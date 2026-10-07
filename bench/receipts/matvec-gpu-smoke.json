@@ -1,0 +1,161 @@
+{
+  "evidence": "measured operator benchmark",
+  "device": "Quadro T2000",
+  "grid": [
+    32,
+    16,
+    16
+  ],
+  "h_mm": [
+    0.4,
+    0.4,
+    0.4
+  ],
+  "seed": 10,
+  "requested_seconds_per_precision": 3.0,
+  "input_sha256": "4d661229dc94ab55783ec15f8668c923d0b5f2e0a5c3bb3c363f06932cf4b613",
+  "relative_fp32_fp64_difference": 7.34490420876381e-08,
+  "versions": {
+    "warp": "1.17.0",
+    "numpy": "2.5.3",
+    "python": "3.14.7"
+  },
+  "rows": [
+    {
+      "dtype": "float32",
+      "windows": [
+        {
+          "seconds": 0.2501348010264337,
+          "matvecs": 5040,
+          "million_cell_matvecs_s": 165.06171804393108
+        },
+        {
+          "seconds": 0.25042538897832856,
+          "matvecs": 5420,
+          "million_cell_matvecs_s": 177.3008726517037
+        },
+        {
+          "seconds": 0.2536896590027027,
+          "matvecs": 5570,
+          "million_cell_matvecs_s": 179.8632241431405
+        },
+        {
+          "seconds": 0.2502093880320899,
+          "matvecs": 5350,
+          "million_cell_matvecs_s": 175.16209261652108
+        },
+        {
+          "seconds": 0.2503825399908237,
+          "matvecs": 3600,
+          "million_cell_matvecs_s": 117.78457076552074
+        },
+        {
+          "seconds": 0.25017979298718274,
+          "matvecs": 5570,
+          "million_cell_matvecs_s": 182.38659267872086
+        },
+        {
+          "seconds": 0.2509671200532466,
+          "matvecs": 5370,
+          "million_cell_matvecs_s": 175.28606930926492
+        },
+        {
+          "seconds": 0.25064259697683156,
+          "matvecs": 4690,
+          "million_cell_matvecs_s": 153.2879106082333
+        },
+        {
+          "seconds": 0.2502898160018958,
+          "matvecs": 4690,
+          "million_cell_matvecs_s": 153.5039683744423
+        },
+        {
+          "seconds": 0.2504399010213092,
+          "matvecs": 5360,
+          "million_cell_matvecs_s": 175.32797218388893
+        },
+        {
+          "seconds": 0.25223879399709404,
+          "matvecs": 5150,
+          "million_cell_matvecs_s": 167.25738072029492
+        },
+        {
+          "seconds": 0.25000384700251743,
+          "matvecs": 5100,
+          "million_cell_matvecs_s": 167.11422844456987
+        }
+      ],
+      "median_million_cell_matvecs_s": 171.209736668408,
+      "minimum_to_first_rate": 0.7135789701048213
+    },
+    {
+      "dtype": "float64",
+      "windows": [
+        {
+          "seconds": 0.2507080700015649,
+          "matvecs": 1490,
+          "million_cell_matvecs_s": 48.68642640790865
+        },
+        {
+          "seconds": 0.2502522640279494,
+          "matvecs": 1580,
+          "million_cell_matvecs_s": 51.72125035621824
+        },
+        {
+          "seconds": 0.2508390119764954,
+          "matvecs": 1530,
+          "million_cell_matvecs_s": 49.967347189098575
+        },
+        {
+          "seconds": 0.25030947802588344,
+          "matvecs": 1570,
+          "million_cell_matvecs_s": 51.38215341038765
+        },
+        {
+          "seconds": 0.2510848270030692,
+          "matvecs": 1580,
+          "million_cell_matvecs_s": 51.549749757844914
+        },
+        {
+          "seconds": 0.251438555016648,
+          "matvecs": 1590,
+          "million_cell_matvecs_s": 51.80303394257727
+        },
+        {
+          "seconds": 0.2502091230126098,
+          "matvecs": 1520,
+          "million_cell_matvecs_s": 49.76573136133195
+        },
+        {
+          "seconds": 0.25049675902118906,
+          "matvecs": 1580,
+          "million_cell_matvecs_s": 51.67076831882342
+        },
+        {
+          "seconds": 0.2510558040230535,
+          "matvecs": 1580,
+          "million_cell_matvecs_s": 51.555709099684705
+        },
+        {
+          "seconds": 0.2501603899872862,
+          "matvecs": 1580,
+          "million_cell_matvecs_s": 51.740245530708584
+        },
+        {
+          "seconds": 0.2500127200037241,
+          "matvecs": 1510,
+          "million_cell_matvecs_s": 49.477162601229814
+        },
+        {
+          "seconds": 0.250497532018926,
+          "matvecs": 1580,
+          "million_cell_matvecs_s": 51.67060887059791
+        }
+      ],
+      "median_million_cell_matvecs_s": 51.552729428764806,
+      "minimum_to_first_rate": 1.0
+    }
+  ],
+  "establishes": "operator output difference and synchronized throughput on this device",
+  "does_not_establish": "whole-solve FP32 accuracy, hierarchy VRAM, thermal gate or bracket acceptance"
+}

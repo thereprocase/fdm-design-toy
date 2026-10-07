@@ -56,11 +56,16 @@ def main():
         deadline = time.perf_counter() + a.seconds
         while time.perf_counter() < deadline:
             t0 = time.perf_counter()
-            for _ in range(10):
-                launch()
-            wp.synchronize_device(dev)
+            count = 0
+            while True:
+                for _ in range(10):
+                    launch()
+                count += 10
+                wp.synchronize_device(dev)
+                if time.perf_counter() - t0 >= 0.25:
+                    break
             dt = time.perf_counter() - t0
-            windows.append(dict(seconds=dt, matvecs=10, million_cell_matvecs_s=cells * 10 / dt / 1e6))
+            windows.append(dict(seconds=dt, matvecs=count, million_cell_matvecs_s=cells * count / dt / 1e6))
         outputs.append(yw.numpy().astype(np.float64))
         rates = [w['million_cell_matvecs_s'] for w in windows]
         rows.append(dict(dtype=np.dtype(dtype).name, windows=windows,

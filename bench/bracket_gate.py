@@ -77,6 +77,8 @@ def build(root, h):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=r"D:\Code\Models\spool-wall-rack")
+    ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--maxiter", type=int, default=2000)
     ap.add_argument("--h", default="0.503,0.503,0.6")
     ap.add_argument("--iters", type=int, default=40)
     ap.add_argument("--vol", type=float, default=0.5)
@@ -113,9 +115,14 @@ def main():
         xp = filt(x)
         E = np.where(body, a.emin + xp.ravel() ** 3 * (1 - a.emin), 0.0)
         t0 = time.perf_counter()
-        s = MGPCG(nx, ny, nz, Ke, E, fixed, coarsest_degree=a.coarsest_degree, coarsest_dofs=a.coarsest_dofs)
+        s = MGPCG(nx, ny, nz, Ke, E, fixed, device=a.device, coarsest_degree=a.coarsest_degree, coarsest_dofs=a.coarsest_dofs)
         setup = time.perf_counter() - t0
-        u, sv = s.solve(b, tol=1e-6, maxiter=2000, x0=u)
+        u, sv = s.solve(b, tol=1e-6, maxiter=a.maxiter, x0=u)
+        if not sv["converged"] or not np.isfinite(sv["true_rel_res"]) or sv["true_rel_res"] > 1e-6:
+            rows.append({"iter": it, "status": "solver_failed", **sv,
+                         "setup_s": setup, "total_s": time.perf_counter() - ti})
+            print(f"solver failed: true residual {sv['true_rel_res']:.3e}; optimisation stopped", flush=True)
+            break
         ue = u[dofs]
         ce = np.einsum("ij,jk,ik->i", ue, Ke, ue)
         c = float((E[ids] * ce).sum())
@@ -139,8 +146,12 @@ def main():
         del s
     if a.out:
         import warp as wp
-        Path(a.out).write_text(json.dumps({"device": wp.get_device("cuda:0").name, "grid": [nx, ny, nz], "h_mm": h,
-                                           "body_cells": int(occ.sum()), "bc": info, "rows": rows,
+        Path(a.out).write_text(json.dumps({"device": wp.get_device(a.device).name, "grid": [nx, ny, nz], "h_mm": h,
+                                           "evidence": "measured design-solver gate investigation",
+                                           "does_not_establish": "truth-model strength or physical qualification; coarse repros do not establish the 0.8 mm gate",
+                                           "warp": wp.__version__, "emin": a.emin,
+                                           "coarsest_degree": a.coarsest_degree, "coarsest_dofs": a.coarsest_dofs,
+                                           "body_cells": int(occ.sum()), "bc": info, "rows": rows, "gate_converged": all(r.get("status") != "solver_failed" for r in rows),
                                            "problem": sb.problem_dict(br)}, indent=1, default=str))
         np.save(Path(a.out).with_suffix(".npy"), filt(x).astype(np.float32))
 

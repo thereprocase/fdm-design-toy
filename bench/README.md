@@ -23,8 +23,25 @@ CPU operator smoke test. They do not establish the real bracket gate, GPU therma
 stability, peak hierarchy VRAM, physical accuracy, or print qualification.
 The minimum/first throughput ratio is a diagnostic, not automatic thermal acceptance:
 compare sustained 0.4 mm runs with a separately measured burst on the same device.
-B4/B5 hierarchy VRAM and B10 orientation covariance remain open in #10.
+B4/B5 hierarchy VRAM and the sustained GPU thermal gate remain open in #10.
+B10 FP64 reference covariance now passes all 24 proper grid rotations on a
+masked non-cubic TI case; this does not establish production GPU rotation parity.
 
 The solver regression in `tests/test_coarse_operator.py` uses CPU Warp and checks
 that the dense coarsest inverse actually inverts the first Galerkin operator,
 including a masked thin-shell domain. It does not measure bracket convergence.
+
+Real-bracket receipt `receipts/geometry-bracket.json`: the hashed body at 0.4 mm
+has exact scanline/section occupancy parity; three local scanline runs take
+2.64–2.74 s (measured; this establishes #5 voxeliser timing for that fixture).
+The local GPU smoke receipt identifies the actual Quadro T2000, not the larger
+GPU described by the original handoff. It is a smoke measurement, not a thermal
+gate or a full 0.4 mm hierarchy memory result.
+
+`python bench/domain_audit.py --root <checkout> --out connectivity.json` audits
+body connectivity and clamp/load membership. At 3.2 mm, a disconnected loaded
+seven-cell island has no full clamp: that resolution is an invalid mechanical
+repro. At 1.6 mm the body is node-connected but has five face-connected groups;
+at 0.8 mm it is face-connected. Node connectivity does not prove absence of
+hinge modes or full rigid-body restraint. See the hashed connectivity receipt.
+The bracket runner stops optimisation after a failed true-residual check.

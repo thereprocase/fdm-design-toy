@@ -1,0 +1,91 @@
+{
+  "evidence": "measured masked geometry connectivity",
+  "rows": [
+    {
+      "h_mm": 3.2,
+      "grid": [
+        80,
+        80,
+        16
+      ],
+      "body_cells": 4962,
+      "face_connected_components": 3,
+      "node_connected_components": 2,
+      "components": [
+        {
+          "cells": 4955,
+          "fully_clamped_nodes": 42,
+          "loaded_nodes": 308
+        },
+        {
+          "cells": 7,
+          "fully_clamped_nodes": 0,
+          "loaded_nodes": 8
+        }
+      ],
+      "bc": {
+        "seat_nodes": {
+          "rear_seat": 158,
+          "front_seat": 158
+        },
+        "clamped_nodes": 449,
+        "wall_nodes": 428
+      }
+    },
+    {
+      "h_mm": 1.6,
+      "grid": [
+        144,
+        160,
+        16
+      ],
+      "body_cells": 42648,
+      "face_connected_components": 5,
+      "node_connected_components": 1,
+      "components": [
+        {
+          "cells": 42648,
+          "fully_clamped_nodes": 160,
+          "loaded_nodes": 1274
+        }
+      ],
+      "bc": {
+        "seat_nodes": {
+          "rear_seat": 626,
+          "front_seat": 648
+        },
+        "clamped_nodes": 1751,
+        "wall_nodes": 1631
+      }
+    },
+    {
+      "h_mm": 0.8,
+      "grid": [
+        272,
+        304,
+        32
+      ],
+      "body_cells": 334066,
+      "face_connected_components": 1,
+      "node_connected_components": 1,
+      "components": [
+        {
+          "cells": 334066,
+          "fully_clamped_nodes": 390,
+          "loaded_nodes": 5908
+        }
+      ],
+      "bc": {
+        "seat_nodes": {
+          "rear_seat": 2912,
+          "front_seat": 2996
+        },
+        "clamped_nodes": 6436,
+        "wall_nodes": 6124
+      }
+    }
+  ],
+  "mesh_sha256": "565d0e8fb8d452e3d1b86352be97a980f85ba8a97ce2bbe915292db0fdb63843",
+  "establishes": "voxel connectivity and clamp/load membership at the recorded resolutions",
+  "does_not_establish": "positive-definite stiffness, full rigid-mode restraint, GPU convergence or bracket acceptance"
+}
