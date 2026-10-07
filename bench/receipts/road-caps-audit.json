@@ -1,0 +1,105 @@
+{
+  "schema": "fdmgen/road-caps-audit@0.1",
+  "geometry": {
+    "length_mm": 10,
+    "width_mm": 0.42,
+    "height_mm": 0.2
+  },
+  "grid": {
+    "origin_mm": [
+      -0.9996858407346411,
+      -0.9996858407346411,
+      -0.09968584073464103
+    ],
+    "h_mm": 0.1,
+    "shape": [
+      125,
+      25,
+      5
+    ],
+    "step_frac": 0.2
+  },
+  "producer": "deposit: default rectangular roads vs forward extension of half width, same volume per road",
+  "establishes": "synthetic volume accounting and sensitivity to collinear G-code segmentation",
+  "does_not_establish": [
+    "physical bead corner geometry",
+    "preferred cap model",
+    "actual bracket sensitivity",
+    "shell qualification",
+    "mechanical effect"
+  ],
+  "rows": [
+    {
+      "segments": 1,
+      "caps": false,
+      "gcode_sha256": "93782fc899005a9486179dde6e389945fa58037476d23703d8dde4e6376ac73d",
+      "credited_mm3": 0.8400000000000005,
+      "deposited_mm3": 0.8399999999999984,
+      "outside_mm3": 0.0,
+      "density_sha256": "fc5a47d5efa96bfc2f9c5e94f5ebf8468f2ee9fc60e351fe6034637de2cb9b53",
+      "solid_cells_at_half_density": 800,
+      "moved_vs_one_segment_mm3": 0.0,
+      "moved_vs_uncapped_mm3": 0.0
+    },
+    {
+      "segments": 1,
+      "caps": true,
+      "gcode_sha256": "93782fc899005a9486179dde6e389945fa58037476d23703d8dde4e6376ac73d",
+      "credited_mm3": 0.8400000000000005,
+      "deposited_mm3": 0.8400000000000021,
+      "outside_mm3": 0.0,
+      "density_sha256": "305b57e6f29ff36c49b44db48f09ee28b9c7ac7e8a90718c36ae5db7a05ed9e0",
+      "solid_cells_at_half_density": 816,
+      "moved_vs_one_segment_mm3": 0.0,
+      "moved_vs_uncapped_mm3": 0.017901369863011968
+    },
+    {
+      "segments": 10,
+      "caps": false,
+      "gcode_sha256": "0deeb99d16c3d5aeab51fd6f2188dd77c02f97395c59fcc221b06ee0eda7d91b",
+      "credited_mm3": 0.8399999999999955,
+      "deposited_mm3": 0.839999999999997,
+      "outside_mm3": 0.0,
+      "density_sha256": "25c4fbc334ae9e249e9e6a5258f658114b96577712a55f6928c4612c3fbbf605",
+      "solid_cells_at_half_density": 800,
+      "moved_vs_one_segment_mm3": 7.26415455565288e-16,
+      "moved_vs_uncapped_mm3": 0.0
+    },
+    {
+      "segments": 10,
+      "caps": true,
+      "gcode_sha256": "0deeb99d16c3d5aeab51fd6f2188dd77c02f97395c59fcc221b06ee0eda7d91b",
+      "credited_mm3": 0.8399999999999955,
+      "deposited_mm3": 0.8399999999999956,
+      "outside_mm3": 0.0,
+      "density_sha256": "74fdbc418cdd0f7acf78a9b96f198d14bb1ad10e448b96ed8e81e6f0f0cb08c6",
+      "solid_cells_at_half_density": 816,
+      "moved_vs_one_segment_mm3": 0.11236020660229093,
+      "moved_vs_uncapped_mm3": 0.1242098360655725
+    },
+    {
+      "segments": 100,
+      "caps": false,
+      "gcode_sha256": "62dd898ab21114784d7e146a5594ca6600c228dd5b8ad9707ace23cf96e84837",
+      "credited_mm3": 0.8399999999999959,
+      "deposited_mm3": 0.839999999999997,
+      "outside_mm3": 0.0,
+      "density_sha256": "b8ce5cf64a260be38c1efdc3cef388aff7f9031eb9c337f3d1e96d61aef3ce35",
+      "solid_cells_at_half_density": 800,
+      "moved_vs_one_segment_mm3": 8.051285332877356e-16,
+      "moved_vs_uncapped_mm3": 0.0
+    },
+    {
+      "segments": 100,
+      "caps": true,
+      "gcode_sha256": "62dd898ab21114784d7e146a5594ca6600c228dd5b8ad9707ace23cf96e84837",
+      "credited_mm3": 0.8399999999999959,
+      "deposited_mm3": 0.8399999999999994,
+      "outside_mm3": 0.0,
+      "density_sha256": "c99c6ab5fc38149718393c0fbafa464435ba80d3254e39f878d9f732b18b41c9",
+      "solid_cells_at_half_density": 800,
+      "moved_vs_one_segment_mm3": 0.017539726027395983,
+      "moved_vs_uncapped_mm3": 0.008925000000001158
+    }
+  ]
+}

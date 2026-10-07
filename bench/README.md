@@ -338,3 +338,35 @@ intentionally reject that schema rather than labelling it a thresholded result.
 Both retain full input provenance and hashes. Known-answer tests verify density
 capping, exact zero stiffness outside deposits and compliance scaling of a
 clamped block with a fixed load (1×, 2×, 8× for full, half-linear, half-cubic).
+
+### Optional road caps: segmentation sensitivity
+
+The density pilots above use caps-off occupancy. The optional `deposit(caps=True)`
+mode extends each segment **forward** by half its width and redistributes the
+same extruded volume over the extended road. It fills some raster corner gaps,
+but also changes density according to how a path is split into G-code moves.
+Do not treat it as a validated mechanics correction.
+
+A synthetic straight 10 × 0.42 × 0.2 mm road (0.84 mm³) was represented as
+1, 10 or 100 equal collinear moves, with identical total extrusion. On a fixed
+0.1 mm grid, deposition step 0.02 mm and slightly offset origin:
+
+| Moves | Caps-off volume moved versus one move, mm³ | Caps-on volume moved versus one move, mm³ | Caps-on volume moved versus same uncapped path, mm³ |
+|---|---:|---:|---:|
+| 1 | 0 | 0 | 0.01790 |
+| 10 | <1e-15 | 0.11236 | 0.12421 |
+| 100 | <1e-15 | 0.01754 | 0.00893 |
+
+“Moved” means half the L1 difference between cell-volume arrays. All six runs
+conserve the input volume within 1e-12 tolerance, with zero outside the grid.
+Changing one move to ten reassigns 13.4% of the road volume with caps enabled;
+the uncapped control is invariant to numerical precision in this experiment.
+The response is not monotonic in segment count. This measures synthetic raster
+sensitivity, not the size or direction of the effect on the bracket or its
+mechanics. It neither validates caps-off geometry nor invalidates a physical
+print; corner shape and overlap still need a defensible bead model.
+
+Reproduce with `PYTHONPATH=src python bench/road_caps_audit.py --out audit.json`.
+`receipts/road-caps-audit.json` records grid, input G-code hashes, density hashes
+and volume accounting. The script generates all inputs without external part
+files. No producer defaults or published occupancy fields were changed.
