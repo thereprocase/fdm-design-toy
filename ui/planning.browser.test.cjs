@@ -1,6 +1,6 @@
 // Optional integration: expose a temporary Playwright install through NODE_PATH.
 const {chromium}=require('playwright');
-const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs/promises'),assert=require('node:assert/strict');
+const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs/promises'),assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  try {
@@ -21,6 +21,16 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.includes('different orientation table'));assert.equal(await page.locator('.helper-region').count(),2);
   await page.locator('#shell-only').check();assert.deepEqual((await download()).massing.helper_regions,[]);assert.match(await page.locator('#handoff-readiness').innerText(),/geometry inputs needed/);
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+  const plain=await fs.readFile(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
+  const bom=Buffer.concat([Buffer.from([0xef,0xbb,0xbf]),plain]);
+  await page.locator('#table-file').setInputFiles({name:'table-bom.json',mimeType:'application/json',buffer:bom});
+  await page.getByRole('button',{name:'facet-00',exact:true}).click();await page.locator('#rationale').fill('Preserve exact source bytes.');await page.locator('#shell-only').check();
+  const exact=await download();assert.equal(exact.source.orientation_table_sha256,crypto.createHash('sha256').update(bom).digest('hex'));
+  await upload(exact);await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
+  const malformed=Buffer.concat([Buffer.from('{"problem":"'),Buffer.from([0xff]),Buffer.from('"}')]);
+  await page.locator('#table-file').setInputFiles({name:'malformed.json',mimeType:'application/json',buffer:malformed});
+  await page.waitForFunction(()=>document.querySelector('#status').textContent.startsWith('Could not load table'));
+  assert(await page.locator('#workspace').isHidden());assert.match(await page.locator('#status').innerText(),/encoded data|UTF-8/i);
   console.log('PASS: multi-helper save/reopen, edits restored, exact round-trip, wrong-source rejection preserves draft, shell-only export, mobile, console');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
