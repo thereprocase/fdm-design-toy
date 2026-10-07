@@ -446,3 +446,16 @@ Selected poses show optional external and internal BRG-001 T columns separately:
 longest unsupported run, recorded limit, verdict, fidelity and full column
 coverage/provenance. Missing or invalid measurements stay Not checked. The limits
 are provisional; a screen PASS does not prove absence of sag or printed strength.
+
+Bridge coverage is visible beside the result: evaluated roads of each type,
+total bridge roads, raster cell size and the longest reported cantilever.
+Cantilevers are reported but not judged by this checker. Zero evaluated roads
+is explicitly distinguished from a successful bridge trial; absent coverage
+is not treated as complete.
+
+The real combined example is
+[`spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json`](../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json).
+Facet-00 records external 3.15 mm (PASS) and internal 122.1 mm (FAIL); facet-01
+records 52.2 mm and 53.95 mm (both FAIL). Limits are provisional 10 mm external
+and 18 mm internal. These are toolpath-raster screens, not physical sag results.
+The original pinned tables and receipt hashes are preserved.

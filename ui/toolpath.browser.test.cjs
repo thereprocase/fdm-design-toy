@@ -18,19 +18,21 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   contact_mm2:{value:[100,20,null,100][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   height_mm:{value:[30,10,null,30][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   t_bridge_span_external_mm:{value:[3.2,0,52,52][i],limit_mm:10,unit:'mm',rule:'BRG-001',level:'T',verdict:i===2?'NOT_CHECKED':i===3?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only bridge screen <b>inert</b>'},
-  t_bridge_span_internal_mm:{value:122,limit_mm:18,unit:'mm',rule:'BRG-001',level:'T',verdict:'FAIL',provisional:true,fidelity:'Synthetic internal bridge screen'},
+  t_bridge_span_internal_mm:{value:i===1?0:122,limit_mm:18,unit:'mm',rule:'BRG-001',level:'T',verdict:i===1?'PASS':'FAIL',provisional:true,fidelity:'Synthetic internal bridge screen',coverage:{bridge_roads:i===1?4:8,external_roads:4,internal_roads:i===1?0:4,cell_mm:.4,max_cantilever_mm:2}},
   t_shell_thin_fraction:{value:[.02,0,.1,.02][i],unit:'fraction',rule:'SHELL-001',level:'T',verdict:i===2?'NOT_CHECKED':i===0?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only screen; seed 0, cell 0.1 mm. <b>inert</b>'}}}));
  await page.locator('#table-file').setInputFiles({name:'sort-fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.getByRole('button',{name:'large',exact:true}).click();await page.locator('#rationale').fill('Keep this choice while comparing.');
  assert.match(await page.locator('#pose-bridges').innerText(),/PASS · 3.2 mm longest unsupported run; recorded limit 10 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122 mm/);assert.equal(await page.locator('#pose-bridges b').count(),0);
+ assert.match(await page.locator('#pose-bridges').innerText(),/Bridge-road coverage is not established/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/longest cantilever across all bridge roads 2 mm \(reported, not judged\)/);
  assert.match(await page.locator('#pose-shell-summary').innerText(),/FAIL · 2% thin · T/);
  assert.match(await page.locator('#pose-shell-fidelity').innerText(),/Synthetic shell-only/);
  assert.match(await page.locator('#pose-shell-coverage').innerText(),/not established/);
  assert.equal(await page.locator('#pose-shell-fidelity b').count(),0);
  await page.locator('#sliced-only').check();assert.equal(await page.locator('#rows tr').count(),3);
  await page.locator('#sliced-only').uncheck();
- await page.getByRole('button',{name:'zero',exact:true}).click();assert.match(await page.locator('#pose-shell-summary').innerText(),/PASS · 0% thin/);
+ await page.getByRole('button',{name:'zero',exact:true}).click();assert.match(await page.locator('#pose-shell-summary').innerText(),/PASS · 0% thin/);assert.match(await page.locator('#pose-bridges').innerText(),/No roads of this type were evaluated/);
  await page.getByRole('button',{name:'unknown',exact:true}).click();assert.equal(await page.locator('#pose-shell-summary').innerText(),'Not checked');
  await page.getByRole('button',{name:'large',exact:true}).click();
  const order=()=>page.locator('#rows button').allTextContents();
@@ -59,6 +61,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.equal(JSON.parse(await page.locator('#pose-shell-receipt').textContent()).receipt.sha256,'b7b362a889869725fa019522e7d73be3671f48fd7805d1a734176a2f847e29fd');
  await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#pose-shell-summary').innerText(),/0.19% thin/);
  await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.equal(await page.locator('#pose-shell-summary').innerText(),'Not checked');assert(await page.locator('#pose-shell-details').isHidden());
+ // Real chained shell + bridge evidence, preserving separate verdicts and original receipt hashes.
+ await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json'));
+ await page.getByRole('button',{name:'facet-00',exact:true}).click();
+ assert.match(await page.locator('#pose-bridges').innerText(),/PASS · 3.15 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122.1 mm/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/111 external bridges evaluated/);
+ assert.equal(JSON.parse(await page.locator('#pose-bridges pre').first().textContent()).receipt.sha256,'934bd2833b96ae4805164cdc69759550201a0aed38967b349148c3da784ad9a3');
+ assert.match(await page.locator('#pose-shell-summary').innerText(),/0.22% thin/);
+ await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 53.95 mm/);
+ await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.equal(await page.locator('#pose-bridges details').count(),0);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
