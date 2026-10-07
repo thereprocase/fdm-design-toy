@@ -235,6 +235,40 @@ def _cmd_massing_evidence(a) -> int:
     return 2 if any(h["verdict"] == "FAIL" for h in ev["helpers"]) else 0
 
 
+def _cmd_report(a) -> int:
+    import trimesh
+    import yaml
+
+    from .problem import lint_problem_file
+    from .problem.lint import _source_root
+    from .report import render_markdown, run_report
+    prob = yaml.safe_load(a.problem.read_text(encoding="utf-8"))
+    table = json.loads(a.table.read_text(encoding="utf-8"))
+    cand = next((c for c in table["candidates"] if c["id"] == a.pose), None) if a.pose else table["candidates"][0]
+    if cand is None:
+        print(f"ERROR   pose {a.pose!r} is not in the table (have {[c['id'] for c in table['candidates']]})")
+        return 1
+    root = _source_root(prob)
+    if root is None:
+        print("ERROR   the problem's source checkout was not found")
+        return 1
+    mesh = trimesh.load(root / prob["geometry"]["body"]["path"], force="mesh", process=False)
+    rep = run_report(prob, mesh.vertices, mesh.faces, cand, raster_px=a.px, workers=a.workers,
+                     lint_findings=[str(f) for f in lint_problem_file(a.problem)])
+    md = render_markdown(rep, {"problem file": str(a.problem), "orientation table": str(a.table),
+                               "table sha256": hashlib_sha(a.table)})
+    a.out.parent.mkdir(parents=True, exist_ok=True)
+    a.out.write_text(md, encoding="utf-8")
+    fails = [r for r in rep["results"] if r.verdict.value == "FAIL"]
+    print(f"wrote {a.out}: {len(rep['results'])} checks, {len(fails)} FAIL, evidence rung {rep['ladder_rung']}")
+    return 2 if fails else 0
+
+
+def hashlib_sha(path: Path) -> str:
+    import hashlib
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fdmgen", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -294,6 +328,14 @@ def main(argv: list[str] | None = None) -> int:
     me.add_argument("--baseline", type=Path, help="slice of the -shell-only.3mf written by 'fdmgen massing'")
     me.add_argument("--out", type=Path)
     me.set_defaults(fn=_cmd_massing_evidence)
+    rp = sub.add_parser("report", help="design report: every check for one problem in one pose (Markdown)")
+    rp.add_argument("problem", type=Path)
+    rp.add_argument("--table", type=Path, required=True)
+    rp.add_argument("--pose", help="candidate id (default: the table's first-ranked)")
+    rp.add_argument("--px", type=float, default=0.1, help="raster cell size for width/gap/bridge checks (mm)")
+    rp.add_argument("--workers", type=int, default=1, help="processes for the per-layer checks (use a big machine)")
+    rp.add_argument("--out", type=Path, default=Path("out/report.md"))
+    rp.set_defaults(fn=_cmd_report)
     a = ap.parse_args(argv)
     return a.fn(a)
 
