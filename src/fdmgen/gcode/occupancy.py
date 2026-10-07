@@ -20,9 +20,10 @@ def deposit(tp: Toolpath, offset, M, c, origin, h, shape, *, step_frac: float = 
     """Volume grid (mm3 per cell) and the volume that fell outside it, for the roads in mask (default credited).
 
     Each road is a rectangle (width x layer height) along its centreline. Without caps, the half-bead square
-    at a convex corner (where the slicer turns a wall at its centreline) stays empty. caps=True extends each
-    road forward by half its width with the same volume: along a path every corner square is covered by the
-    incoming road, at the cost of diluting the road's density by w / (2 L).
+    at a convex corner (where the slicer turns a wall at its centreline) and the bead's end caps stay empty.
+    caps=True extends roads where the path is not a straight continuation (see _cap_extensions), lays the
+    extension at the road's own volume per unit length, then rescales the whole grid once so the total is
+    still the roads' volume. Splitting a straight road into collinear moves changes nothing.
     """
     sel = credit(tp)["credited_mask"] if mask is None else np.asarray(mask, bool)
     a = tp.start[sel] + np.asarray(offset, float)
@@ -31,12 +32,15 @@ def deposit(tp: Toolpath, offset, M, c, origin, h, shape, *, step_frac: float = 
     h = np.broadcast_to(np.asarray(h, float), (3,))
     step = float(h.min()) * step_frac
     L = np.linalg.norm(b[:, :2] - a[:, :2], axis=1)
+    total = float(vol.sum())
     if caps:
-        ext = np.zeros_like(a)
-        ext[:, :2] = (b[:, :2] - a[:, :2]) / np.maximum(L, 1e-12)[:, None] * (w / 2)[:, None]
-        ext[L < 1e-12] = 0.0
-        b = b + ext
-        L = np.linalg.norm(b[:, :2] - a[:, :2], axis=1)
+        lead, trail = _cap_extensions(a, b, w, L)
+        u = np.zeros_like(a)
+        u[:, :2] = (b[:, :2] - a[:, :2]) / np.maximum(L, 1e-12)[:, None]
+        a, b = a - u * lead[:, None], b + u * trail[:, None]
+        L_ext = L + lead + trail
+        vol = np.where(L > 1e-12, vol * L_ext / np.maximum(L, 1e-12), vol)
+        L = L_ext
     n_l = np.maximum(1, np.ceil(L / step)).astype(int)
     n_w = np.maximum(1, np.ceil(w / step)).astype(int)
     n_h = np.maximum(1, np.ceil(hh / step)).astype(int)
@@ -61,7 +65,32 @@ def deposit(tp: Toolpath, offset, M, c, origin, h, shape, *, step_frac: float = 
         ok = np.all((idx >= 0) & (idx < np.asarray(shape)), axis=1)
         np.add.at(grid, tuple(idx[ok].T), share[ok])
         outside += float(share[~ok].sum())
+    if caps and vol.sum() > 0:
+        k = total / float(vol.sum())                # one global factor: cap material comes from the same extrusion
+        grid *= k
+        outside *= k
     return grid, outside
+
+
+def _cap_extensions(a, b, w, L, *, tol_mm=1e-6):
+    """Lead and trail extensions (mm) per road: half the width where a path starts or ends, the miter length
+    (w/2) tan(theta/2), at most w/2, at a turn of theta between consecutive roads, and 0 when the next road
+    continues straight on. Consecutive means the next road starts where this one ends."""
+    lead, trail = w / 2, w / 2                     # new arrays (w / 2 allocates)
+    if len(a) > 1:
+        joined = np.linalg.norm(a[1:] - b[:-1], axis=1) < tol_mm
+        d = np.zeros((len(a), 2))
+        ok = L > 1e-12
+        d[ok] = (b - a)[ok, :2] / L[ok, None]
+        theta = np.arccos(np.clip(np.einsum("ij,ij->i", d[:-1], d[1:]), -1.0, 1.0))
+        miter = (w[:-1] / 2) * np.minimum(1.0, np.tan(np.minimum(theta, np.pi / 2) / 2))
+        trail[:-1] = np.where(joined, miter, trail[:-1])
+        lead[1:] = np.where(joined, 0.0, lead[1:])
+    lead[L <= 1e-12] = 0.0
+    trail[L <= 1e-12] = 0.0
+    return lead, trail
+
+
 
 
 def plate_to_grid(R_pose, t_pose, R_design_to_grid, t_design_to_grid):

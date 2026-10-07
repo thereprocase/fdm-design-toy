@@ -78,3 +78,24 @@ def test_caps_fill_the_convex_corner_and_conserve_volume():
     corner = (slice(10, 12), slice(10, 12), 0)                     # cells covering x, y in 0.0..0.2 mm
     assert plain[corner].sum() == 0.0 and capped[corner].min() > 0
     assert capped.sum() + out == pytest.approx(tp.volume.sum(), rel=1e-12) == plain.sum()
+
+
+def test_caps_do_not_depend_on_how_a_straight_road_is_split():
+    """A 10 mm road written as 1, 10 or 100 collinear moves is one bead. Caps extend only the path's ends, so the
+    field may differ only by the deposit's point-sampling noise (0 with equal moves uncapped, about 0.5 % for an
+    uneven split uncapped at step 1/3, shrinking with finer steps). Before this rule a 10-way split moved 13 %."""
+    def road(n):
+        e = 0.2 * 0.42 * 10.0 / AREA / n
+        g = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", ";TYPE:Outer wall", ";Z:0.2",
+             ";HEIGHT:0.2", ";WIDTH:0.42", "G1 X1 Y1 Z0.2"]
+        g += [f"G1 X{1 + 10.0 * (k + 1) / n:.6f} Y1 E{e:.8f}" for k in range(n)]
+        return read_gcode("\n".join(g + ["; stop printing object part"]) + "\n", footer_rel_tol=None)
+    grids = []
+    for n in (1, 10, 100):
+        tp = road(n)
+        g, out = deposit(tp, (0, 0, 0), np.eye(3), np.zeros(3), np.array([0.0, 0.0, 0.0]) + 1e-4 * np.pi, 0.1,
+                         (130, 30, 3), mask=np.ones(len(tp), bool), caps=True)
+        assert g.sum() + out == pytest.approx(tp.volume.sum(), rel=1e-12)
+        grids.append(g)
+    for g in grids[1:]:
+        assert np.abs(g - grids[0]).sum() / 2 < 0.01 * grids[0].sum()
