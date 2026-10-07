@@ -24,6 +24,12 @@ parameters:
     tag: U
     status: PROVISIONAL
     note: 2w at w = 0.42
+  min_area_mm2:
+    value: 0.2
+    unit: mm2
+    tag: derived
+    status: PROVISIONAL
+    note: per-layer components smaller than this are not reported (acute corner tips); about one bead width squared; residue on the real spool bracket at 0.1 mm pixels was <= 0.10 mm2
 checkers:
   M: fdmgen.catalog.checks.layers.check_gap
 sources:

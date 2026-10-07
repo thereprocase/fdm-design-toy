@@ -7,9 +7,12 @@ All in-plane operations are strictly per layer.
 Width/gap method: morphological opening of the phase with a disc of diameter d_min. Pixels the opening
 removes are thinner than d_min, except the unavoidable residue in corners (a disc cannot reach into a
 corner tip). Residue that lies within `corner_tol` (default 0.5 r) of the kept, opened set is treated
-as corner rounding and ignored; at a 90-degree corner the tip is 0.414 r away. Consequence (stated in
-every result): stubs and pinches shorter than about 0.5 r are not reported. The threshold is resolved
-to one pixel.
+as corner rounding and ignored; at a 90-degree corner the tip is 0.414 r away. Acute corners leave
+longer tips (r (1/sin(theta/2) - 1)), so components smaller than min_area_mm2 per layer are also
+ignored: on the real spool bracket at 0.1 mm pixels every such residue was <= 0.10 mm2, while a 0.6 mm
+wide fin reaches 0.2 mm2 at 0.33 mm long. Consequence (stated in every result): stubs and pinches
+shorter than about 0.5 r, and features under min_area_mm2 per layer, are not reported. The threshold
+is resolved to one pixel.
 """
 from __future__ import annotations
 
@@ -45,7 +48,8 @@ def _box(mask, h, origin):
     return lo.round(3).tolist(), hi.round(3).tolist()
 
 
-def thin_regions(phase: np.ndarray, h, d_min_mm: float, corner_tol: float = 0.5, pad_value: bool = False):
+def thin_regions(phase: np.ndarray, h, d_min_mm: float, corner_tol: float = 0.5, pad_value: bool = False,
+                 min_area_mm2: float = 0.2):
     """Mask of pixels in `phase` that belong to features narrower than d_min_mm (per layer).
 
     pad_value is what lies beyond the grid edge: False for material, True for the void phase (the
@@ -54,9 +58,9 @@ def thin_regions(phase: np.ndarray, h, d_min_mm: float, corner_tol: float = 0.5,
     ndi = _ndi()
     dx, dy, _ = h
     r = d_min_mm / 2.0
-    pad = int(np.ceil(r / min(dx, dy))) + 2
+    pad = int(np.ceil(2 * r / min(dx, dy))) + 2    # a whole disc fits in the padding
     p = np.pad(phase, ((pad, pad), (pad, pad), (0, 0)), constant_values=pad_value)
-    opened = ndi.binary_opening(p, structure=_disc(r, dx, dy))
+    opened = ndi.binary_opening(p, structure=_disc(r, dx, dy), border_value=int(pad_value))
     residue = p & ~opened
     if not residue.any():
         return np.zeros_like(phase)
@@ -64,19 +68,22 @@ def thin_regions(phase: np.ndarray, h, d_min_mm: float, corner_tol: float = 0.5,
     dist = ndi.distance_transform_edt(~opened, sampling=(dx, dy, 1e9))
     lab, n = ndi.label(residue, structure=_layer_structure())
     far = ndi.maximum(dist, lab, index=np.arange(1, n + 1))
+    area = np.asarray(ndi.sum(residue, lab, index=np.arange(1, n + 1))) * dx * dy
     keep = np.zeros(n + 1, bool)
-    keep[1:] = np.asarray(far) > corner_tol * r
+    keep[1:] = (np.asarray(far) > corner_tol * r) & (area >= min_area_mm2)
     out = keep[lab]
     return out[pad:-pad, pad:-pad]
 
 
-def _width_result(rule, phase_name, occ_phase, h, d_min, origin, provisional, corner_tol):
-    thin = thin_regions(occ_phase, h, d_min, corner_tol, pad_value=(phase_name == "void"))
+def _width_result(rule, phase_name, occ_phase, h, d_min, origin, provisional, corner_tol, min_area):
+    thin = thin_regions(occ_phase, h, d_min, corner_tol, pad_value=(phase_name == "void"), min_area_mm2=min_area)
     px = h[0] * h[1]
     metrics = {"d_min_mm": d_min, "pixel_mm": [h[0], h[1]], "thin_area_mm2_summed_over_layers": float(thin.sum() * px),
-               "layers_affected": int(thin.any(axis=(0, 1)).sum()), "corner_tol_r": corner_tol}
+               "layers_affected": int(thin.any(axis=(0, 1)).sum()), "corner_tol_r": corner_tol,
+               "min_area_mm2": min_area}
     does_not = (f"Bead counts or gap fill in the real toolpaths (T level); stubs and pinches shorter than "
-                f"about {corner_tol} x {d_min / 2:.2f} mm; widths finer than one pixel ({h[0]} mm).")
+                f"about {corner_tol} x {d_min / 2:.2f} mm; features under {min_area} mm2 per layer (acute "
+                f"corner tips); widths finer than one pixel ({h[0]} mm).")
     if thin.any():
         lo, hi = _box(thin, h, origin)
         metrics["bbox_print_mm"] = [lo, hi]
@@ -94,14 +101,18 @@ def _width_result(rule, phase_name, occ_phase, h, d_min, origin, provisional, co
                        f"Every {phase_name} feature admits a {d_min:.2f} mm disc on every layer.", does_not)
 
 
-def check_wall(occ, h, d_min_mm: float = 0.84, *, origin=(0, 0, 0), provisional=True, corner_tol=0.5):
+def check_wall(occ, h, d_min_mm: float = 0.84, *, origin=(0, 0, 0), provisional=True, corner_tol=0.5,
+               min_area_mm2: float = 0.2):
     """WALL-001: solid features at least d_min (default 2w = 0.84 mm) wide in XY."""
-    return _width_result("WALL-001", "material", np.asarray(occ, bool), h, d_min_mm, origin, provisional, corner_tol)
+    return _width_result("WALL-001", "material", np.asarray(occ, bool), h, d_min_mm, origin, provisional, corner_tol,
+                         min_area_mm2)
 
 
-def check_gap(occ, h, d_min_mm: float = 0.84, *, origin=(0, 0, 0), provisional=True, corner_tol=0.5):
+def check_gap(occ, h, d_min_mm: float = 0.84, *, origin=(0, 0, 0), provisional=True, corner_tol=0.5,
+              min_area_mm2: float = 0.2):
     """GAP-001: clear gaps at least d_min wide in XY (the void phase, open space around the part included)."""
-    return _width_result("GAP-001", "void", ~np.asarray(occ, bool), h, d_min_mm, origin, provisional, corner_tol)
+    return _width_result("GAP-001", "void", ~np.asarray(occ, bool), h, d_min_mm, origin, provisional, corner_tol,
+                         min_area_mm2)
 
 
 def check_bridge(occ, h, max_span_mm: float = 10.0, *, origin=(0, 0, 0), bed_layer: int | None = None,

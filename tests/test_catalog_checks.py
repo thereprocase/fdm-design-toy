@@ -167,6 +167,29 @@ def test_gap_slot(gap, verdict):
     assert r.verdict is verdict, r.message
 
 
+def test_grid_edge_is_not_a_gap():
+    """Regression (real bracket run): a part one pixel from the grid edge read as a 0.1 mm gap."""
+    occ = np.zeros((_mm(10), _mm(10), 2), bool)
+    occ[1:-1, 1:-1] = True
+    assert layers.check_gap(occ, PX).verdict is Verdict.PASS
+    assert layers.check_wall(occ, PX).verdict is Verdict.PASS
+
+
+def _triangle(apex_deg, height_mm=6.0):
+    """Isosceles triangle with the given apex angle, base on y = 1 mm, apex up."""
+    n = _mm(12)
+    x, y = np.meshgrid((np.arange(n) + 0.5) * PX[0], (np.arange(n) + 0.5) * PX[1], indexing="ij")
+    half = np.tan(np.radians(apex_deg / 2))
+    inside = (y >= 1.0) & (y <= 1.0 + height_mm) & (np.abs(x - 6.0) <= (1.0 + height_mm - y) * half)
+    return np.repeat(inside[:, :, None], 2, axis=2)
+
+
+def test_corner_tips_below_min_area_are_ignored_but_spikes_are_not():
+    assert layers.check_wall(_triangle(70), PX).verdict is Verdict.PASS     # residue at a 70 deg tip < 0.2 mm2
+    r = layers.check_wall(_triangle(25), PX)                                # a 25 deg spike: ~1.5 mm of tip < 2w wide
+    assert r.verdict is Verdict.FAIL and r.metrics["min_area_mm2"] == 0.2
+
+
 def _bridge(span_mm, pillar_mm=2.0, width_mm=4.0):
     """Two pillars span_mm apart (5 layers), a deck on top: the deck's air-borne part is the bridge."""
     nx = _mm(2 * pillar_mm + span_mm + 2)
