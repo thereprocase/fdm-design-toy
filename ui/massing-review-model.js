@@ -21,6 +21,32 @@ const MassingReview = (() => {
   for(const c of r.checks)if(typeof c.rule!=='string'||typeof c.message!=='string'||!['V','M','T','P','FE'].includes(c.level)||!['PASS','FAIL','NOT_CHECKED'].includes(c.verdict)||typeof c.provisional!=='boolean'||!Array.isArray(c.fixes)||!c.fixes.every(f=>typeof f==='string'))throw Error('Invalid check result in receipt.');
   return r;
  }
- return {draft,pair};
+ function slice(report, evidence) {
+  if(evidence?.schema!=='fdmgen/massing-slice-evidence@0.1'||evidence.tier!=='S'||evidence.level!=='T')throw Error('Expected an S-tier, T-level massing slice receipt.');
+  if(evidence.project_3mf_sha256!==report.project_3mf_sha256)throw Error('Slice receipt belongs to a different exported project.');
+  for(const key of ['draft_sha256','table_sha256','mesh_sha256','problem','candidate_id'])if(evidence.plan?.[key]!==report.plan[key])throw Error('Slice receipt plan provenance differs from the export.');
+  if(![null,'shell-only slice'].includes(evidence.baseline))throw Error('Unknown baseline kind.');
+  const finite=(x,label,nonnegative=false)=>{if(!Number.isFinite(x)||(nonnegative&&x<0))throw Error(`Invalid slice measurement: ${label}`);};
+  for(const key of ['credited_mm3','min_fill_fraction','min_added_mm3'])finite(evidence[key],key,true);
+  if(!Array.isArray(evidence.placement_shift_xy_mm)||evidence.placement_shift_xy_mm.length!==2||!evidence.placement_shift_xy_mm.every(Number.isFinite))throw Error('Invalid slice placement shift.');
+  if(!Array.isArray(evidence.helpers))throw Error('Slice receipt needs helper measurements.');
+  const expected=new Set(report.helpers.map(h=>h.id)),seen=new Set();
+  for(const h of evidence.helpers){
+   if(!expected.has(h.id)||seen.has(h.id))throw Error('Unknown or duplicate sliced helper.');seen.add(h.id);
+   if(!['PASS','FAIL','NOT_CHECKED'].includes(h.verdict)||typeof h.message!=='string')throw Error('Invalid sliced helper verdict.');
+   for(const key of ['solid_infill_in_box_mm3','box_volume_mm3'])finite(h[key],key,true);
+   for(const key of ['added_solid_mm3','added_fill_fraction'])finite(h[key],key);
+   if(evidence.baseline===null){if(h.baseline_solid_infill_mm3!==null)throw Error('Baseline volume supplied without a baseline slice.');}
+   else finite(h.baseline_solid_infill_mm3,'baseline volume',true);
+  }
+  if(seen.size!==expected.size)throw Error('Slice receipt is missing helpers.');
+  return evidence;
+ }
+ function contextMismatch(r){
+  const mismatch=new Set(Array.isArray(r.baseline_context_mismatch)?r.baseline_context_mismatch:[]);
+  if(r.baseline&&r.slicer&&r.baseline_slicer)for(const key of ['generator','version','printer_model','print_settings_id','filament_settings_id','layer_height','wall_loops','sparse_infill_density','filament_shrink','enable_support'])if(r.slicer[key]!==r.baseline_slicer[key])mismatch.add(key);
+  return [...mismatch];
+ }
+ return {draft,pair,slice,contextMismatch};
 })();
 if(typeof module!=='undefined')module.exports=MassingReview;

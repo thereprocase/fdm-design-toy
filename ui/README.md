@@ -187,3 +187,31 @@ The command writes the project and its JSON receipt. Exit code 2 reports a faile
 check even though files were written. Open the receipt alongside the saved draft
 in helper review, revise any failures, and export again. Slice the resulting
 project on the second workstation; geometry checks are not toolpath evidence.
+
+## Compare helper material with the shell-only slice
+
+The review page accepts an optional `fdmgen/massing-slice-evidence@0.1` receipt
+after the export report. Its project hash, plan provenance and full helper set
+must match. The view shows project and baseline solid infill, added volume and
+box fraction per helper, together with the producer's screening thresholds.
+Overlapping boxes can count the same roads; do not sum them as material credit.
+Without a baseline, added material stays unattributed even if the producer's
+absolute-fill screen says PASS. Toolpath evidence does not establish bonding
+or strength.
+
+Slice both the exported project and its `-shell-only.3mf` companion with the
+same Orca settings, automatic arrangement/orientation off, then run:
+
+```bash
+fdmgen massing-evidence REPORT.json project.gcode --baseline shell-only.gcode
+```
+
+Load the resulting `-slice-evidence.json` in review. Changing the draft or
+accepted export report clears earlier slice results. A mismatched slice receipt
+preserves the last matching result and displays an error. The UI verifies
+recorded project/plan pairing, not the G-code bytes or baseline settings.
+
+When recorded, project and baseline slicer settings and G-code fingerprints are
+shown together. Differences in the recorded settings are flagged even if the
+producer omitted its mismatch list. Such differences are not attributed to
+helpers alone. Recorded hashes are provenance, not verification of G-code files.

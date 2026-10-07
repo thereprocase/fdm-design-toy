@@ -1,11 +1,11 @@
 'use strict';
 const el=id=>document.getElementById(id);
-let saved=null,digest=null,generation=0,receiptGeneration=0;
+let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0;
 function add(tag,value,parent){const n=document.createElement(tag);n.textContent=value;parent.append(n);return n;}
 el('review-draft').onchange=async e=>{
  const file=e.target.files[0];if(!file)return;const request=++generation;++receiptGeneration;
  // Clear old results immediately, so they cannot be mistaken for this revision.
- saved=null;digest=null;el('review-workspace').hidden=true;el('review-receipt').disabled=true;el('review-receipt').value='';
+ clearSlice();matchedReport=null;saved=null;digest=null;el('review-workspace').hidden=true;el('review-receipt').disabled=true;el('review-receipt').value='';
  try{const raw=await file.arrayBuffer(),d=MassingReview.draft(JSON.parse(new TextDecoder().decode(raw))),h=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',raw)),b=>b.toString(16).padStart(2,'0')).join('');if(request!==generation)return;saved=d;digest=h;el('review-receipt').disabled=false;el('review-status').textContent='Draft loaded. Open its matching export receipt.';}catch(err){if(request===generation)el('review-status').textContent=err.message;}
 };
 el('review-receipt').onchange=async e=>{
@@ -13,6 +13,7 @@ el('review-receipt').onchange=async e=>{
  try{const r=MassingReview.pair(saved,digest,JSON.parse(await file.text()));if(current!==generation||request!==receiptGeneration)return;render(r);el('review-status').textContent='Receipt fingerprint matched this saved draft.';}catch(err){if(current===generation&&request===receiptGeneration)el('review-status').textContent=err.message+' Previous matched results, if any, remain below.';}
 };
 function render(r){
+ clearSlice();matchedReport=r;el('review-slice').disabled=false;
  el('review-workspace').hidden=false;el('review-title').textContent=`${r.plan.problem} · ${r.plan.candidate_id}`;
  el('review-context').textContent=r.capability_context_matches_template?'Template fingerprint matches the capability context. This does not validate every changed value or combination.':'Template differs from the measured capability context. Helper settings are unverified for this profile.';
  if(r.warning)el('review-context').textContent+=' '+r.warning;
@@ -27,4 +28,29 @@ function render(r){
  if(!r.helpers.length)add('p','Shell-only draft; no helpers.',el('review-helpers'));
  el('review-setting-evidence').textContent=r.settings_evidence?JSON.stringify(r.settings_evidence,null,2):'Per-value setting evidence was not recorded in this receipt.';
  el('review-settings').textContent=JSON.stringify(r.object_settings,null,2);el('review-skin').textContent=r.skin_note||'';el('review-provenance').textContent=JSON.stringify(r,null,2);
+}
+
+function clearSlice(){++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}
+el('review-slice').onchange=async e=>{
+ const file=e.target.files[0];if(!file||!matchedReport)return;const request=++sliceGeneration,report=matchedReport;
+ try{const receipt=MassingReview.slice(report,JSON.parse(await file.text()));if(request!==sliceGeneration||report!==matchedReport)return;renderSlice(receipt);el('slice-status').textContent='Slice receipt matches the exported project and saved plan.';}
+ catch(error){if(request===sliceGeneration)el('slice-status').textContent=error.message+' Previous matched slice results, if any, remain below.';}
+};
+function renderSlice(r){
+ const baseline=r.baseline!==null,mismatch=MassingReview.contextMismatch(r),number=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
+ el('slice-results').hidden=false;
+ el('slice-baseline').textContent=baseline?'Compared with a shell-only slice. Differences describe solid infill in each helper box; overlapping boxes may count the same roads.':'No shell-only baseline supplied. Absolute fill includes existing body material; helper contribution is not established.';
+ if(mismatch.length)el('slice-baseline').textContent='Baseline settings differ: '+mismatch.join(', ')+'. Reported differences cannot be attributed to helpers alone; re-slice with matching settings.';
+ el('slice-settings').textContent=JSON.stringify({project:r.slicer||'Not recorded',baseline:r.baseline_slicer||'Not recorded'},null,2);
+ el('slice-thresholds').textContent=`Producer thresholds: ${number(r.min_fill_fraction*100)}% of box volume and ${number(r.min_added_mm3)} mm³. These are slicer screening thresholds, not strength limits.`;
+ el('slice-scope').textContent=(baseline&&!mismatch.length?(r.establishes||''):'Helper contribution is not established by this comparison.')+' Does not establish: '+(r.does_not_establish||'shell bonding or strength.');
+ el('slice-helpers').replaceChildren();
+ for(const h of r.helpers){const name=saved.massing.helper_regions.find(p=>p.id===h.id).name,row=add('article','',el('slice-helpers'));add('h3',`${name} · T ${h.verdict}${!baseline?' (absolute-fill screen)':mismatch.length?' (context mismatch)':''}`,row);
+  const values=add('dl','',row);
+  for(const [label,value] of [['Project solid infill in box',number(h.solid_infill_in_box_mm3)+' mm³'],['Shell-only solid infill in box',baseline?number(h.baseline_solid_infill_mm3)+' mm³':'Not checked'],[mismatch.length?'Uncontrolled solid-infill difference':'Added solid infill',baseline?number(h.added_solid_mm3)+' mm³':'Not attributable without baseline'],['Added fill / box volume',baseline?number(h.added_fill_fraction*100)+'%':'Not attributable without baseline']]){add('dt',label,values);add('dd',value,values);}
+  if(baseline&&!mismatch.length)add('p',h.message.replace(h.id,name),row);
+ }
+ el('slice-credit').textContent=`Whole-slice credited material: ${number(r.credited_mm3)} mm³. This is not a sum of helper contributions or a strength result.`;
+ el('slice-source-note').textContent='Project/plan pairing checked; G-code contents and matching baseline settings are not verified by this page. Inspect recorded provenance below; older receipts may omit G-code fingerprints and slicer settings.';
+ el('slice-provenance').textContent=JSON.stringify(r,null,2);
 }
