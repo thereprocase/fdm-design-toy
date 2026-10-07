@@ -45,3 +45,19 @@ to the matching `body-mounted.stl`, and run `node ui/browser.test.cjs` from the
 repository root. `CHROMIUM_PATH` defaults to `/usr/bin/chromium`. The test checks
 the committed real table, matched/mismatched meshes, visible FAIL verdicts,
 camera controls and mobile overflow. It does not verify physical correctness.
+
+Planning drafts now use `fdmgen.massing-plan.v0.2`. Each requested helper has a
+name, location, load purpose and interface/clearance constraints. Shell-only is
+an explicit option. Geometry is not created by these intent records. Changing
+shell or helper settings does not recompute the source analysis.
+
+Reopen a draft after loading its original orientation table. The exact table
+SHA256 must match; stale/other-table drafts are rejected without replacing the
+current plan. Reopened evidence comes from the loaded table, not from copied
+metrics in the draft. v0.1 free-text helper notes are retained as one region;
+location and clearance fields must be completed before exporting v0.2.
+
+Run `node --test ui/plan.test.cjs` for round-trip and provenance checks. With
+Playwright exposed through `NODE_PATH`, `node ui/planning.browser.test.cjs`
+checks real-table selection, multiple helpers, exact draft round-trip, wrong
+source rejection, shell-only export and mobile layout.
