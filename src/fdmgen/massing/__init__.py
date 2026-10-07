@@ -2,9 +2,10 @@
 from .export import (
     HELPER_SETTINGS,
     check_helpers,
+    check_keep_clear,
     export_plan,
     load_capabilities,
     slice_evidence,
 )
 
-__all__ = ["HELPER_SETTINGS", "check_helpers", "export_plan", "load_capabilities", "slice_evidence"]
+__all__ = ["HELPER_SETTINGS", "check_helpers", "check_keep_clear", "export_plan", "load_capabilities", "slice_evidence"]

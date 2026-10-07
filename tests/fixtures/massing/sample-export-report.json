@@ -8,7 +8,7 @@
   "candidate_id": "facet-00"
  },
  "template_3mf_sha256": "1845af11047b2307d2af8c21108b9a88e96b5318993dd735fdd7929ab8737e42",
- "project_3mf_sha256": "734c917cebed62ffe2134f1f60aad91837954864b65a87e34eda66c41ea821d3",
+ "project_3mf_sha256": "b40cb5dce10610d1c143b9c5733d291910ada707465d51f6c94d802a1d8354ca",
  "capability_context_matches_template": true,
  "settings_evidence": {
   "sparse_infill_density": {
@@ -132,6 +132,46 @@
    ],
    "establishes": "",
    "does_not_establish": ""
+  },
+  {
+   "rule": "KEEP-CLEAR",
+   "level": "M",
+   "verdict": "FAIL",
+   "message": "KEEP-CLEAR FAIL: helper 34d4f9dc-e1d8-470f-938d-591a419ecb37 comes within 13.00 mm of the rear_seat axis; keeping rear_seat clear needs 13.60 mm (13.60 mm rod seat + 0.00 mm clearance). No clearance was requested, so 0 mm is used.",
+   "provisional": true,
+   "metrics": {
+    "helper_id": "34d4f9dc-e1d8-470f-938d-591a419ecb37",
+    "interface_id": "rear_seat",
+    "clearance_mm": 0.0,
+    "clearance_given": false,
+    "model": "rod seat modelled as a cylinder of its largest seat radius",
+    "distance_mm": 13.0,
+    "required_mm": 13.6
+   },
+   "fixes": [
+    "move or shrink helper 34d4f9dc-e1d8-470f-938d-591a419ecb37 by at least 0.60 mm away from rear_seat"
+   ],
+   "establishes": "",
+   "does_not_establish": "Printed fit and assembly access."
+  },
+  {
+   "rule": "KEEP-CLEAR",
+   "level": "M",
+   "verdict": "PASS",
+   "message": "KEEP-CLEAR PASS (modelled): helper 64440f04-4cdc-4e5a-af33-565e7fe9a19d stays 26.55 mm from the rear_seat axis (needs 13.60 mm; rod seat modelled as a cylinder of its largest seat radius). No clearance was requested, so 0 mm is used.",
+   "provisional": true,
+   "metrics": {
+    "helper_id": "64440f04-4cdc-4e5a-af33-565e7fe9a19d",
+    "interface_id": "rear_seat",
+    "clearance_mm": 0.0,
+    "clearance_given": false,
+    "model": "rod seat modelled as a cylinder of its largest seat radius",
+    "distance_mm": 26.554,
+    "required_mm": 13.6
+   },
+   "fixes": [],
+   "establishes": "The helper box stays outside the modelled interface cylinder plus clearance.",
+   "does_not_establish": "Printed fit, washer/driver access, or anything the cylinder model leaves out."
   }
  ],
  "establishes": "A sliceable project carrying the plan's pose, shell and helper intent, with MOD-001 geometry checks.",

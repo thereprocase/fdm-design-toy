@@ -192,7 +192,8 @@ def _cmd_massing(a) -> int:
     template = (zipfile.ZipFile(a.template).read("audit.3mf") if a.template.suffix == ".zip" else a.template.read_bytes())
     body = trimesh.load(mesh_path, force="mesh")
     try:
-        data, report = export_plan(plan, body.vertices, body.faces, template, load_capabilities(a.capabilities))
+        data, report = export_plan(plan, body.vertices, body.faces, template, load_capabilities(a.capabilities),
+                                   interfaces=table.get("interfaces"))
     except ValueError as e:
         print(f"ERROR   {e}")
         return 1

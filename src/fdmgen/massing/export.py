@@ -109,7 +109,7 @@ def check_helpers(helpers, body_vertices=None, body_faces=None, *, gap_min_mm=No
 
 
 def export_plan(plan, body_vertices, body_faces, template: bytes, capabilities: dict, *, layer_height_mm=0.2,
-                helper_settings=None, allow_unmeasured_values: bool = False) -> tuple[bytes, dict]:
+                helper_settings=None, allow_unmeasured_values: bool = False, interfaces=None) -> tuple[bytes, dict]:
     """Orca 3MF bytes and a report for a validated plan; raises ValueError on a refused setting."""
     settings = dict(helper_settings or HELPER_SETTINGS)
     t_sha = hashlib.sha256(template).hexdigest()
@@ -144,6 +144,8 @@ def export_plan(plan, body_vertices, body_faces, template: bytes, capabilities: 
                          object_settings=object_settings)
     band = max(plan.walls * 0.42, plan.skin_mm)            # walls (about one line width each) or skins, whichever reaches further
     checks = [] if plan.shell_only else check_helpers(plan.helpers, body_vertices, body_faces, shell_band_mm=band)
+    if not plan.shell_only:
+        checks += check_keep_clear(plan.helpers, interfaces)
     report = {
         "schema": "fdmgen/massing-export@0.1",
         "plan": {"draft_sha256": plan.draft_sha256, "table_sha256": plan.table_sha256, "mesh_sha256": plan.mesh_sha256,
@@ -256,3 +258,62 @@ def slice_evidence(report: dict, gcode_text: str, baseline_gcode_text: str | Non
             "min_fill_fraction": min_fill_fraction, "min_added_mm3": min_added_mm3, "helpers": rows,
             "establishes": "How much solid infill each helper added in its box in the real slice (MOD-001 T).",
             "does_not_establish": "Bond continuity with the shell, or strength; physical testing is separate."}
+
+
+_AXIS_PLANE = {"Z": ((0, 1), "center_xy_mm"), "X": ((1, 2), "center_yz_mm"), "Y": ((0, 2), "center_xz_mm")}
+
+
+def _interface_radius(i: dict) -> tuple[float | None, str]:
+    if i.get("type") == "rod_seat" and i.get("seat_radius_mm"):
+        return float(max(i["seat_radius_mm"])), "rod seat modelled as a cylinder of its largest seat radius"
+    if i.get("type") == "screw_clearance" and i.get("d_mm"):
+        return float(i["d_mm"]) / 2, "screw bore modelled as a cylinder of its clearance diameter; washer and driver access are not modelled"
+    return None, f"no keep-clear geometry for interface type {i.get('type')!r}"
+
+
+def check_keep_clear(helpers, interfaces) -> list[CheckResult]:
+    """One result per (helper, requested interface): the helper box must stay outside the interface's cylinder
+    (radius + the helper's clearance_mm) around its axis. Exact for an axis-aligned box and an axis along X/Y/Z;
+    interfaces without usable geometry are NOT_CHECKED, never dropped."""
+    by_id = {i["id"]: i for i in (interfaces or [])}
+    out = []
+    for h in helpers:
+        clearance = float(h.clearance_mm or 0.0)
+        given = h.clearance_mm is not None
+        note = "" if given else " No clearance was requested, so 0 mm is used."
+        for iid in h.interface_ids:
+            base = {"helper_id": h.id, "interface_id": iid, "clearance_mm": clearance, "clearance_given": given}
+            i = by_id.get(iid)
+            if i is None:
+                out.append(CheckResult("KEEP-CLEAR", "M", Verdict.NOT_CHECKED,
+                                       f"KEEP-CLEAR NOT_CHECKED: helper {h.id} names interface {iid}, which the table does not define.",
+                                       True, base))
+                continue
+            r, model = _interface_radius(i)
+            plane = _AXIS_PLANE.get(str(i.get("axis", "")).upper())
+            if r is None or plane is None or plane[1] not in i:
+                out.append(CheckResult("KEEP-CLEAR", "M", Verdict.NOT_CHECKED,
+                                       f"KEEP-CLEAR NOT_CHECKED: helper {h.id} vs {iid}: {model if r is None else 'axis or centre missing'}.",
+                                       True, {**base, "model": model}))
+                continue
+            (a, b), key = plane
+            p = np.asarray(i[key], float)
+            lo = (h.center_mm - h.size_mm / 2)[[a, b]]
+            hi = (h.center_mm + h.size_mm / 2)[[a, b]]
+            d = float(np.linalg.norm(np.maximum(0.0, np.maximum(lo - p, p - hi))))
+            need = r + clearance
+            m = {**base, "model": model, "distance_mm": round(d, 3), "required_mm": round(need, 3)}
+            if d < need - 1e-9:
+                out.append(CheckResult("KEEP-CLEAR", "M", Verdict.FAIL,
+                                       f"KEEP-CLEAR FAIL: helper {h.id} comes within {d:.2f} mm of the {iid} axis; keeping "
+                                       f"{iid} clear needs {need:.2f} mm ({r:.2f} mm {model.split(' modelled')[0]} + "
+                                       f"{clearance:.2f} mm clearance).{note}", True, m,
+                                       [f"move or shrink helper {h.id} by at least {need - d:.2f} mm away from {iid}"], "",
+                                       "Printed fit and assembly access."))
+            else:
+                out.append(CheckResult("KEEP-CLEAR", "M", Verdict.PASS,
+                                       f"KEEP-CLEAR PASS (modelled): helper {h.id} stays {d:.2f} mm from the {iid} axis "
+                                       f"(needs {need:.2f} mm; {model}).{note}", True, m, [],
+                                       "The helper box stays outside the modelled interface cylinder plus clearance.",
+                                       "Printed fit, washer/driver access, or anything the cylinder model leaves out."))
+    return out

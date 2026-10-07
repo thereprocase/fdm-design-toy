@@ -117,6 +117,12 @@ def test_real_ui_draft_exports_and_flags_the_tiny_helper():
     fails = [c for c in rep["checks"] if c["verdict"] == "FAIL"]
     assert len(fails) == 1 and tiny.id in fails[0]["message"] and "0.50 mm" in fails[0]["message"]
     assert rep["plan"]["candidate_id"] == "facet-00" and len(rep["helpers"]) == 2
+    _, rep = export_plan(p, b.vertices, b.faces, zipfile.ZipFile(TEMPLATE_ZIP).read("audit.3mf"), CAP,
+                         interfaces=json.loads(table)["interfaces"])
+    kc = [c for c in rep["checks"] if c["rule"] == "KEEP-CLEAR"]
+    assert len(kc) == 2 and {c["metrics"]["interface_id"] for c in kc} == {"rear_seat"}
+    backing = next(c for c in kc if c["metrics"]["helper_id"] != tiny.id)
+    assert backing["verdict"] == "FAIL" and backing["metrics"]["distance_mm"] == pytest.approx(13.0)   # 0.6 mm inside
 
 
 @pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="spool-wall-rack checkout not next to this repository")
@@ -171,3 +177,22 @@ def test_sample_slice_evidence_contract():
                 "baseline_solid_infill_mm3", "solid_infill_in_box_mm3"} <= set(h)
     assert sorted(h["verdict"] for h in ev["helpers"]) == ["FAIL", "PASS"]
     assert ev["slicer"]["version"] == "2.4.2" and ev["baseline_context_mismatch"] == []
+
+
+def test_keep_clear_one_result_per_helper_interface():
+    from fdmgen.massing import check_keep_clear
+    ifs = [{"id": "seat", "type": "rod_seat", "axis": "Z", "center_xy_mm": [0, 0], "seat_radius_mm": [12.4, 13.6]},
+           {"id": "bore", "type": "screw_clearance", "axis": "X", "center_yz_mm": [0, 5], "d_mm": 5.2},
+           {"id": "datum", "type": "locating_corner"}]
+    near = Helper("near", "near", "", "", np.array([15.0, 0, 5]), np.array([10.0, 10, 10]), ("seat", "bore"), None, "")
+    far = Helper("far", "far", "", "", np.array([25.0, 30, 5]), np.array([10.0, 10, 4]), ("seat", "datum", "ghost"), 2.0, "")
+    r = check_keep_clear([near, far], ifs)
+    got = {(c.metrics["helper_id"], c.metrics["interface_id"]): c for c in r}
+    assert set(got) == {("near", "seat"), ("near", "bore"), ("far", "seat"), ("far", "datum"), ("far", "ghost")}
+    assert got[("near", "seat")].verdict is Verdict.FAIL and got[("near", "seat")].metrics["distance_mm"] == pytest.approx(10)
+    assert "0 mm is used" in got[("near", "seat")].message
+    assert got[("near", "bore")].verdict is Verdict.FAIL                       # the box spans the bore axis
+    seat_far = got[("far", "seat")]
+    assert seat_far.verdict is Verdict.PASS and seat_far.metrics["required_mm"] == pytest.approx(15.6)
+    assert "modelled" in seat_far.message and "Printed fit" in seat_far.does_not_establish
+    assert got[("far", "datum")].verdict is Verdict.NOT_CHECKED and got[("far", "ghost")].verdict is Verdict.NOT_CHECKED
