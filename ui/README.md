@@ -403,3 +403,15 @@ same project G-code at 0.1 mm with 20,000 samples and records the same result
 (0.22% thin, no unmeasured samples). Its table, mesh, pose and slicer context
 match the seed draft/export/slice fixtures. The browser test exercises this
 exact receipt as well as legacy disclosure and a changed-transform rejection.
+
+Load **Optional shell-only baseline check** to compare sampled thin fractions.
+Each check must match its own recorded G-code hash and pose; comparison requires
+current receipts with matching table, mesh, pose, grid, method, source hashes
+and slicer context, zero clipped volume and no unmeasured samples. A legacy or
+method-mismatched result remains visible but does not produce a comparison.
+
+The paired current seed fixtures report 0.22% thin each (0 percentage-point
+difference). This is aggregate sampled evidence, not proof of pointwise equal
+thickness or physical shell integrity. The project receipt was independently
+rerun and reproduced byte-for-byte (SHA-256 `7a7dd851…`); the baseline fixture is
+the producer's unchanged receipt (SHA-256 `b7b362a8…`).

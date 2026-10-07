@@ -18,6 +18,17 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#shell-pairing').textContent.includes('hashes also match'));
  assert.match(await page.locator('#shell-summary').innerText(),/Recorded T PASS/);
  assert.equal(JSON.parse(await page.locator('#shell-provenance').textContent()).schema,'fdmgen/shell-check@0.2');
+ await page.locator('#review-shell-baseline').setInputFiles(fixture('baseline-shell-check-current'));
+ await page.waitForFunction(()=>document.querySelector('#shell-comparison-status').textContent.startsWith('Matched sampled-screen comparison'));
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
+ await page.locator('#review-shell-baseline').setInputFiles(fixture('project-shell-check-current'));
+ await page.waitForFunction(()=>document.querySelector('#shell-baseline-status').textContent.includes('G-code differs'));
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
+ const different=JSON.parse(fs.readFileSync(fixture('baseline-shell-check-current')));different.method.seed=1;
+ await page.locator('#review-shell-baseline').setInputFiles({name:'other-method.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(different))});
+ await page.waitForFunction(()=>document.querySelector('#shell-comparison-status').textContent.includes('Shell method differs'));
+ await page.locator('#review-shell-baseline').setInputFiles(fixture('baseline-shell-check-current'));
+ await page.waitForFunction(()=>document.querySelector('#shell-comparison-status').textContent.startsWith('Matched sampled-screen comparison'));
  const current=JSON.parse(fs.readFileSync(fixture('project-shell-check-current'))),wrongPose=structuredClone(current);
  wrongPose.pose.t_mm[0]+=1;
  await page.locator('#review-shell').setInputFiles({name:'wrong-pose.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(wrongPose))});
@@ -32,5 +43,6 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-slice').setInputFiles([]);await page.locator('#review-slice').setInputFiles(fixture('slice-evidence'));
  await page.waitForFunction(()=>document.querySelector('#shell-results').hidden);
+ assert(await page.locator('#shell-comparison').isHidden());
  assert.deepEqual(errors,[]);console.log('PASS shell G-code/pose pairing, legacy provenance disclosure, bad receipt retention, sample accounting, invalidation, mobile');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

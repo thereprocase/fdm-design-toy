@@ -70,3 +70,18 @@ test('current shell receipts require geometry, method, source and transform prov
   const bad=structuredClone(modern);mutate(bad);assert.throws(()=>Review.shell(seedReport,seedSlice,bad,draft));
  }
 });
+
+test('paired shell fractions require common current methods and geometry',()=>{
+ const read=name=>JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-'+name+'.json')));
+ const draft=read('draft'),project=read('project-shell-check-current'),baseline=read('baseline-shell-check-current');
+ const p=Review.shell(seedReport,seedSlice,project,draft),b=Review.shell(seedReport,seedSlice,baseline,draft,'baseline');
+ assert(Review.shellComparison(p,b,seedSlice).comparable);
+ assert.throws(()=>Review.shell(seedReport,seedSlice,project,draft,'baseline'),/G-code differs/);
+ assert(!Review.shellComparison(Review.shell(seedReport,seedSlice,read('project-shell-check')),b,seedSlice).comparable);
+ for(const mutate of [r=>r.method.seed=1,r=>r.grid.origin_mm[0]+=1,r=>r.source_sha256['fdmgen/gcode/reader.py']='c'.repeat(64)]){
+  const bad=structuredClone(baseline);mutate(bad);
+  assert(!Review.shellComparison(p,Review.shell(seedReport,seedSlice,bad,draft,'baseline'),seedSlice).comparable);
+ }
+ const mismatch=structuredClone(seedSlice);mismatch.baseline_context_mismatch=['wall_loops'];
+ assert(!Review.shellComparison(p,b,mismatch).comparable);
+});

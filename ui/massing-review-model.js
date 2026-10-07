@@ -47,14 +47,17 @@ const MassingReview = (() => {
   if(r.baseline&&r.slicer&&r.baseline_slicer)for(const key of ['generator','version','printer_model','print_settings_id','filament_settings_id','layer_height','wall_loops','sparse_infill_density','filament_shrink','enable_support'])if(r.slicer[key]!==r.baseline_slicer[key])mismatch.add(key);
   return [...mismatch];
  }
- function shell(report,sliced,r,planningDraft){
+ function shell(report,sliced,r,planningDraft,kind='project'){
   slice(report,sliced);
+  if(!['project','baseline'].includes(kind)||kind==='baseline'&&sliced.baseline!=='shell-only slice')throw Error('Shell check needs the requested slice baseline.');
+  const context=kind==='baseline'?sliced.baseline_slicer:sliced.slicer;
+  if(r&&Object.prototype.hasOwnProperty.call(r,'_receipt'))throw Error('Reserved shell view field in input.');
   if(r?.schema==='fdmgen/shell-check@0.2'){
    const vec=v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite);
    if(!planningDraft||!vec(r.pose?.t_mm)||!Array.isArray(r.pose?.R_design_to_print)||r.pose.R_design_to_print.length!==3||!r.pose.R_design_to_print.every(vec))throw Error('Shell-check needs the saved pose transform.');
    for(const key of ['R_design_to_print','t_mm'])if(JSON.stringify(r.pose[key])!==JSON.stringify(planningDraft.orientation[key]))throw Error('Shell-check transform differs from the saved draft.');
    if(!hash(r.table?.sha256)||!hash(r.mesh?.sha256)||!vec(r.grid?.origin_mm)||r.grid.frame!=='print (plate) frame of the pose')throw Error('Missing shell geometry provenance.');
-   for(const key of ['generator','version','printer_model','print_settings_id','filament_settings_id','layer_height','wall_loops','sparse_infill_density','filament_shrink','enable_support'])if(r.gcode?.[key]===undefined||r.gcode[key]===null||r.gcode[key]===''||r.gcode[key]!==sliced.slicer?.[key])throw Error('Shell-check slicer settings are missing or differ: '+key);
+   for(const key of ['generator','version','printer_model','print_settings_id','filament_settings_id','layer_height','wall_loops','sparse_infill_density','filament_shrink','enable_support'])if(r.gcode?.[key]===undefined||r.gcode[key]===null||r.gcode[key]===''||r.gcode[key]!==context?.[key])throw Error('Shell-check slicer settings are missing or differ: '+key);
    const method=r.method;
    if(!method||method.deposit?.roads!=='credited'||typeof method.deposit.caps!=='boolean'||!Number.isFinite(method.deposit.step_frac)||method.deposit.step_frac<=0||method.deposit.step_frac>1||!Number.isInteger(method.seed)||!Number.isInteger(method.surface_samples)||method.surface_samples!==r.result?.metrics?.samples+r.result?.metrics?.unmeasured||!Number.isFinite(method.thin_fraction_limit)||method.thin_fraction_limit<0||method.thin_fraction_limit>1)throw Error('Invalid shell method provenance.');
    for(const key of ['min_beads','bead_spacing_mm','layer_mm','entry_mm'])if(method[key]!==r.result?.metrics?.[key])throw Error('Shell method differs from result: '+key);
@@ -63,7 +66,7 @@ const MassingReview = (() => {
       table_sha256:r.table.sha256,mesh_sha256:r.mesh.sha256,cell_mm:r.grid.cell_mm,grid_shape:r.grid.shape,clipped_outside_grid_mm3:r.grid.clipped_outside_grid_mm3};
   }
   if(r?.schema!=='fdmgen/shell-check@0.1')throw Error('Expected a shell-check receipt.');
-  if(!hash(r.gcode_sha256)||r.gcode_sha256!==sliced.slicer?.gcode_sha256)throw Error('Shell-check G-code differs from the loaded project slice.');
+  if(!hash(r.gcode_sha256)||r.gcode_sha256!==context?.gcode_sha256)throw Error('Shell-check G-code differs from the loaded '+kind+' slice.');
   if(r.pose!==report.plan.candidate_id)throw Error('Shell-check pose differs from the export.');
   for(const key of ['table_sha256','mesh_sha256'])if(r[key]!==undefined&&(!hash(r[key])||r[key]!==report.plan[key]))throw Error('Shell-check '+key+' differs from the export.');
   const c=r.result,m=c?.metrics;
@@ -78,6 +81,18 @@ const MassingReview = (() => {
   }
   if(m.bands.reduce((n,b)=>n+b.samples,0)!==m.samples)throw Error('Shell band counts differ from measured samples.');
   return r;
+ }
+ function shellComparison(project,baseline,sliced){
+  const reasons=[];
+  const p=project?._receipt,b=baseline?._receipt;
+  if(!p||!b)return {comparable:false,reasons:['Both shell checks need current geometry and method provenance.']};
+  if(contextMismatch(sliced).length)reasons.push('Project and baseline slicer settings differ.');
+  const stable=v=>JSON.stringify(v,(_,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.keys(x).sort().map(k=>[k,x[k]])):x);
+  for(const [label,x,y] of [['table',p.table.sha256,b.table.sha256],['mesh',p.mesh.sha256,b.mesh.sha256],['pose',p.pose,b.pose],['method',p.method,b.method],['producer source',p.source_sha256,b.source_sha256]])if(stable(x)!==stable(y))reasons.push('Shell '+label+' differs.');
+  for(const key of ['frame','origin_mm','cell_mm','shape'])if(stable(p.grid[key])!==stable(b.grid[key]))reasons.push('Shell grid '+key+' differs.');
+  if(p.grid.clipped_outside_grid_mm3!==0||b.grid.clipped_outside_grid_mm3!==0)reasons.push('Shell raster clips deposited volume.');
+  if(project.result.metrics.unmeasured||baseline.result.metrics.unmeasured)reasons.push('Unmeasured surface samples prevent this comparison.');
+  return {comparable:reasons.length===0,reasons};
  }
  function mechanics(report, sliced, r){
   slice(report,sliced);
@@ -118,6 +133,6 @@ const MassingReview = (() => {
    return a.status==='ready'&&a.reasons.length===0&&a.face_components===1&&a.missing_loaded_dofs===0&&a.loaded_fixed_dofs===0&&a.restrained_rigid_modes===6&&s?.status==='solved'&&s.true_relative_residual<=1e-8&&s.compliance_N_mm>0;
   })&&Object.values(r.seats).every(s=>s.force_error_N<=1e-9&&s.moment_error_N_mm<=1e-7);
  }
- return {draft,pair,slice,contextMismatch,shell,mechanics,mechanicsComparable};
+ return {draft,pair,slice,contextMismatch,shell,shellComparison,mechanics,mechanicsComparable};
 })();
 if(typeof module!=='undefined')module.exports=MassingReview;
