@@ -227,7 +227,7 @@ function addHelper(region={}) {
   const z=text('p','',spatial);z.className='hint';z.dataset.printZ='';
   toggle.onchange=()=>{spatial.hidden=!toggle.checked;updateRegions();};
   box.addEventListener('input',updateRegions);
-  box.addEventListener('focusin',()=>setActiveHelper(box));
+  box.addEventListener('focusin',()=>setActiveHelper(box,false));
   const duplicate=text('button','Duplicate region',box);duplicate.type='button';duplicate.className='secondary';
   duplicate.onclick=()=>{
     const copy=addHelper();
@@ -249,7 +249,10 @@ function addHelper(region={}) {
     byId('remove-status').textContent=`Removed ${name}. Undo remove restores its fields and position. Up to 20 removals are kept until another draft or table is loaded.`;
     updateRegions();byId('undo-remove').focus({preventScroll:true});
   };
-  byId('helper-regions').append(box);updateRegions();return box;
+  const editor=document.createElement('details');editor.className='helper-editor';editor.open=true;
+  text('summary','Edit helper settings',editor);
+  for(const child of [...box.children].slice(1))editor.append(child);
+  box.append(editor);byId('helper-regions').append(box);updateRegions();return box;
 }
 function resetPlan(){
   clearDraftError();
@@ -360,7 +363,7 @@ byId('export').onclick=()=>{
   }catch(error){
     byId('export-status').textContent=error.message;
     const field=invalidDraftField();
-    if(field){if(field.matches('input,textarea')){field.dataset.exportError='';field.setAttribute('aria-invalid','true');field.setAttribute('aria-errormessage','export-status');}field.focus();field.scrollIntoView({block:'center'});}
+    if(field){const helper=field.closest('.helper-region');if(helper)setActiveHelper(helper);if(field.matches('input,textarea')){field.dataset.exportError='';field.setAttribute('aria-invalid','true');field.setAttribute('aria-errormessage','export-status');}field.focus();field.scrollIntoView({block:'center'});}
   }
 };
 
@@ -403,8 +406,9 @@ if(location.hash==='#review-edit'){
 }
 
 function cancelSurfacePlacement(){viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='';}
-function setActiveHelper(box){
+function setActiveHelper(box,expand=true){
  if(activeHelper!==box)cancelSurfacePlacement();
+ if(box&&expand)box.querySelector('.helper-editor').open=true;
  activeHelper=box;byId('return-helper').hidden=!box;updateRegions();
 }
 function refreshHelperSelector(){
@@ -415,8 +419,12 @@ function refreshHelperSelector(){
  boxes.forEach((box,i)=>{const option=document.createElement('option'),name=box.querySelector('[data-key="name"]').value.trim()||`Helper ${i+1}`;option.value=box.dataset.id;option.textContent=name+(box.querySelector('[data-spatial]').checked?'':' — no box yet');select.append(option);box.classList.toggle('active-helper',box===activeHelper&&!shellOnly);});
  byId('return-helper').hidden=shellOnly||!activeHelper;
  select.disabled=shellOnly||!boxes.length;select.value=!shellOnly&&activeHelper?activeHelper.dataset.id:'';
+ byId('collapse-other-helpers').disabled=shellOnly||!activeHelper;
+ byId('expand-helpers').disabled=shellOnly||!boxes.length;
  byId('active-helper-status').textContent=shellOnly?'Shell-only draft: helper boxes are excluded.':activeHelper?`Editing ${activeHelper.querySelector('[data-key="name"]').value.trim()||'unnamed helper'}. ${activeHelper.querySelector('[data-spatial]').checked?'Its box has the solid blue outline; other boxes are dashed orange.':'Enable its spatial box to preview the region.'}`:'Focus a helper field to highlight its box.';
 }
+byId('collapse-other-helpers').onclick=()=>{for(const box of byId('helper-regions').children)box.querySelector('.helper-editor').open=box===activeHelper;};
+byId('expand-helpers').onclick=()=>{for(const editor of document.querySelectorAll('.helper-editor'))editor.open=true;};
 byId('preview-helper').onchange=()=>{
  const box=[...byId('helper-regions').children].find(b=>b.dataset.id===byId('preview-helper').value);
  setActiveHelper(box||null);

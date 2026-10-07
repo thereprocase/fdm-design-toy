@@ -592,3 +592,9 @@ preview and draft only; export and geometry checks are still required.
 Typing a centre, moving it with the axis controls or undoing a move cancels any
 pending surface-pick action. A subsequent viewer click cannot replace that
 position unless **Place centre on part** is selected again.
+
+Each helper editor can be folded while its name remains visible. **Show only
+selected helper** closes the other editors; **Expand all helpers** restores them.
+Folding changes presentation only: every helper remains in the preview and draft,
+and it does not mark the plan edited. Selecting a helper from the preview or
+focusing an export error opens the relevant editor automatically.
