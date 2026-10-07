@@ -26,6 +26,8 @@ exists yet. What runs today:
 | [`problems/`](problems/) | `problem.yaml` generated from pinned sources, with a lint that checks load resultants and cross-file consistency | load split matches the pinned reference to 1e-12 |
 | `fdmgen.orient` | ranked orientation table: stable poses, printability columns, inter-layer index F_L from a stress field | the existing hand-chosen bracket pose ranks first; uniaxial-bar known answers pass |
 | `fdmgen.coupons` | overhang and bridge ladder plate, plus slicer-evidence receipts per rung | Orca supports the 35–45° rungs and leaves 50–60° alone (slicer evidence only) |
+| [`catalog/slicer/`](catalog/slicer/) | which per-modifier settings Orca 2.4.2 honours, with one sliced proof per setting | `wall_generator` and `layer_height` are ignored on a modifier; wall overrides add internal walls at the region boundary |
+| `fdmgen.massing` | a planning draft → an Orca project (body shell + 100 % helper modifiers) → the slice read back per helper | on the bracket, a backing helper added 2,708 mm³ of solid infill; a 0.5 mm helper was dropped, as MOD-001 predicted |
 | `fdmgen.fem` | GPU multigrid elasticity solver and cell stress recovery; CPU algebraic-multigrid pilots in [`bench/`](bench/) | solver gate (#4) not met yet |
 | [`ui/`](ui/) | local browser workspace for comparing orientation evidence and drafting shell and helper regions | draft sketches record intent only; modifier geometry and strength checks come from the Python tools; see [`ui/README.md`](ui/README.md) |
 
@@ -55,10 +57,17 @@ fdmgen lint problems/spool-rack-g2-ef/problem.yaml
 fdmgen orient problems/spool-rack-g2-ef/problem.yaml --voxel     # needs the source part checkout
 fdmgen coupons --out out/coupons         # overhang + bridge ladder plate (STL + rung metadata)
 fdmgen coupons-evidence out/coupons/ladder-plate.json plate_1.gcode
+
+# massing round trip: draft from the ui/ workspace -> project -> slice both -> read back
+fdmgen massing draft.json --table TABLE.json --template ORCA_TEMPLATE.3mf --out out/massing
+#   slice out/massing/*-massing.3mf and *-massing-shell-only.3mf with the same Orca (arrange and orient off)
+fdmgen massing-evidence out/massing/*-massing.json project.gcode --baseline shell-only.gcode
 ```
 
 Commands that read the example part need a checkout of its source repository next to this one
 (or `SPOOL_RACK_ROOT`); without it they say so and stop. Output goes to `out/`, which git ignores.
+`fdmgen massing` and `fdmgen massing-evidence` exit with status 2 when any check fails, so they can
+gate a script.
 
 ## Ground rules for work in this repo
 
