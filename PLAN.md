@@ -51,12 +51,12 @@ search loop, keep-out solids), packaged into one reproducible pipeline.
 | D4 | **Re-voxelise in the print frame for every orientation** (layers on grid planes, so the overhang filter, Z quantisation and coating work). The fixed-grid/rotated-tensor route survives as **analysis mode** (scoring a frozen design across orientations). |
 | D5 | **Non-cubic design voxel 0.503 × 0.503 × 0.6 mm** (dx = dz·tan 40°) with a **5-point cross support stencil**: enforces α ≥ 50° at every azimuth (50.0° on axes, 59.3° on diagonals). The common 3×3 stencil admits 35–40° on diagonals and is banned. M- and T-level checks stay authoritative. |
 | D6 | **Resolution tiers**: R1 1.6 mm screening; R2 0.503×0.503×0.6 v1a workhorse; R3 dz ≤ 0.4 (0.4×0.4×0.2 where the coating needs it) for leaders; R4 0.2 mm adaptive truth. 0.2 mm is never a design grid (≈90–148 M bbox cells, does not fit 11.5 GB). Final R2/R3 sizes are confirmed by P0 measurements. |
-| D7 | **Staged optimisation.** v1a: minimax compliance over the load cases + volume + AM filter, body fully solid, F_L evaluated afterwards. v1b (leaders only): inclination-dependent shell coating, aggregated F_L/F_P constraints (qp-relaxed), robust formulation only in the final continuation stage. Solves per iteration: 2 (v1a, K = 2) vs 6 (v1b) vs 18 (robust). |
+| D7 | **Staged optimisation.** v1a: minimax compliance over the load cases + volume + AM filter, **design field = 100 % helper density inside a fixed body whose shell comes from the slicer model for that orientation** (D12), F_L evaluated afterwards. v1b (leaders only): inclination-dependent shell coating, aggregated F_L/F_P constraints (qp-relaxed), robust formulation only in the final continuation stage. Solves per iteration: 2 (v1a, K = 2) vs 6 (v1b) vs 18 (robust). |
 | D8 | **Orientation search**: F_L prescreen from one stress field per load case over directions (exactly even in d, so a hemisphere suffices for F_L), then **full-sphere printability** (overhang/support area, bed contact and stability, interface printability, discrete spin bed-fit) → Pareto filter to ≤ 24 v1a runs → leaders. No gradient-based orientation in v1. |
 | D9 | **Failure criterion v1** (linear in load, three strengths): inter-layer `F_L = √((⟨σ_n⟩₊/Z_t)² + (τ/S_il)²)` on the layer plane; in-layer `F_P = σ_vM/X_t`. Tsai-Wu/Hoffman only after off-axis coupons. |
-| D10 | **Material cards** carry a tier (T0 datasheet + assumptions, T1 own coupons, T2 demonstrator-validated), per-value provenance (own print / slicer-only / vendor / literature / guess), Poisson convention, positive-definiteness check, and **two modulus bases** (short-term datasheet E for strength; 1,000 MPa sustained planning E for movement gates), never mixed silently. **First card: PolyLite ASA.** PETG card unassigned until the grade is known. Strengths are reported at both corners (vendor ratio and 0.5·X_t); **design to the conservative corner** until coupons exist. |
-| D11 | **E_min = 1e-6** by default; raise (≤ 1e-3) only if the multigrid benchmark needs it; recorded in every receipt; a design-vs-truth gap gate (provisionally 15 %) guards against reliance on ersatz stiffness. |
-| D12 | **Sparse-infill credit is a per-problem switch, default off.** Spool-rack-style problems declare 0 % infill + 100 % helpers; dock-style problems may credit infill only with an infill card ≥ T1, with a zero-credit bound reported. |
+| D10 | **Material cards** carry a tier (T0 datasheet + assumptions, T1 own coupons, T2 demonstrator-validated), per-value provenance (own print / slicer-only / vendor / literature / guess), Poisson convention, positive-definiteness check, and **two modulus bases** (short-term datasheet E for strength; 1,000 MPa sustained planning E for movement gates), never mixed silently. **All filament is Polymaker (owner): T0 cards for PolyLite ASA first, then PolyLite PETG**, from Polymaker's datasheets. Strengths are reported at both corners (vendor ratio and 0.5·X_t); **design to the conservative corner** until coupons exist. |
+| D11 | **E_min = 1e-6** by default; raise (≤ 1e-3) only if the multigrid benchmark needs it; recorded in every receipt; a design-vs-truth gap gate (15 %, owner-accepted) guards against reliance on ersatz stiffness. |
+| D12 | **Massing primitive = body shell + 100 % helper volumes; sparse infill is never credited** (owner decision: "it basically doesn't" contribute). Printed material = the slicer's shell of the body (walls and skins, thickness `t(α)` by surface slope) ∪ **companion helper volumes** that the slicer fills at 100 % (modifier meshes), inside a body printed at 0 % infill. This is how the spool-rack E+F work already prints (4 walls, 1.6 mm skins, 0 % infill, continuous solid helper core). The optimiser's design field is the **helper field**; the body envelope becomes a design variable only in P3. Helpers deliver non-uniform wall strength and mass reduction. |
 | D13 | **Rule catalog** (33 rules, stable IDs): rules (`catalog/rules/*.yaml`), calibration bindings tied to slicer-profile hashes (go STALE when a hash changes), checkers. Levels V/M/T/P; results report the highest level reached; **repairs must re-check and emit a geometry delta**. One angle convention: α from horizontal. Material strengths live in the material card, not the catalog. |
 | D14 | **Interfaces are orientation-aware**: bores/seats declare orientation-dependent printable variants (teardrop crest along +Z for axes within 45° of the layer plane); an orientation with no printable variant for some interface is rejected with a message naming it. |
 | D15 | **Inputs are generated from pinned sources, never retyped** (loads, nozzle temperatures, profile values). `fdmgen lint` asserts load resultants and gives plain-language errors. |
@@ -69,6 +69,13 @@ search loop, keep-out solids), packaged into one reproducible pipeline.
 | **Laptop GPU workstation** (RTX 3500 Ada laptop, 11.5 GB; FP64 207 GFLOP/s measured) | inner optimisation loops R1–R3; truth solves fit (4–8 M leaves) |
 | **Second workstation** (RTX 3080 Ti 12 GB, confirmed; the spool-rack GPU results came from this card) | second GPU worker: truth stage, parallel orientations. Its FP64 rate is ~2.5× the laptop's by spec (estimate, to measure) |
 | **Compute box** (40 Broadwell threads, 300 GB, no GPU) | off the critical path through P2: slicing/parsing batches, RAM-heavy cases > 20 M cells, CPU multigrid only if a measured need appears. Long jobs in named tmux sessions, heads-up to its owner for multi-hour full-load runs |
+
+**Why GPUs at all:** they are not required. The expensive step is 2–6 elasticity solves per optimiser iteration on a
+few million cells, × hundreds of iterations × dozens of orientations. The validated solver from the spool-rack work is
+GPU code (NVIDIA Warp) and measures ~160–180 M cell-operations/s on the laptop GPU, so it is the default. Consumer GPUs
+run FP64 at 1/64–1/69 of FP32, which narrows their lead (hence FP32 smoothers). A matrix-free CPU multigrid on the
+compute box might reach 0.3–0.5× per solve (unmeasured guess) while running many orientations in parallel; benchmark
+B8 measures that instead of assuming it away.
 
 ## 5. Roadmap (durations are guesses for one person plus agents, part-time)
 
@@ -101,26 +108,34 @@ chosen orientations pass the 50° M check and zero support in forbidden regions.
 **Start the coupon plate** (Z-tension, inter-layer shear, overhang ladder 40–60°, bridge ladder 6–40 mm).
 Publish: "orientation report for existing parts" page, limitations first. Catalog v0.1.
 
-### P2 — topology-optimisation MVP on the spool bracket, solid body (~4–6 weeks)
-v1a at R2 then leaders at R3; TI printed-solid card; SIMP, density filter, 5-point AM filter, volume, both load cases;
+### P2 — helper-volume optimisation MVP on the spool bracket (~4–6 weeks)
+v1a at R2 then leaders at R3: **optimise where 100 % helper volumes go inside the fixed G / E+F body** (4 walls, 1.6 mm skins,
+0 % infill), per orientation, with the body's shell taken from the slicer model for that orientation; TI printed-solid card for
+shell and helpers; SIMP, density filter, 5-point AM filter on the helper field (helper roofs must self-support inside the void),
+helper rules MOD-001 (boundaries ≥ 2w apart or overlapping ≥ 2w, bonded to credited material), volume, both load cases;
 top orientations from P1 plus three named anchor poses; F_L post hoc; full extract → slice → truth on leaders.
 Acceptance: solver/optimiser parity (reference density within 1e-6, reference run within 2 %/0.1 %, grid-symmetry
 covariance 1e-10); orientation **noise floor** measured (repeat runs) and a monotone-trend plumbing test; exact
 interfaces (≤ 1e-3 mm³ symmetric difference); printable (50° M check, zero support in forbidden regions, settings
-check); an **honesty table** vs the existing hand designs on the same truth pipeline, same pinned loads, same card,
+check); helpers exported as Orca modifier meshes at 100 % and verified on the actual slice; an **honesty table** vs the existing hand designs on the same truth pipeline, same pinned loads, same card,
 stated modulus basis, including the measured design-vs-truth gap.
 Estimated compute (bracket, two load cases, laptop GPU, *estimate*): R0–R2 ≈ 0.5–1.5 h; with R3 + R4 on one leader ≈ 3–8 h.
 Publish: MVP page.
 
-### P3 — massing, inter-layer constraint, second part (~5–8 weeks)
-Sub-cell shell model from `t(α)` calibrated against 0.2 mm truth; body + modifiers + per-region settings (as far as
+### P3 — body envelope + helpers, inter-layer constraint, second part (~5–8 weeks)
+Co-optimise the body envelope with the helpers; sub-cell shell model from `t(α)` calibrated against 0.2 mm truth; body + modifiers + per-region settings (as far as
 P0-D allows); aggregated F_L constraint; a second part where orientation is genuinely contested (candidates: a dock
 arm/clamp, the wall-mount arm, or a collaborator's part).
 Acceptance: emulator within 5 % of Orca credited material per class (provisional band); modifier round trip; on the
 second part, isotropic and anisotropic runs choose differently and truth confirms the anisotropic choice across the
 card interval, or that result is published. Catalog v0.5 after the first calibration plate per material.
 
-### P4 — coupons, strength calibration, one physical test (~4–8 weeks, printer-bound)
+### P4 — coupons, strength and creep calibration, one physical test (~4–8 weeks, printer-bound)
+**Test rig: build one** (owner has no testing machine): a printed-frame tensile/creep rig with a calibrated load cell
+(checked against known masses), a lead-screw or dead-weight lever drive, and displacement by dial indicator or camera-based
+image correlation; designed and calibrated in P1 so it is ready for P4 (its own issue).
+**Creep is in scope** (owner): sustained-load coupons at ~85 °F, Z vs XY, to replace the assumed sustained-modulus
+anisotropy ratio.
 Coupons C1–C7 (incl. a 45° off-axis coupon, the most informative single extra test); cards move to T1 via a
 "virtual coupon" fit through the same truth pipeline; one optimised part and one control printed and loaded against
 **pre-registered** predictions. Acceptance: measured stiffness inside the predicted band and failure location in a
@@ -142,16 +157,17 @@ more parts. Acceptance: someone who didn't write the code takes a new part to a 
 | Scope creep (stress-constrained robust TO, gradient orientation, multi-axis) | v1a/v1b split; non-goals listed |
 | Overclaiming | verdict ladder, establishes/does-not-establish blocks |
 
-## 7. Questions for the owner
+## 7. Owner answers (recorded) and remaining questions
 
-1. **Is a universal testing machine available** (or dead-weight + image correlation)? Decides whether T1 cards and any
-   absolute strength claim are reachable.
-2. **Which PETG** is the grey production PETG? Confirm PolyLite ASA as the production ASA.
-3. **Licence**: proposed CC-BY-4.0 for docs/data and MIT for code.
-4. Is **creep** (sustained ~85 °F) in scope for P4, and may the short-term anisotropy ratio be assumed for the sustained modulus?
-5. **P3 second part**: a dock arm/clamp, the wall-mount arm, or a collaborator's part?
-6. Is **sparse-infill credit** wanted for non-spool-rack parts?
-7. The **15 %** design-vs-truth gap threshold and pre-registered bands: accept as proposed?
+| # | Question | Answer |
+|---|---|---|
+| 1 | Universal testing machine? | **No; build one** → P1 issue for a DIY tensile/creep rig |
+| 2 | Filament grades? | **Polymaker everything** (PolyLite ASA, PolyLite PETG) |
+| 3 | Licence? | **Yes**: CC-BY-4.0 for docs and data, MIT for code |
+| 4 | Creep in scope? | **Yes** → sustained-load coupons in P4 |
+| 5 | P3 second part? | **Open** (candidates: dock arm/clamp, wall-mount arm, a collaborator's part) |
+| 6 | Sparse-infill credit? | **No.** Infill basically doesn't contribute; the design primitive is 100 % helper volumes (D12) |
+| 7 | 15 % design-vs-truth gap? | **Accepted** |
 
 ## 8. Process record
 

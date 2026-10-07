@@ -33,3 +33,7 @@ Their numbers come with stated evidence levels; treat anything tagged *guess* or
 ## Ground rules for work in this repo
 
 See [`AGENTS.md`](AGENTS.md): no personal information, honest uncertainty, reproducible numbers.
+
+## Licence
+
+Code: MIT ([`LICENSE`](LICENSE)). Documentation, research, catalog and data: CC BY 4.0 ([`LICENSE-docs.md`](LICENSE-docs.md)).
