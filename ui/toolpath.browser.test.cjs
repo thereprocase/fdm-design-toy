@@ -65,10 +65,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json'));
  await page.getByRole('button',{name:'facet-00',exact:true}).click();
  assert.match(await page.locator('#pose-bridges').innerText(),/PASS · 3.15 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122.1 mm/);
+ assert.match(await page.locator('#failed-checks').innerText(),/Internal bridge span · BRG-001 · T · provisional/);
+ assert.doesNotMatch(await page.locator('#failed-checks').innerText(),/External bridge span/);
+ assert.match(await page.locator('#rows tr.selected').innerText(),/Fits \/ stable; [1-9][0-9]* recorded failed check/);
  assert.match(await page.locator('#pose-bridges').innerText(),/111 external bridges evaluated/);
  assert.equal(JSON.parse(await page.locator('#pose-bridges pre').first().textContent()).receipt.sha256,'934bd2833b96ae4805164cdc69759550201a0aed38967b349148c3da784ad9a3');
  assert.match(await page.locator('#pose-shell-summary').innerText(),/0.22% thin/);
  await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 53.95 mm/);
+ assert.match(await page.locator('#failed-checks').innerText(),/External bridge span · BRG-001 · T/);
  await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.equal(await page.locator('#pose-bridges details').count(),0);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');

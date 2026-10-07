@@ -59,12 +59,25 @@ function renderBridge(candidate) {
     if(c){const details=text('details','',section);text('summary','Recorded bridge column, coverage and provenance',details);const raw=text('pre',JSON.stringify(c,null,2),details);raw.style.whiteSpace='pre-wrap';raw.style.overflowWrap='anywhere';}
   }
 }
+function failedColumns(candidate) {
+  return Object.entries(candidate.columns||{}).filter(([,c])=>c?.verdict==='FAIL');
+}
+function renderFailedChecks(candidate) {
+  const failures=failedColumns(candidate),list=byId('failed-checks');list.replaceChildren();
+  byId('failed-check-count').textContent=failures.length?`${failures.length} recorded failed check${failures.length===1?'':'s'} to review. Bed fit does not clear these checks.`:'No recorded FAIL columns. Missing and unchecked evidence still require review; this is not qualification.';
+  const names={...metricNames,t_shell_thin_fraction:'Thin shell fraction',t_bridge_span_external_mm:'External bridge span',t_bridge_span_internal_mm:'Internal bridge span',interface_roofs:'Interface roofs',t_support_segments:'Support segments'};
+  for(const [key,c] of failures){
+    const item=text('li','',list);text('strong',`${names[key]||key.replaceAll('_',' ')} · ${c.rule||'rule not recorded'} · ${c.level||'level not recorded'}${c.provisional?' · provisional':''}`,item);
+    text('p',c.fidelity||'No producer explanation supplied; inspect this recorded column.',item);
+  }
+}
 function remember() {if(selected) decisions.set(selected.id,byId('rationale').value);}
 function choose(candidate) {
   remember();selected=candidate;byId('pose-name').textContent=candidate.id;
   byId('direction').textContent=`Build direction (design frame): ${(candidate.build_dir_design || []).join(', ')}`;
   const design=candidate.columns?.F_L_max,vendor=candidate.columns?.F_L_max_vendor_corner;
   byId('strength-range').textContent=Number.isFinite(design?.value)&&Number.isFinite(vendor?.value)?`Material-corner range: ${Math.min(design.value,vendor.value).toFixed(3)}–${Math.max(design.value,vendor.value).toFixed(3)}. Conservative design corner: ${design.value.toFixed(3)}. ${design.fidelity||'FE prescreen; provisional.'}`:'Strength comparison is not checked for both material corners.';
+  renderFailedChecks(candidate);
   byId('reasons').replaceChildren();
   const reasons=Array.isArray(candidate.reasons)?candidate.reasons:[];
   reasons.forEach(r=>text('li',String(r),byId('reasons')));
@@ -118,7 +131,8 @@ function renderRows() {
     const button=text('button',c.id,text('td','',tr));button.type='button';button.setAttribute('aria-pressed',String(c.id===selected?.id));button.onclick=()=>choose(c);
     for(const key of ['F_L_max','ovh_fail_mm2','contact_mm2','t_support_segments'])text('td',formatted(c.columns?.[key]),tr);
     text('td',shellSummary(c),tr);
-    text('td',c.feasible?'Fits / stable; review checks':'Needs review',tr);
+    const failures=failedColumns(c).length;
+    text('td',(c.feasible?'Fits / stable':'Fit needs review')+`; ${failures} recorded failed check${failures===1?'':'s'}`,tr);
   }
   if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=7;}
 }
@@ -153,7 +167,7 @@ byId('table-file').onchange=async event=>{
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
-    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('pose-bridges').replaceChildren();byId('pose-shell-summary').textContent='';byId('pose-shell-fidelity').textContent='';byId('pose-shell-coverage').textContent='';byId('pose-shell-receipt').textContent='';byId('pose-shell-details').hidden=true;byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
+    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('failed-check-count').textContent='';byId('failed-checks').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('pose-bridges').replaceChildren();byId('pose-shell-summary').textContent='';byId('pose-shell-fidelity').textContent='';byId('pose-shell-coverage').textContent='';byId('pose-shell-receipt').textContent='';byId('pose-shell-details').hidden=true;byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
   }catch(error){if(request!==tableRequest)return;byId('status').textContent=`Could not load table: ${error.message}${analysis?' The previous table and current draft remain available.':''}`;}
 };
 byId('pose-sort').onchange=byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};

@@ -459,3 +459,10 @@ Facet-00 records external 3.15 mm (PASS) and internal 122.1 mm (FAIL); facet-01
 records 52.2 mm and 53.95 mm (both FAIL). Limits are provisional 10 mm external
 and 18 mm internal. These are toolpath-raster screens, not physical sag results.
 The original pinned tables and receipt hashes are preserved.
+
+The pose list counts recorded FAIL columns separately from bed-fit feasibility.
+The selected-pose summary names each failed column, rule, evidence level and
+producer explanation. Multiple columns can report the same rule (for example,
+external and internal bridges); this is a column count, not a count of independent
+physical defects. No recorded failures does not mean all checks were performed
+or that the part is qualified.
