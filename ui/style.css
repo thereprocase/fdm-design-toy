@@ -23,3 +23,11 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 #proposal-evidence { overflow-wrap: anywhere; }
 #proposal-evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
 #proposal-evidence summary { cursor: pointer; }
+
+/* Keep the selected-pose action reachable as evidence accumulates. */
+.pose-table{max-height:min(52vh,460px);overscroll-behavior:contain}
+.pose-table table{min-width:680px}
+.pose-table th{position:sticky;top:0;z-index:1;background:#fffef9}
+.pose-table:focus-visible{outline:3px solid #d79730;outline-offset:3px}
+.pose-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:16px 0}
+.pose-actions a{font-size:.85rem;color:#245c47}

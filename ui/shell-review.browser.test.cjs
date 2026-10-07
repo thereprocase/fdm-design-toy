@@ -51,6 +51,12 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   await page.waitForFunction(message=>document.querySelector('#shell-status').textContent.includes(message),message);
   assert(await page.locator('#shell-results').isVisible());assert.match(await page.locator('#shell-summary').innerText(),/0.22%/);
  }
+ await page.locator('#review-shell').setInputFiles(fixture('project-shell-check-v03'));
+ await page.waitForFunction(()=>document.querySelector('#shell-pairing').textContent.includes('at 5 heights'));
+ const real=JSON.parse(await page.locator('#shell-provenance').textContent());assert.equal(real.schema,'fdmgen/shell-check@0.3');
+ assert.deepEqual(real.placement.deposit_offset_mm,[.0005,1.995,0]);assert.equal(real.source_sha256['fdmgen/catalog/checks/toolpath.py'],'621a6b7715d18d3fec10d8ea1048dabf9076eea331151f499a3c61b915fed366');
+ assert.match(await page.locator('#shell-summary').innerText(),/0.22%/);
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/pose-check provenance differs/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-slice').setInputFiles([]);await page.locator('#review-slice').setInputFiles(fixture('slice-evidence'));
  await page.waitForFunction(()=>document.querySelector('#shell-results').hidden);

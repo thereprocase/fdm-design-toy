@@ -71,6 +71,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#pose-bridges').innerText(),/111 external bridges evaluated/);
  assert.equal(JSON.parse(await page.locator('#pose-bridges pre').first().textContent()).receipt.sha256,'934bd2833b96ae4805164cdc69759550201a0aed38967b349148c3da784ad9a3');
  assert.match(await page.locator('#pose-shell-summary').innerText(),/0.22% thin/);
+ const layout=await page.evaluate(()=>({table:document.querySelector('.pose-table').getBoundingClientRect().height,action:document.querySelector('#plan-pose').getBoundingClientRect().top-document.querySelector('#pose-name').getBoundingClientRect().top}));
+ assert(layout.table<=460);assert(layout.action>=0&&layout.action<200);
+ await page.locator('#plan-pose').click();assert.equal(await page.evaluate(()=>document.activeElement.id),'walls');
+
  await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 53.95 mm/);
  assert.match(await page.locator('#failed-checks').innerText(),/External bridge span · BRG-001 · T/);
  await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.equal(await page.locator('#pose-bridges details').count(),0);

@@ -480,3 +480,16 @@ clearance or box value, the editor focuses the first relevant field and associat
 it with the error message for assistive technology. Editing clears the field's
 error marker; export still runs the authoritative draft validation. No values
 are filled in or repaired automatically.
+
+The pose table scrolls within a bounded, keyboard-focusable region with sticky
+column headings. **Plan this pose** sits beside the selected-pose heading, with a
+link to its recorded checks. Evidence remains visible below; the action only
+opens the massing controls and does not approve the pose or its checks.
+
+The fresh real project receipt
+[`seed-project-shell-check-v03.json`](fixtures/seed-project-shell-check-v03.json)
+(SHA-256 `cd70f213…`, producer `7cad385`) records five containment-check heights,
+the verifier source hash and the deposition offset after measured placement
+correction. The browser imports these exact bytes and reports 0.22% thin samples.
+It does not pair this newer receipt with a legacy baseline's weaker pose evidence.
+Earlier receipt files remain unchanged.
