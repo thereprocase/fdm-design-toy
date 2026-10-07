@@ -349,6 +349,47 @@ def _cmd_gcode_occupancy(a) -> int:
     return 0
 
 
+def _cmd_shell_check(a) -> int:
+    import hashlib
+
+    import numpy as np
+    import trimesh
+
+    from .catalog.checks.shell import check_shell
+    from .gcode import extruder_offset, read_gcode
+    from .gcode.occupancy import deposit
+    table = json.loads(a.table.read_text(encoding="utf-8"))
+    cand = next((c for c in table["candidates"] if c["id"] == a.pose), None)
+    if cand is None:
+        print(f"ERROR   pose {a.pose!r} is not in the table")
+        return 1
+    import os
+    roots = ([Path(os.environ["SPOOL_RACK_ROOT"])] if os.environ.get("SPOOL_RACK_ROOT") else []) + \
+        [Path(__file__).resolve().parents[3] / str(table["mesh"].get("source") or "")]
+    mesh_path = next((r / table["mesh"]["path"] for r in roots if (r / table["mesh"]["path"]).is_file()), None)
+    if mesh_path is None:
+        print(f"ERROR   the body mesh {table['mesh']['path']} was not found")
+        return 1
+    body = trimesh.load(mesh_path, force="mesh", process=True)
+    V = body.vertices @ np.asarray(cand["R_design_to_print"]).T + np.asarray(cand["t_mm"])
+    raw = a.gcode.read_bytes()
+    text = raw.decode("utf-8")
+    tp = read_gcode(text)
+    origin = V.min(axis=0) - 1.0
+    shape = tuple(int(x) for x in np.ceil((V.max(axis=0) + 1.0 - origin) / a.cell))
+    vgrid, outside = deposit(tp, extruder_offset(text), np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5)
+    r = check_shell(vgrid / a.cell ** 3, origin, a.cell, V, body.faces, n_samples=a.samples)
+    out = {"schema": "fdmgen/shell-check@0.1", "gcode_sha256": hashlib.sha256(raw).hexdigest(), "pose": a.pose,
+           "cell_mm": a.cell, "grid_shape": list(shape), "clipped_outside_grid_mm3": outside, "result": r.to_dict()}
+    a.out.parent.mkdir(parents=True, exist_ok=True)
+    a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
+    print(r.message)
+    for b in r.metrics["bands"]:
+        print(f"  slope {b['slope_deg']} deg: {b['samples']} samples, thin {100 * b['thin_fraction']:.1f} %, "
+              f"median {b['median_mm']} mm (needs {b['required_mm']}), p05 {b['p05_mm']}")
+    return 2 if r.verdict.value == "FAIL" else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fdmgen", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -434,6 +475,14 @@ def main(argv: list[str] | None = None) -> int:
     go.add_argument("--report", type=Path, help="fdmgen massing report of the sliced project (adds project sha + plan)")
     go.add_argument("--out", type=Path, required=True)
     go.set_defaults(fn=_cmd_gcode_occupancy)
+    sc = sub.add_parser("shell-check", help="SHELL-001 at T level: printed shell thickness by slope from a slice")
+    sc.add_argument("gcode", type=Path, help="slice of the posed body (plate coordinates = the table's pose)")
+    sc.add_argument("--table", type=Path, required=True)
+    sc.add_argument("--pose", required=True)
+    sc.add_argument("--cell", type=float, default=0.2, help="raster cell size (mm); heavy below 0.2 for whole parts")
+    sc.add_argument("--samples", type=int, default=20000)
+    sc.add_argument("--out", type=Path, default=Path("out/shell-check.json"))
+    sc.set_defaults(fn=_cmd_shell_check)
     a = ap.parse_args(argv)
     return a.fn(a)
 
