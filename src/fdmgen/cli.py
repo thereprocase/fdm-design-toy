@@ -377,7 +377,8 @@ def _cmd_shell_check(a) -> int:
     tp = read_gcode(text)
     origin = grid_origin(V.min(axis=0))
     shape = tuple(int(x) for x in np.ceil((V.max(axis=0) + 1.0 - origin) / a.cell))
-    vgrid, outside = deposit(tp, extruder_offset(text), np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5)
+    vgrid, outside = deposit(tp, extruder_offset(text), np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5,
+                             caps=True)
     r = check_shell(vgrid / a.cell ** 3, origin, a.cell, V, body.faces, n_samples=a.samples)
     out = {"schema": "fdmgen/shell-check@0.1", "gcode_sha256": hashlib.sha256(raw).hexdigest(), "pose": a.pose,
            "cell_mm": a.cell, "grid_shape": list(shape), "clipped_outside_grid_mm3": outside, "result": r.to_dict()}

@@ -83,9 +83,13 @@ def march(density, origin, h, points, inward, *, step_mm=0.025, max_mm=4.0, thre
 
 
 def check_shell(density, origin, h, vertices, faces, *, n_samples=20000, min_beads=2, bead_spacing_mm=0.38,
-                layer_mm=0.2, threshold=0.5, thin_fraction_limit=0.01, seed=0, provisional=True) -> CheckResult:
+                layer_mm=0.2, threshold=0.5, thin_fraction_limit=0.01, seed=0, provisional=True,
+                outer_width_mm=0.42) -> CheckResult:
     p, n, area = sample_surface(vertices, faces, n_samples, seed)
-    t = march(density, np.asarray(origin, float), h, p, -n, threshold=threshold)
+    # The outer bead's centreline sits half a width inside the surface and the raster draws roads without end
+    # caps, so at a convex corner the first material can be up to half a bead (plus a cell) inward.
+    entry = outer_width_mm / 2 + 1.5 * float(np.max(h))
+    t = march(density, np.asarray(origin, float), h, p, -n, threshold=threshold, entry_mm=entry)
     alpha = np.degrees(np.arccos(np.clip(np.abs(n[:, 2]), 0, 1)))
     need = min_beads * (bead_spacing_mm * np.sin(np.radians(alpha)) + layer_mm * np.cos(np.radians(alpha)))
     ok = np.isfinite(t)
@@ -100,7 +104,8 @@ def check_shell(density, origin, h, vertices, faces, *, n_samples=20000, min_bea
     frac = float(thin[ok].mean()) if ok.any() else float("nan")
     metrics = {"samples": int(ok.sum()), "unmeasured": int((~ok).sum()), "thin_fraction": round(frac, 4),
                "thin_area_mm2_est": round(frac * area, 1), "bands": bands, "min_beads": min_beads,
-               "bead_spacing_mm": bead_spacing_mm, "layer_mm": layer_mm, "threshold": threshold}
+               "bead_spacing_mm": bead_spacing_mm, "layer_mm": layer_mm, "threshold": threshold,
+               "entry_mm": round(entry, 4)}
     worst = max(bands, key=lambda b: b["thin_fraction"]) if bands else None
     does_not = ("Bond quality between those beads, or anything finer than the raster cell; the raster is an approximation "
                 "of the slicer's roads.")

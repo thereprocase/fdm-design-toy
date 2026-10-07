@@ -63,3 +63,18 @@ def test_plate_to_grid_composes_pose_inverse_and_solver_map():
     g = occupancy(tp, (0, 0, 0), M, c, np.array([180.0, 150.0, -1.0]), 1.6, (60, 40, 4))
     a = g["accounting"]
     assert a["deposited_inside_grid_mm3"] + a["clipped_outside_grid_mm3"] == pytest.approx(a["credited_input_mm3"], rel=1e-12)
+
+
+def test_caps_fill_the_convex_corner_and_conserve_volume():
+    """Two walls meeting at their centrelines (how the slicer turns a corner): caps fill the corner square."""
+    e = 0.2 * 0.42 * 5.0 / AREA
+    g = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", ";TYPE:Outer wall", ";Z:0.2",
+         ";HEIGHT:0.2", ";WIDTH:0.42", "G1 X0.21 Y5.21 Z0.2", f"G1 X0.21 Y0.21 E{e:.6f}", f"G1 X5.21 Y0.21 E{e:.6f}",
+         "; stop printing object part"]
+    tp = read_gcode("\n".join(g) + "\n", footer_rel_tol=None)
+    args = (tp, (0, 0, 0), np.eye(3), np.zeros(3), np.array([-1.0, -1.0, 0.0]) + 1e-4 * np.pi, 0.1, (80, 80, 2))
+    plain, _ = deposit(*args, mask=np.ones(len(tp), bool))
+    capped, out = deposit(*args, mask=np.ones(len(tp), bool), caps=True)
+    corner = (slice(10, 12), slice(10, 12), 0)                     # cells covering x, y in 0.0..0.2 mm
+    assert plain[corner].sum() == 0.0 and capped[corner].min() > 0
+    assert capped.sum() + out == pytest.approx(tp.volume.sum(), rel=1e-12) == plain.sum()

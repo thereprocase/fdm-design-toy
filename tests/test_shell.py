@@ -21,14 +21,14 @@ def road(x0, y0, x1, y1):
     return [f"G1 X{x0:.3f} Y{y0:.3f}", f"G1 X{x1:.3f} Y{y1:.3f} E{e:.6f}"]
 
 
-def printed_box(walls):
+def printed_box(walls, caps=True):
     g = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", f";WIDTH:{W}", f";HEIGHT:{H}"]
     layers = round(TOP / H)
     for k in range(1, layers + 1):
         z = round(k * H, 3)
         g += [f";Z:{z}", f"G1 Z{z}", ";TYPE:Outer wall"]
         for i in range(walls):                              # closed loops: each side runs W/2 past its corner
-            a, b, e = W / 2 + 0.4 * i, SIDE - W / 2 - 0.4 * i, W / 2
+            a, b, e = W / 2 + 0.4 * i, SIDE - W / 2 - 0.4 * i, (W / 2 if caps else 0.0)
             g += road(a - e, a, b + e, a) + road(b, a - e, b, b + e) + road(b + e, b, a - e, b) + road(a, b + e, a, a - e)
         if k <= 3 or k > layers - 3:                       # 3-layer bottom and top skins
             g.append(";TYPE:Internal solid infill")
@@ -39,10 +39,11 @@ def printed_box(walls):
     return read_gcode("\n".join(g) + "\n", footer_rel_tol=None)
 
 
-def shell_result(walls, shift=0.0):
-    tp = printed_box(walls)
+def shell_result(walls, shift=0.0, caps=True, raster_caps=False):
+    tp = printed_box(walls, caps)
     origin, h, shape = np.array([-0.5, -0.5, -0.5]) + shift, 0.1, (120, 120, 75)
-    vgrid, _ = deposit(tp, (0, 0, 0), np.eye(3), np.zeros(3), origin, h, shape, mask=np.ones(len(tp), bool))
+    vgrid, _ = deposit(tp, (0, 0, 0), np.eye(3), np.zeros(3), origin, h, shape, mask=np.ones(len(tp), bool),
+                       caps=raster_caps)
     box = trimesh.creation.box(extents=(SIDE, SIDE, TOP))
     box.apply_translation((SIDE / 2, SIDE / 2, TOP / 2))
     return check_shell(vgrid / h ** 3, origin, h, box.vertices, box.faces, n_samples=3000)
@@ -72,3 +73,12 @@ def test_tie_break_offset_removes_the_exact_half_cell_artefact():
     assert shell_result(2, 0.05).verdict is Verdict.FAIL          # documents the raw artefact the nudge exists for
     r = shell_result(2, 0.05 + TIE_BREAK_MM)
     assert r.verdict is Verdict.PASS, r.message
+
+
+def test_convex_corners_without_road_end_caps_do_not_read_as_zero():
+    """Regression (real bracket): the slicer turns the outer wall at its centreline, the raster has no end caps,
+    so a half-bead square at each convex corner is empty and rays starting there used to read 0 mm."""
+    assert shell_result(2, 0.0137, caps=False).verdict is Verdict.FAIL     # the raster artefact without caps
+    r = shell_result(2, 0.0137, caps=False, raster_caps=True)
+    assert r.verdict is Verdict.PASS, r.message
+    assert shell_result(1, 0.0137, caps=False, raster_caps=True).verdict is Verdict.FAIL

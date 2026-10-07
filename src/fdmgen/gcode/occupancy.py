@@ -16,8 +16,14 @@ import numpy as np
 from .reader import Toolpath, credit
 
 
-def deposit(tp: Toolpath, offset, M, c, origin, h, shape, *, step_frac: float = 1 / 3, mask=None):
-    """Volume grid (mm3 per cell) and the volume that fell outside it, for the roads in mask (default credited)."""
+def deposit(tp: Toolpath, offset, M, c, origin, h, shape, *, step_frac: float = 1 / 3, mask=None, caps: bool = False):
+    """Volume grid (mm3 per cell) and the volume that fell outside it, for the roads in mask (default credited).
+
+    Each road is a rectangle (width x layer height) along its centreline. Without caps, the half-bead square
+    at a convex corner (where the slicer turns a wall at its centreline) stays empty. caps=True extends each
+    road forward by half its width with the same volume: along a path every corner square is covered by the
+    incoming road, at the cost of diluting the road's density by w / (2 L).
+    """
     sel = credit(tp)["credited_mask"] if mask is None else np.asarray(mask, bool)
     a = tp.start[sel] + np.asarray(offset, float)
     b = tp.end[sel] + np.asarray(offset, float)
@@ -25,6 +31,12 @@ def deposit(tp: Toolpath, offset, M, c, origin, h, shape, *, step_frac: float = 
     h = np.broadcast_to(np.asarray(h, float), (3,))
     step = float(h.min()) * step_frac
     L = np.linalg.norm(b[:, :2] - a[:, :2], axis=1)
+    if caps:
+        ext = np.zeros_like(a)
+        ext[:, :2] = (b[:, :2] - a[:, :2]) / np.maximum(L, 1e-12)[:, None] * (w / 2)[:, None]
+        ext[L < 1e-12] = 0.0
+        b = b + ext
+        L = np.linalg.norm(b[:, :2] - a[:, :2], axis=1)
     n_l = np.maximum(1, np.ceil(L / step)).astype(int)
     n_w = np.maximum(1, np.ceil(w / step)).astype(int)
     n_h = np.maximum(1, np.ceil(hh / step)).astype(int)
