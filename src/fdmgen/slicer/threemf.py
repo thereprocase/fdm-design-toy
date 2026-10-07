@@ -106,7 +106,7 @@ def write_project(template: bytes, parts: list[Part], *, object_name: str, objec
             if md.get("key") in ("gcode_file", "thumbnail_file", "thumbnail_no_light_file", "top_file", "pick_file"):
                 plate.remove(md)
     out = io.BytesIO()
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as z:
         for name in zin.namelist():
             if name in ("Metadata/plate_1.gcode", "Metadata/plate_1.gcode.md5", "Metadata/_rels/model_settings.config.rels") \
                     or name.endswith(".png"):
@@ -126,6 +126,6 @@ def write_project(template: bytes, parts: list[Part], *, object_name: str, objec
 def _entry(name: str) -> zipfile.ZipInfo:
     """Fixed timestamp and attributes, so the same parts and template always give the same bytes (and hash)."""
     info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
-    info.compress_type = zipfile.ZIP_DEFLATED
+    info.compress_type = zipfile.ZIP_STORED     # deflate output differs between zlib builds; stored bytes do not
     info.external_attr = 0o644 << 16
     return info

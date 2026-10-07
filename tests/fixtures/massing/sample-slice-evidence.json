@@ -2,7 +2,7 @@
  "schema": "fdmgen/massing-slice-evidence@0.1",
  "tier": "S",
  "level": "T",
- "project_3mf_sha256": "905ae83a60a94199bdd54b268054927065f31026e6ff01cf8489db6662dbf15e",
+ "project_3mf_sha256": "f463aee8997036b6c9f4d15c422f81fdeead802965b2a2f843f62c12820b69db",
  "plan": {
   "draft_sha256": "3e14c3b9c56ec31866032ae4cf8bd88c8245fdc3b12ddeda84c2e1d5a29e719f",
   "table_sha256": "1e051040642fecfa32548b37f54d4e13493d8847ae2eb24cc139bd6f10b1bfbe",
@@ -12,7 +12,7 @@
  },
  "baseline": "shell-only slice",
  "slicer": {
-  "gcode_sha256": "75f03088696ed59fe24cbbc8116a8d77e4a51210118809ccaa20488b52b3fdd1",
+  "gcode_sha256": "cce2760b53e3a3b9cd643015d1e1af241d7bc4d579521c39fe46abc132e9785f",
   "generator": "OrcaSlicer",
   "version": "2.4.2",
   "printer_model": "Bambu Lab P1S",
@@ -25,7 +25,7 @@
   "enable_support": "0"
  },
  "baseline_slicer": {
-  "gcode_sha256": "d3707372f260e462cb990d7fbe357c7279af9eaed44e84504e48a91742608c40",
+  "gcode_sha256": "acbeefaac094cb4bcff5c9688326a54660c86690c0cc9a7bf7b01111454c4568",
   "generator": "OrcaSlicer",
   "version": "2.4.2",
   "printer_model": "Bambu Lab P1S",
@@ -40,18 +40,18 @@
  "baseline_context_mismatch": [],
  "placement_shift_xy_mm": [
   -0.0005,
-  0.004
+  0.005
  ],
- "credited_mm3": 72300.0,
+ "credited_mm3": 72289.6,
  "min_fill_fraction": 0.1,
  "min_added_mm3": 0.5,
  "helpers": [
   {
    "id": "34d4f9dc-e1d8-470f-938d-591a419ecb37",
-   "solid_infill_in_box_mm3": 2746.233,
+   "solid_infill_in_box_mm3": 2746.236,
    "box_volume_mm3": 3200.0,
-   "baseline_solid_infill_mm3": 37.731,
-   "added_solid_mm3": 2708.502,
+   "baseline_solid_infill_mm3": 37.736,
+   "added_solid_mm3": 2708.5,
    "added_fill_fraction": 0.846,
    "verdict": "PASS",
    "message": "helper 34d4f9dc-e1d8-470f-938d-591a419ecb37: added 2708.5 mm3 of solid infill (85 % of its box)"

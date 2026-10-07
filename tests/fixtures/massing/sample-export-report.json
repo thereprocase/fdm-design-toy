@@ -8,7 +8,7 @@
   "candidate_id": "facet-00"
  },
  "template_3mf_sha256": "1845af11047b2307d2af8c21108b9a88e96b5318993dd735fdd7929ab8737e42",
- "project_3mf_sha256": "905ae83a60a94199bdd54b268054927065f31026e6ff01cf8489db6662dbf15e",
+ "project_3mf_sha256": "f463aee8997036b6c9f4d15c422f81fdeead802965b2a2f843f62c12820b69db",
  "capability_context_matches_template": true,
  "settings_evidence": {
   "sparse_infill_density": {

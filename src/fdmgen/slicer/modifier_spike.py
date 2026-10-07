@@ -154,7 +154,7 @@ def build_variant(template: bytes, overrides: dict | None = None, *, body: str =
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for name, data in files.items():
             info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))    # reproducible bytes
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
             info.external_attr = 0o644 << 16
             z.writestr(info, data)
 

@@ -115,7 +115,7 @@ def test_real_ui_draft_exports_and_flags_the_tiny_helper():
     table = TABLE.read_bytes()
     mesh_path = REPO.parent / "spool-wall-rack" / json.loads(table)["mesh"]["path"]
     p = load_draft(DRAFT.read_bytes(), table, mesh_path.read_bytes())
-    b = trimesh.load(mesh_path)
+    b = trimesh.load(mesh_path, process=False)
     _data, rep = export_plan(p, b.vertices, b.faces, zipfile.ZipFile(TEMPLATE_ZIP).read("audit.3mf"), CAP)
     tiny = next(h for h in p.helpers if min(h.size_mm) < 0.84)
     fails = [c for c in rep["checks"] if c["verdict"] == "FAIL"]

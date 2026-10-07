@@ -190,7 +190,7 @@ def _cmd_massing(a) -> int:
         print(f"ERROR   the draft cannot be used: {e}")
         return 1
     template = (zipfile.ZipFile(a.template).read("audit.3mf") if a.template.suffix == ".zip" else a.template.read_bytes())
-    body = trimesh.load(mesh_path, force="mesh")
+    body = trimesh.load(mesh_path, force="mesh", process=False)      # raw STL order: no version-dependent merging
     try:
         data, report = export_plan(plan, body.vertices, body.faces, template, load_capabilities(a.capabilities),
                                    interfaces=table.get("interfaces"))
