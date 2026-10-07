@@ -9,6 +9,7 @@ dependencies = ["numpy>=2.0"]
 
 [project.optional-dependencies]
 gpu = ["warp-lang>=1.17,<1.19"]
+geom = ["trimesh>=4", "shapely>=2", "networkx>=3", "scipy>=1.13", "rtree>=1"]
 dev = ["pytest>=8", "scipy>=1.13"]
 
 [build-system]

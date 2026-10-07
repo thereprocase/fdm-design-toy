@@ -70,3 +70,29 @@ def test_galerkin_element_matrices_equal_rap():
     Kc = galerkin.first_coarse(E, Ke, nx, ny, nz, dtype=np.float64)
     Ac = galerkin.assemble_dense(Kc, nxc, nyc, nzc, np.zeros(P.shape[1]))
     assert np.allclose(Ac, RAP, rtol=1e-12, atol=1e-12)
+
+
+def test_masked_domain_matches_direct():
+    """Cells outside the part have E = 0; DOFs with no active element become identity rows."""
+    nx, ny, nz = 16, 8, 8
+    Ke = element.box_ke(element.isotropic_C(1.0, 0.3), 1, 1, 1)
+    E3 = np.ones((nx, ny, nz))
+    E3[8:, 4:, :] = 0.0                     # L-shaped part: upper-right block empty
+    E3[:, :, 6:] *= np.where(np.random.default_rng(2).random((nx, ny, 2)) < 0.3, 1e-3, 1.0)
+    E = E3.ravel()
+    fixed, b = reference.cantilever(nx, ny, nz)
+    # inactive DOFs for the reference
+    act = np.zeros((nx + 1, ny + 1, nz + 1), bool)
+    for c in element.CORNERS:
+        act[c[0]:c[0] + nx, c[1]:c[1] + ny, c[2]:c[2] + nz] |= E3 > 0
+    inactive = np.repeat(~act.ravel(), 3)
+    b[inactive] = 0.0
+    fx = (fixed.astype(bool) | inactive).astype(np.int32)
+    A = reference.assemble(nx, ny, nz, Ke, E, fx)
+    bb = b.copy(); bb[fx != 0] = 0
+    u_ref = sp.spsolve(A.tocsc(), bb)
+    s = MGPCG(nx, ny, nz, Ke, E, fixed, coarsest_dofs=50)   # force the Chebyshev coarsest path too
+    assert s.levels[0].n_inactive == inactive.sum()
+    u, info = s.solve(b, tol=1e-10, maxiter=500)
+    assert info["converged"]
+    assert np.linalg.norm(u - u_ref) / np.linalg.norm(u_ref) < 1e-7

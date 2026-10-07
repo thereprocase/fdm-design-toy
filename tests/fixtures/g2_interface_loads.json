@@ -1,0 +1,19 @@
+{
+ "source": "spool-wall-rack@14338e9:analysis/rev-g2/adaptive-validation/g-h0p2-interfaces.json (subset)",
+ "load_N": 117.72,
+ "applied_force_N": [
+  -7.562414236494952e-13,
+  -117.72000000000205,
+  0.0
+ ],
+ "rear_seat_target_N": [
+  -31.293062243765473,
+  -75.1207488871594,
+  0.0
+ ],
+ "front_seat_target_N": [
+  31.293062243765473,
+  -42.59925111284059,
+  0.0
+ ]
+}

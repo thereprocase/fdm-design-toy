@@ -41,6 +41,7 @@ class Level:
     Kel_np: np.ndarray = None
     lmax: float = 0.0
     work: dict = field(default_factory=dict)
+    n_inactive: int = 0
 
     @property
     def nnode(self):
@@ -53,13 +54,14 @@ class Level:
 
 class MGPCG:
     def __init__(self, nx, ny, nz, Ke, E, fixed, device="cuda:0", coarsest_dofs=3000, cheb_degree=3,
-                 lmax_iters=12, lmin_ratio=30.0, coarse="galerkin"):
+                 lmax_iters=12, lmin_ratio=30.0, coarse="galerkin", coarsest_degree=40):
         self.dev = wp.get_device(device)
         self.mod = operator_module(Ke)
         self.Ke = Ke
         self.deg = cheb_degree
         self.lmin_ratio = lmin_ratio
         self.coarse = coarse
+        self.coarsest_degree = coarsest_degree
         E = np.asarray(E, np.float64)
         fixed = np.asarray(fixed, np.int32)
         self.fine64 = (wp.array(E, dtype=wp.float64, device=self.dev),
@@ -73,7 +75,14 @@ class MGPCG:
             nxc, nyc, nzc = lv.nx // 2, lv.ny // 2, lv.nz // 2
             Ec = wp.zeros(nxc * nyc * nzc, dtype=wp.float32, device=self.dev)
             wp.launch(H32["coarsen_E"], dim=nxc * nyc * nzc, inputs=[nxc, nyc, nzc, lv.E, Ec], device=self.dev)
-            fc = lv.fixed_np.reshape(lv.nx + 1, lv.ny + 1, lv.nz + 1, 3)[::2, ::2, ::2].reshape(-1).copy()
+            # Dirichlet DOFs on the coarse level: any fixed fine DOF (same component) inside the coarse node's
+            # interpolation support. Injection alone loses small clamps (bores) and leaves the coarse problem
+            # floating in rigid-body modes (measured: singular coarsest operator on the spool bracket).
+            mf = wp.array(lv.fixed_np.astype(np.float32), dtype=wp.float32, device=self.dev)
+            mc = wp.zeros(3 * (nxc + 1) * (nyc + 1) * (nzc + 1), dtype=wp.float32, device=self.dev)
+            wp.launch(H32["restrict"], dim=(nxc + 1) * (nyc + 1) * (nzc + 1), inputs=[nxc, nyc, nzc, mf, mc],
+                      device=self.dev)
+            fc = (mc.numpy() > 0).astype(np.int32)
             prev = lv
             lv = Level(nxc, nyc, nzc, lv.scale * 2.0, Ec, wp.array(fc, dtype=wp.int32, device=self.dev), fc)
             if coarse == "galerkin":
@@ -98,19 +107,40 @@ class MGPCG:
             else:
                 wp.launch(self.mod.diag_float32, dim=lv.nnode,
                           inputs=[lv.nx, lv.ny, lv.nz, wp.float32(lv.scale), lv.E, lv.fixed, dg], device=self.dev)
+            # masked domains: DOFs with no active element in their support (zero diagonal) become identity
+            # rows on this level. Using the operator's own diagonal (Galerkin on coarse levels) never
+            # over-constrains a coarse node that still touches material, unlike injecting fine fixed status.
+            dgh = dg.numpy()
+            inactive = (dgh == 0.0) & (lv.fixed_np == 0)
+            if inactive.any():
+                lv.fixed_np = (lv.fixed_np.astype(bool) | inactive).astype(np.int32)
+                lv.fixed = wp.array(lv.fixed_np, dtype=wp.int32, device=self.dev)
+                dgh[inactive] = 1.0
+                dg = wp.array(dgh, dtype=wp.float32, device=self.dev)
+                if lv is self.levels[0]:
+                    self.fine64 = (self.fine64[0], lv.fixed)
+            lv.n_inactive = int(inactive.sum())
             lv.dinv = wp.zeros_like(dg)
             wp.launch(H32["inv"], dim=lv.ndof, inputs=[dg, lv.dinv], device=self.dev)
-        for lv in self.levels[:-1]:
+        for lv in self.levels:
             lv.lmax = self._power(lv, lmax_iters) * 1.1
         c = self.levels[-1]
-        if c.Kel_np is not None:
+        self.coarse_inv_dev = None
+        if c.ndof > coarsest_dofs:
+            A = None  # too large to invert: high-degree Chebyshev on the coarsest level (linear, symmetric)
+        elif c.Kel_np is not None:
             A = galerkin.assemble_dense(c.Kel_np.astype(np.float64), c.nx, c.ny, c.nz, c.fixed_np)
         else:
             A = reference.assemble(c.nx, c.ny, c.nz, Ke, c.E.numpy().astype(np.float64), c.fixed_np, c.scale).toarray()
         for lv in self.levels:
             lv.Kel_np = None  # host copies no longer needed
-        self.coarse_inv = np.linalg.inv(A)  # small (<= coarsest_dofs)
-        self.coarse_inv_dev = wp.array(self.coarse_inv.astype(np.float32).reshape(-1), dtype=wp.float32, device=self.dev)
+        if A is not None:
+            A[c.fixed_np != 0, :] = 0.0
+            A[:, c.fixed_np != 0] = 0.0
+            A[c.fixed_np != 0, c.fixed_np != 0] = 1.0
+            self.coarse_inv = np.linalg.inv(A)  # small (<= coarsest_dofs)
+            self.coarse_inv_dev = wp.array(self.coarse_inv.astype(np.float32).reshape(-1), dtype=wp.float32,
+                                           device=self.dev)
         self.scal = wp.zeros(4, dtype=wp.float64, device=self.dev)  # rz, pq, rz_new, rr
         n = self.levels[0].ndof
         self.v64 = {k: wp.zeros(n, dtype=wp.float64, device=self.dev) for k in ("x", "r", "z", "p", "q")}
@@ -154,7 +184,7 @@ class MGPCG:
             wp.copy(v, w)
         return lam
 
-    def _smooth(self, lv, x, b):
+    def _smooth(self, lv, x, b, degree=None):
         """Chebyshev(Jacobi) on D^-1 A over [lmax/lmin_ratio, lmax]; x updated in place."""
         lmax = lv.lmax
         lmin = lmax / self.lmin_ratio
@@ -167,7 +197,7 @@ class MGPCG:
         self._axpby32(n, 1.0, b, -1.0, t, r)                         # r = b - A x
         wp.launch(H32["mul"], dim=n, inputs=[lv.dinv, r, d], device=self.dev)
         self._axpby32(n, 1.0 / theta, d, 0.0, d, d)                 # d = D^-1 r / theta
-        for _ in range(self.deg):
+        for _ in range(degree or self.deg):
             self._axpby32(n, 1.0, x, 1.0, d, x)                     # x += d
             self._A32(lv, d, t)
             self._axpby32(n, 1.0, r, -1.0, t, r)                    # r -= A d
@@ -181,7 +211,10 @@ class MGPCG:
         lv = self.levels[l]
         x.zero_()
         if l == len(self.levels) - 1:
-            wp.launch(dense_matvec_f32, dim=lv.ndof, inputs=[lv.ndof, self.coarse_inv_dev, b, x], device=self.dev)
+            if self.coarse_inv_dev is not None:
+                wp.launch(dense_matvec_f32, dim=lv.ndof, inputs=[lv.ndof, self.coarse_inv_dev, b, x], device=self.dev)
+            else:
+                self._smooth(lv, x, b, degree=self.coarsest_degree)
             return
         self._smooth(lv, x, b)
         r, t = lv.work["r"], lv.work["t"]
