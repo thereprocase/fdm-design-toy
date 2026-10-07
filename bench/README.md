@@ -159,3 +159,53 @@ At 0.75, 648 loaded DOFs are missing. These receipts establish sensitivity to
 coarse occupancy and load discretisation; they do not establish helper stiffness
 improvement. A revised contact-load discretisation must explicitly preserve each
 seat's resultant and moment before such a comparison can be interpreted.
+
+### Explicit seat-load transfer and connected-domain sensitivity
+
+`seat_load_transfer.py` constructs nonnegative nodal forces parallel to each
+original seat force. Weights are closest to uniform while preserving that seat's
+resultant and moment about the zero of the solver coordinate frame. Candidate
+nodes are the intersection of surviving nodes in both slices and the full-body
+context, restricted to the original bearing-side nodes. Each case receives the
+same resulting load array. This is an explicit discretisation change, not a
+contact-pressure solution.
+
+```bash
+python bench/seat_load_transfer.py --root /path/to/part-checkout \
+  --reference bench/receipts/bracket-stress-r1.json \
+  --baseline shell-only.npz --project helpers.npz --out transfer.json
+# Separate sensitivity: explicitly remove face-disconnected fragments, then solve.
+python bench/seat_load_transfer.py --root /path/to/part-checkout \
+  --reference bench/receipts/bracket-stress-r1.json \
+  --baseline shell-only.npz --project helpers.npz --out sensitivity.json \
+  --largest-face-component --solve
+```
+
+The first command retains the raw domains and their connectivity failures.
+The second records removed cells, cell volumes, original load and restraint
+DOFs before retaining each largest face-connected component. It does not insert
+stiffness into empty cells. The adjacent NPZ stores original/transferred loads
+and constraints; receipts pin input and output hashes.
+
+Measured R1 sensitivity at density threshold 0.5, E = 1000 MPa, nu = 0.3:
+
+| Domain | Removed cells | Compliance N·mm | Maximum displacement mm |
+|---|---:|---:|---:|
+| Full-body context | 120 | 108.549 | 1.744 |
+| Shell-only | 52 | 484.839 | 8.130 |
+| Seeded helpers | 51 | 470.662 | 7.932 |
+
+None of the removed fragments had original loaded or fixed DOFs exclusive to
+its nodes. The transfers retain 620 rear-seat and 600 front-seat nodes, with
+force errors below 2e-13 N and moment errors below 3e-11 N·mm. All three true
+relative residuals are below 1e-8. The helper case has 2.924% lower compliance
+under this common redistributed load and **explicitly modified domain policy**.
+The full-body centre-sampled context is not a guaranteed stiffness bound because
+its boundary occupancy differs from the deposited-road raster.
+
+Receipts: `receipts/occupancy-seat-transfer-r1.json` (raw topology still blocked)
+and `receipts/occupancy-connected-sensitivity-r1.json` (modified domains).
+This does not establish the unmodified 0.5-domain result, mesh convergence,
+unchanged local pressure, anisotropic behaviour, large-deflection validity or physical performance.
+The solver uses linear small-displacement elasticity; the reported millimetres
+are model outputs, not validated movement predictions.
