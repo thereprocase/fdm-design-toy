@@ -164,8 +164,8 @@ def _shifted_box_text(dx):
         z = round(k * H, 3)
         g += [f";Z:{z}", f"G1 Z{z}", ";TYPE:Outer wall"]
         for i in range(2):
-            a, b, e = W / 2 + 0.4 * i, SIDE - W / 2 - 0.4 * i, W / 2
-            for x0, y0, x1, y1 in ((a - e, a, b + e, a), (b, a - e, b, b + e), (b + e, b, a - e, b), (a, b + e, a, a - e)):
+            a, b = W / 2 + 0.4 * i, SIDE - W / 2 - 0.4 * i           # closed loop turning at the centreline, as Orca does
+            for x0, y0, x1, y1 in ((a, a, b, a), (b, a, b, b), (b, b, a, b), (a, b, a, a)):
                 g += road(x0 + dx, y0, x1 + dx, y1)
                 total += W * H * math.hypot(x1 - x0, y1 - y0)
     g += ["; stop printing object part", f"; filament used [cm3] = {total / 1000:.8f}"]
