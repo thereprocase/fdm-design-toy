@@ -7,6 +7,10 @@ outward-wound triangle shells, one shell per solid; a plate is the union of disj
   which brackets the 50 deg design limit and Orca's 45 deg support threshold.
 - Bridge rung (span): two pillars and a deck whose middle bridges `span` mm of air. Spans 6..40 mm
   by default, around the provisional 10 mm external / 18 mm internal BRG-001 limits.
+- Channel rung (void): a solid bar 120 mm long whose width leaves a nominal `void` mm between the two
+  4-wall shells. Sliced with the part's own process (0 % sparse infill), the void's roof is an internal
+  bridge, and the slicer chooses whether its strands run across the bar or along it. This is the bracket's
+  case (strands laid along a 7.8 mm channel); the printed rungs say whether such strands sag.
 Every rung's defining number is in its metadata, so checkers and slices can be read per rung.
 """
 from __future__ import annotations
@@ -15,6 +19,7 @@ import numpy as np
 
 OVERHANG_DEG = (35, 40, 45, 50, 55, 60)
 BRIDGE_MM = (6, 10, 14, 18, 24, 30, 40)
+CHANNEL_MM = (4, 8, 12, 16)
 
 
 def _prism_xz(poly, y0, depth):
@@ -75,11 +80,35 @@ def bridge_ladder(spans=BRIDGE_MM, *, pillar=5.0, width=5.0, pillar_h=6.0, deck=
     return _merge(shells), meta
 
 
+def channel_ladder(voids=CHANNEL_MM, *, length=120.0, height=8.0, shell=1.65, gap=6.0, origin=(0.0, 0.0)):
+    """Bars along +Y, side by side in X. shell is the nominal 4-wall thickness per side (the slicer decides the
+    real one), so void_mm is nominal too; channel_bbox_mm is the nominal void footprint."""
+    shells, meta, x = [], [], origin[0]
+    y0 = origin[1]
+    for w in voids:
+        width = w + 2 * shell
+        shells.append(_box((x, y0, 0.0), (x + width, y0 + length, height)))
+        meta.append({"id": f"chn-{w:02d}", "kind": "channel", "void_mm": float(w), "shell_mm": float(shell),
+                     "length_mm": float(length), "height_mm": float(height),
+                     "channel_bbox_mm": [[x + shell, y0 + shell, 0.0], [x + width - shell, y0 + length - shell, height]],
+                     "bbox_mm": [[x, y0, 0.0], [x + width, y0 + length, height]]})
+        x += width + gap
+    return _merge(shells), meta
+
+
+def channel_plate(*, voids=CHANNEL_MM, center_xy=(128.0, 128.0)):
+    """The channel ladder alone, centred on the bed: it must be sliced with the part's process, not the
+    coupon plate's."""
+    (v, f), m = channel_ladder(voids)
+    d = [center_xy[0] - (v[:, 0].min() + v[:, 0].max()) / 2, center_xy[1] - (v[:, 1].min() + v[:, 1].max()) / 2, 0.0]
+    return (v + d, f), _shift_meta(m, d)
+
+
 def _shift_meta(meta, d):
     out = []
     for m in meta:
         m = dict(m)
-        for k in ("bbox_mm", "bridge_bbox_mm"):
+        for k in ("bbox_mm", "bridge_bbox_mm", "channel_bbox_mm"):
             if k in m:
                 m[k] = [[c + o for c, o in zip(p, d)] for p in m[k]]
         out.append(m)

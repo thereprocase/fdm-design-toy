@@ -120,13 +120,18 @@ def _cmd_orient(a) -> int:
 
 
 def _cmd_coupons(a) -> int:
-    from .coupons import plate, write_stl
-    (v, f), meta = plate()
+    from .coupons import channel_plate, plate, write_stl
+    if a.channel:
+        (v, f), meta = channel_plate()
+        stem, what = "channel-plate", "fdmgen channel ladder (slice with the part's own process)"
+    else:
+        (v, f), meta = plate()
+        stem, what = "ladder-plate", "fdmgen overhang + bridge ladders"
     a.out.mkdir(parents=True, exist_ok=True)
-    write_stl(a.out / "ladder-plate.stl", v, f, "fdmgen overhang + bridge ladders")
-    (a.out / "ladder-plate.json").write_text(json.dumps({"schema": "fdmgen/coupon-plate@0.1", "frame": "print",
-                                                         "units": "mm", "rungs": meta}, indent=1), encoding="utf-8")
-    print(f"wrote {a.out / 'ladder-plate.stl'} ({len(f)} triangles, {len(meta)} rungs) and ladder-plate.json")
+    write_stl(a.out / f"{stem}.stl", v, f, what)
+    (a.out / f"{stem}.json").write_text(json.dumps({"schema": "fdmgen/coupon-plate@0.1", "frame": "print",
+                                                    "units": "mm", "rungs": meta}, indent=1), encoding="utf-8")
+    print(f"wrote {a.out / (stem + '.stl')} ({len(f)} triangles, {len(meta)} rungs) and {stem}.json")
     return 0
 
 
@@ -142,8 +147,12 @@ def _cmd_coupons_evidence(a) -> int:
     print(f"wrote {a.out} ({ev['gcode']['generator']} {ev['gcode']['version']}, support {s['enable_support']} "
           f"threshold {s['support_threshold_angle']}, bridge_no_support {s['bridge_no_support']})")
     for r in ev["rungs"]:
-        key = f"{r['alpha_deg']:.0f} deg" if "alpha_deg" in r else f"{r['span_mm']:.0f} mm"
+        key = (f"{r['alpha_deg']:.0f} deg" if "alpha_deg" in r else
+               f"{r['span_mm']:.0f} mm" if "span_mm" in r else f"void {r['void_mm']:.0f}")
         extra = f", longest bridge road {r['longest_bridge_road_mm']:.1f} mm" if "longest_bridge_road_mm" in r else ""
+        if r["kind"] == "channel":
+            extra = (f", {r['bridge_roads']} bridge roads ({r['length_fraction_along']} of their length along), strand "
+                     f"{r['strand_span_max_mm']} mm, ceiling {r['ceiling_span_max_mm']} mm")
         print(f"  {r['id']:7} {key:7} support roads {r['support_segments']:5d}{extra}")
     return 0
 
@@ -582,6 +591,7 @@ def main(argv: list[str] | None = None) -> int:
     o.set_defaults(fn=_cmd_orient)
     cp = sub.add_parser("coupons", help="write the overhang + bridge ladder plate (STL + rung metadata)")
     cp.add_argument("--out", type=Path, default=Path("out/coupons"))
+    cp.add_argument("--channel", action="store_true", help="the channel ladder instead (internal bridges along a bar)")
     cp.set_defaults(fn=_cmd_coupons)
     ce = sub.add_parser("coupons-evidence", help="pair a coupon plate with its sliced G-code (tier S receipt)")
     ce.add_argument("plate", type=Path, help="ladder-plate.json from 'fdmgen coupons'")

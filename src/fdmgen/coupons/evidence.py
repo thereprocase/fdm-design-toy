@@ -39,6 +39,8 @@ def slice_evidence(plate: dict, gcode_path, plate_name: str = "", plate_sha256: 
         if r["kind"] == "overhang":                          # footprint under the sloped face
             (x0, y0, _), (x1, y1, _) = r["bbox_mm"]
             regions[r["id"]] = ([x1 - (x1 - x0 - r.get("base_mm", 6.0)), y0], [x1, y1])
+        elif r["kind"] == "channel":
+            regions[r["id"]] = (r["channel_bbox_mm"][0][:2], r["channel_bbox_mm"][1][:2])
         else:
             regions[r["id"]] = (r["bridge_bbox_mm"][0][:2], r["bridge_bbox_mm"][1][:2])
     sup = support_by_region(tp, regions, shift, off)
@@ -46,9 +48,13 @@ def slice_evidence(plate: dict, gcode_path, plate_name: str = "", plate_sha256: 
     mid = (tp.start + tp.end) / 2
     xy = mid[:, :2] + off[:2] - shift
     seg_len = np.linalg.norm(tp.end - tp.start, axis=1)
+    spans = None
+    if any(r["kind"] == "channel" for r in rungs):
+        from ..catalog.checks.toolpath import bridge_spans
+        spans = bridge_spans(tp, offset=off)
     out_rungs = []
     for r in rungs:
-        row = {"id": r["id"], "kind": r["kind"], **{k: r[k] for k in ("alpha_deg", "span_mm") if k in r},
+        row = {"id": r["id"], "kind": r["kind"], **{k: r[k] for k in ("alpha_deg", "span_mm", "void_mm") if k in r},
                **{k: v for k, v in sup[r["id"]].items()}}
         if r["kind"] == "bridge":
             (bx0, by0, z0), (bx1, by1, _) = r["bridge_bbox_mm"]
@@ -57,6 +63,8 @@ def slice_evidence(plate: dict, gcode_path, plate_name: str = "", plate_sha256: 
             br = inb & (np.char.find(low, "bridge") >= 0)
             row["bridge_roads_first_deck_layer"] = int(br.sum())
             row["longest_bridge_road_mm"] = float(seg_len[br].max()) if br.any() else 0.0
+        if r["kind"] == "channel":
+            row.update(_channel_row(r, spans, tp, off, shift))
         out_rungs.append(row)
     return {
         "schema": SCHEMA, "tier": "S",
@@ -66,6 +74,30 @@ def slice_evidence(plate: dict, gcode_path, plate_name: str = "", plate_sha256: 
         "placement": {"shift_xy_mm": np.round(shift, 4).tolist(), "extruder_offset_mm": off.tolist()},
         "rungs": out_rungs,
         "unassigned_support_segments": sup["_unassigned"]["support_segments"],
-        "establishes": "What the slicer generated for each rung under the recorded settings (support roads, bridge roads).",
+        "establishes": "What the slicer generated for each rung under the recorded settings (support roads, bridge roads; "
+                      "for channel rungs the bridge strand direction and strand and ceiling spans).",
         "does_not_establish": "How the rungs print on the printer (P level): sag, curl, droop and bridge quality need the printed plate.",
     }
+
+
+def _channel_row(r, spans, tp, off, shift) -> dict:
+    """Bridge roads whose midpoint lies over the rung's nominal void: how many, which way the bridge material
+    runs (by length, so the short connectors between strands do not count as strands), and the worst strand
+    and ceiling spans (catalog BRG-001 T measures)."""
+    (x0, y0, _), (x1, y1, _) = r["channel_bbox_mm"]
+    along_len = total_len = 0.0
+    mine = []
+    for s in spans:
+        i = s["road_index"]
+        m = (tp.start[i, :2] + tp.end[i, :2]) / 2 + np.asarray(off, float)[:2] - shift
+        if x0 <= m[0] <= x1 and y0 <= m[1] <= y1:
+            d = tp.end[i, :2] - tp.start[i, :2]
+            n = float(np.linalg.norm(d))
+            total_len += n
+            along_len += n if abs(d[1]) > 0.9 * n else 0.0
+            mine.append(s)
+    return {"bridge_roads": len(mine),
+            "length_fraction_along": round(along_len / total_len, 4) if total_len else None,
+            "strand_span_max_mm": round(max((s["span_mm"] for s in mine), default=0.0), 3),
+            "ceiling_span_max_mm": round(max((s["ceiling_span_mm"] for s in mine), default=0.0), 3),
+            "bridge_layers_z_mm": sorted({s["z_mm"] for s in mine})}

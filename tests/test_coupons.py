@@ -108,3 +108,36 @@ def test_plate_fixture_matches_the_generator_and_evidence_contract():
     for r in nos:
         if r["kind"] == "bridge":          # every span bridged with ~2.45 mm anchors at each end
             assert r["longest_bridge_road_mm"] == pytest.approx(r["span_mm"] + 4.9, abs=0.2)
+
+
+def test_channel_ladder_bars_are_closed_and_their_voids_are_nominal():
+    from fdmgen.coupons import channel_plate
+    (v, f), meta = channel_plate()
+    assert [m["id"] for m in meta] == ["chn-04", "chn-08", "chn-12", "chn-16"]
+    tri = v[f]
+    vol = np.einsum("ij,ij->i", tri[:, 0], np.cross(tri[:, 1], tri[:, 2])).sum() / 6
+    expect = sum((m["void_mm"] + 2 * m["shell_mm"]) * m["length_mm"] * m["height_mm"] for m in meta)
+    assert vol == pytest.approx(expect, rel=1e-9)                              # outward-wound closed bars
+    for m in meta:
+        (cx0, cy0, _), (cx1, cy1, _) = m["channel_bbox_mm"]
+        assert cx1 - cx0 == pytest.approx(m["void_mm"]) and cy1 - cy0 == pytest.approx(m["length_mm"] - 2 * m["shell_mm"])
+    assert v[:, 0].min() + v[:, 0].max() == pytest.approx(256.0) and v[:, 2].min() == 0.0      # bed-centred, on the bed
+
+
+def test_channel_row_counts_strand_direction_by_length_not_by_road():
+    """Across-strands joined by short lengthwise connectors: by road count half run along, by length almost none."""
+    from types import SimpleNamespace
+
+    from fdmgen.coupons.evidence import _channel_row
+    start, end, spans = [], [], []
+    for k in range(10):
+        y = 10.0 + 0.45 * k
+        start += [(1.0, y, 0.4), (9.0, y, 0.4)]
+        end += [(9.0, y, 0.4), (9.0, y + 0.45, 0.4)]                      # strand across, then a 0.45 mm connector
+        spans += [{"road_index": 2 * k, "span_mm": 7.5, "ceiling_span_mm": 7.6, "z_mm": 0.4},
+                  {"road_index": 2 * k + 1, "span_mm": 0.0, "ceiling_span_mm": 0.5, "z_mm": 0.4}]
+    tp = SimpleNamespace(start=np.array(start), end=np.array(end))
+    rung = {"channel_bbox_mm": [[0.0, 0.0, 0.0], [10.0, 30.0, 8.0]]}
+    row = _channel_row(rung, spans, tp, (0.0, 0.0, 0.0), np.zeros(2))
+    assert row["bridge_roads"] == 20 and row["length_fraction_along"] == pytest.approx(4.5 / 84.5, abs=1e-4)
+    assert row["strand_span_max_mm"] == 7.5 and row["ceiling_span_max_mm"] == 7.6
