@@ -1,0 +1,20 @@
+# ZQ-001: Z quantisation. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: ZQ-001
+name: Z quantisation
+protects: Rounded fit heights
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+enforcement:
+- hard_filter
+- post_check
+enforcement_text: snap variables; post_check
+defaults:
+  petg: fit-critical Z on multiples of h
+  asa: same
+evidence: L
+sources:
+- tag: L
+  ref: research/final/frodo.md section 3.1 (master table)

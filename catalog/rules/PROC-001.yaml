@@ -1,0 +1,57 @@
+# PROC-001: Effective settings match declared process and material-card binding. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: PROC-001
+name: Effective settings match declared process and material-card binding
+protects: Settings that don't do what they claim
+convention:
+  angle: slope_from_horizontal
+levels:
+- T
+enforcement:
+- post_check
+enforcement_text: post_check (blocking)
+defaults:
+  petg: see key list in 3.2
+  asa: same
+evidence: U (spool-rack check)
+checkers:
+  T: fdmgen.catalog.checks.proc.check_settings
+slicer_keys:
+- printer_model
+- nozzle_diameter
+- layer_height
+- line_width
+- outer_wall_line_width
+- inner_wall_line_width
+- initial_layer_line_width
+- wall_loops
+- wall_generator
+- min_bead_width
+- top_shell_layers
+- bottom_shell_layers
+- top_shell_thickness
+- bottom_shell_thickness
+- ensure_vertical_shell_thickness
+- sparse_infill_density
+- sparse_infill_pattern
+- support_threshold_angle
+- enable_support
+- support_type
+- filament_type
+- nozzle_temperature
+- hot_plate_temp
+- fan_min_speed
+- fan_max_speed
+- slow_down_layer_time
+- filament_shrink
+- filament_shrinkage_compensation_z
+- xy_hole_compensation
+- elefant_foot_compensation
+- enable_arc_fitting
+- extruder_offset
+note: Minimum key list; the process file and the material card's process_binding add their own keys.
+sources:
+- tag: U
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: U
+  ref: research/final/frodo.md section 3.2 (rule cards)

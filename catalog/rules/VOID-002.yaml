@@ -1,0 +1,19 @@
+# VOID-002: No trapped support. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: VOID-002
+name: No trapped support
+protects: Unremovable support
+convention:
+  angle: slope_from_horizontal
+levels:
+- T
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: 0 support roads in any enclosed cavity
+  asa: same
+evidence: logic
+sources:
+- tag: logic
+  ref: research/final/frodo.md section 3.1 (master table)

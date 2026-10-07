@@ -1,0 +1,25 @@
+# SUP-001: No support on interface faces. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: SUP-001
+name: No support on interface faces
+protects: Debris on fits (P-0004)
+convention:
+  angle: slope_from_horizontal
+levels:
+- T
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: '0 support/interface roads within 0.6 mm of `role: interface` regions'
+  asa: same
+evidence: U
+parameters:
+  interface_clearance_mm:
+    value: 0.6
+    unit: mm
+    tag: U
+    status: PROVISIONAL
+sources:
+- tag: U
+  ref: research/final/frodo.md section 3.1 (master table)

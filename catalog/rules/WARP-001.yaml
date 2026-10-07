@@ -1,0 +1,27 @@
+# WARP-001: Warp risk. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: WARP-001
+name: Warp risk
+protects: Lifted corners, bowed parts
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+enforcement:
+- post_check
+enforcement_text: orientation-level (first layers), not per iteration
+defaults:
+  petg: footprint L ≤ 200 mm without measures
+  asa: L > 120 mm ⇒ brim ≥ 5 mm, footprint corners r ≥ 3 mm; no bed-lying plate t < 2 mm with L > 100 mm
+evidence: L (Wang 2007), H values
+parameters:
+  footprint_max_mm:
+    value: 200
+    unit: mm
+    tag: H
+    status: PROVISIONAL
+sources:
+- tag: L
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: L
+  ref: research/final/frodo.md section 3.2 (rule cards)

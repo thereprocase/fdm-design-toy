@@ -1,0 +1,19 @@
+# SURF-001: Stair-stepping on functional faces. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: SURF-001
+name: Stair-stepping on functional faces
+protects: Rough fits, leaks
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: cusp `c = h·cos α` ≤ allowable on faces tagged functional; `c = 0` for horizontal faces on a layer boundary
+  asa: same
+evidence: L
+sources:
+- tag: L
+  ref: research/final/frodo.md section 3.1 (master table)

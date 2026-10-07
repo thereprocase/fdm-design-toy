@@ -1,0 +1,25 @@
+# SEAM-001: Seam placement. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: SEAM-001
+name: Seam placement
+protects: Zits on fits
+convention:
+  angle: slope_from_horizontal
+levels:
+- T
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: no outer-wall loop start within 1 mm of interface faces
+  asa: same
+evidence: H
+parameters:
+  interface_clearance_mm:
+    value: 1.0
+    unit: mm
+    tag: H
+    status: PROVISIONAL
+sources:
+- tag: H
+  ref: research/final/frodo.md section 3.1 (master table)

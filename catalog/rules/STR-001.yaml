@@ -1,0 +1,23 @@
+# STR-001: Inter-layer failure index. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: STR-001
+name: Inter-layer failure index
+protects: Layer separation
+convention:
+  angle: slope_from_horizontal
+levels:
+- '-'
+enforcement:
+- post_check
+- constraint
+enforcement_text: post-check + orientation prescreen day 1
+defaults:
+  petg: '`F_L = sqrt((<σ_n>⁺/Z_t,eff)² + (τ/S_il,eff)²) ≤ 1/SF` with Z_t, S_il from the active material card'
+  asa: same
+evidence: card tier (T0 today)
+note: Strengths (Z_t, S_il) come from the active material card, never from the catalog. SF from problem.yaml.
+sources:
+- tag: logic
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: logic
+  ref: research/final/frodo.md section 3.2 (rule cards)

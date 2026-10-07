@@ -1,0 +1,23 @@
+# SHELL-001: Orientation-dependent shell thickness. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: SHELL-001
+name: Orientation-dependent shell thickness
+protects: Thin skin on mid slopes
+convention:
+  angle: slope_from_horizontal
+levels:
+- '-'
+enforcement:
+- constraint
+- post_check
+- advisory
+enforcement_text: 'V: Sauron''s directional coating in the strength stage; T post_check'
+defaults:
+  petg: 'T: ≥ 2 solid beads normal to every surface after `ensure_vertical_shell_thickness`; M reports `t(α)` band'
+  asa: same
+evidence: derived; threshold H
+sources:
+- tag: derived
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: derived
+  ref: research/final/frodo.md section 3.2 (rule cards)

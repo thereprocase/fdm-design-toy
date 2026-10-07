@@ -1,0 +1,21 @@
+# BRG-002: Bridge anchoring and credit. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: BRG-002
+name: Bridge anchoring and credit
+protects: Bridges into air; overstated strength
+convention:
+  angle: slope_from_horizontal
+levels:
+- T
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: both ends on prior-layer material; zero structural/bond credit
+  asa: same
+evidence: U-policy (G2)
+sources:
+- tag: policy
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: policy
+  ref: research/final/frodo.md section 3.2 (rule cards)

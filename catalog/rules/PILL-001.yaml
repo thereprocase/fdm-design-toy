@@ -1,0 +1,33 @@
+# PILL-001: Thin pillars / fins. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: PILL-001
+name: Thin pillars / fins
+protects: Wobble, knock, layer-time sag
+convention:
+  angle: slope_from_horizontal
+levels:
+- V
+- M
+enforcement:
+- constraint
+- post_check
+enforcement_text: penalty optional; post_check
+defaults:
+  petg: min width ≥ 3w; height / width ≤ 8
+  asa: same
+evidence: H
+parameters:
+  min_width_mm:
+    value: 1.26
+    unit: mm
+    tag: H
+    status: PROVISIONAL
+    note: 3w
+  max_height_to_width:
+    value: 8
+    unit: '1'
+    tag: H
+    status: PROVISIONAL
+sources:
+- tag: H
+  ref: research/final/frodo.md section 3.1 (master table)

@@ -1,0 +1,22 @@
+# COOL-001: Minimum layer time. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: COOL-001
+name: Minimum layer time
+protects: Heat sag, blobs
+convention:
+  angle: slope_from_horizontal
+levels:
+- T
+enforcement:
+- constraint
+- post_check
+enforcement_text: V penalty optional; T post_check
+defaults:
+  petg: flag layers below 12 s that hit the 20 mm/s floor
+  asa: below 3 s
+evidence: S
+sources:
+- tag: S
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: S
+  ref: research/final/frodo.md section 3.2 (rule cards)

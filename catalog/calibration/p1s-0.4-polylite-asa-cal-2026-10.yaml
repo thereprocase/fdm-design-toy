@@ -1,0 +1,24 @@
+# Calibration binding: rule values valid only for the slicer profiles whose hashes are pinned below.
+# Catalog data, CC BY 4.0. While a hash is null the binding is UNBOUND and every value it carries is
+# reported with that status (never as CALIBRATED). Change any pinned hash and every value goes STALE.
+schema: fdmgen/calibration@0.1
+id: p1s-0.4-polylite-asa-cal-2026-10
+binds:
+  printer: {model: Bambu Lab P1S, nozzle_mm: 0.4, plate: Textured PEI}
+  orca_version: 2.4.2
+  profile_sha256:            # pinned when the profiles are exported into the repo (issue #9 follow-up)
+    machine: null
+    process: null
+    filament: null
+compensation:                # consumed by HOLE/EF rules and by the G-code -> design mapper (PLAN D3)
+  filament_shrink_xy: {value: 0.9946, unit: '1', tag: S, owner: slicer}
+  filament_shrinkage_compensation_z: {value: 1.0, unit: '1', tag: S, owner: slicer}
+  xy_hole_compensation: {value: 0, unit: mm, tag: S, owner: geometry}
+  elefant_foot_compensation: {value: 0.15, unit: mm, tag: S, owner: slicer}
+values:
+  OVH-001.alpha_min_deg: {value: 50, unit: deg, tag: S, status: PROVISIONAL, receipt: overhang threshold wedges (slice only)}
+  OVH-002.f_min: {value: 0.6, unit: '1', tag: derived, status: PROVISIONAL}
+  BRG-001.max_span_external_mm: {value: 10, unit: mm, tag: L, status: PROVISIONAL}
+  BRG-001.max_span_internal_mm: {value: 18, unit: mm, tag: precedent, status: PROVISIONAL, receipt: geometry audit only}
+  EF-001.slicer_compensation_mm: {value: 0.15, unit: mm, tag: S, status: PROVISIONAL, receipt: filament/process profile}
+# No material strengths here: STR-001 reads the material card bound to the same profile hashes.

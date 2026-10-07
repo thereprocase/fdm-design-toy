@@ -1,0 +1,22 @@
+# HOLE-001: Horizontal-axis bore roof (incl. frozen interfaces). Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: HOLE-001
+name: Horizontal-axis bore roof (incl. frozen interfaces)
+protects: Sagging crowns, support in bores
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+- T
+enforcement:
+- repair
+enforcement_text: repair (teardrop variant per orientation)
+defaults:
+  petg: tangent crest α ≥ 50°
+  asa: same
+evidence: U (D9 prints)
+sources:
+- tag: U
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: U
+  ref: research/final/frodo.md section 3.2 (rule cards)

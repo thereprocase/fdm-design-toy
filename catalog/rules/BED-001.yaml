@@ -1,0 +1,20 @@
+# BED-001: Build volume, exclusion, margins, spin feasibility. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: BED-001
+name: Build volume, exclusion, margins, spin feasibility
+protects: Off-bed or colliding placement
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+- T
+enforcement:
+- post_check
+enforcement_text: post_check per orientation and spin
+defaults:
+  petg: 256×256×250; exclude 0–18 × 0–28; margin ≥ 10; spacing ≥ 12
+  asa: same
+evidence: S
+sources:
+- tag: S
+  ref: research/final/frodo.md section 3.1 (master table)

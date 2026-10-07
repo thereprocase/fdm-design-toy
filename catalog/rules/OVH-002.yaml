@@ -1,0 +1,28 @@
+# OVH-002: Minimum leaning-wall overlap. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: OVH-002
+name: Minimum leaning-wall overlap
+protects: Same, generalised to h; feeds bond fraction to STR-001
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: '`f = 1 − h/(w tan α) ≥ f_min`; f_min = 0.6 ⇔ α = 50° at h 0.2, w 0.42'
+  asa: same until coupon
+evidence: H, derived
+parameters:
+  f_min:
+    value: 0.6
+    unit: '1'
+    tag: derived
+    status: PROVISIONAL
+    note: f = 1 - h/(w tan alpha); 0.6 is alpha = 50 deg at h 0.2, w 0.42
+sources:
+- tag: derived
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: derived
+  ref: research/final/frodo.md section 3.2 (rule cards)

@@ -1,0 +1,19 @@
+# STR-003: Threads axis-vertical; pins axis in-layer. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: STR-003
+name: Threads axis-vertical; pins axis in-layer
+protects: Weak threads, split pins
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+enforcement:
+- post_check
+enforcement_text: orientation-level
+defaults:
+  petg: thread axis ∥ Z_P; pin axis ⟂ Z_P on a chord flat
+  asa: same
+evidence: U (D9)
+sources:
+- tag: U
+  ref: research/final/frodo.md section 3.1 (master table)

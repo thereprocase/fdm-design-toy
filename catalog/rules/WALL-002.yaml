@@ -1,0 +1,23 @@
+# WALL-002: Bead-count band edge. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: WALL-002
+name: Bead-count band edge
+protects: Stiffness jumps from print variation
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+- T
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: no thickness within ±0.1w of an Arachne band edge (1.70, 2.85, 3.70, 4.85 w at mb = 0.85) when `wall_generator
+    = arachne`
+  asa: same
+evidence: U (Fillaprint algebra)
+sources:
+- tag: U
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: U
+  ref: research/final/frodo.md section 3.2 (rule cards)

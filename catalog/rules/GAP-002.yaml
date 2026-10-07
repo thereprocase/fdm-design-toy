@@ -1,0 +1,33 @@
+# GAP-002: Print-in-place / sliding clearance. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: GAP-002
+name: Print-in-place / sliding clearance
+protects: Fused moving parts
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+- P
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: ≥ 0.30 mm per side XY; Z ≥ h + 0.1
+  asa: same
+evidence: precedent (Rev F), H
+parameters:
+  clearance_xy_mm:
+    value: 0.3
+    unit: mm
+    tag: precedent
+    status: PROVISIONAL
+    note: per side
+  clearance_z_extra_mm:
+    value: 0.1
+    unit: mm
+    tag: H
+    status: PROVISIONAL
+    note: Z clearance = h + this
+sources:
+- tag: precedent
+  ref: research/final/frodo.md section 3.1 (master table)

@@ -1,0 +1,43 @@
+# BRG-001: Bridge span. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: BRG-001
+name: Bridge span
+protects: Sag, failed anchors
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+- T
+enforcement:
+- post_check
+enforcement_text: post_check
+defaults:
+  petg: external ≤ 10, internal (hidden) ≤ 18 mm
+  asa: same
+evidence: L / precedent; vendor 30/40 recorded as V (dispute §7.2)
+parameters:
+  max_span_external_mm:
+    value: 10
+    unit: mm
+    tag: L
+    status: PROVISIONAL
+    note: general DfAM guidance
+  max_span_internal_mm:
+    value: 18
+    unit: mm
+    tag: precedent
+    status: PROVISIONAL
+    note: a design precedent audited as geometry only, never print-tested
+  anchor_min_mm:
+    value: 0.84
+    unit: mm
+    tag: derived
+    status: PROVISIONAL
+    note: 2w at w = 0.42
+checkers:
+  M: fdmgen.catalog.checks.layers.check_bridge
+sources:
+- tag: L
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: L
+  ref: research/final/frodo.md section 3.2 (rule cards)

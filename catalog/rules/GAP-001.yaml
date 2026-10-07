@@ -1,0 +1,33 @@
+# GAP-001: Minimum clear gap (XY). Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: GAP-001
+name: Minimum clear gap (XY)
+protects: Fused gaps
+convention:
+  angle: slope_from_horizontal
+levels:
+- V
+- M
+- T
+enforcement:
+- hard_filter
+- post_check
+enforcement_text: as WALL-001 on the void phase
+defaults:
+  petg: ≥ 2w = 0.84 mm
+  asa: same
+evidence: U (Fillaprint R3/R9)
+parameters:
+  d_min_mm:
+    value: 0.84
+    unit: mm
+    tag: U
+    status: PROVISIONAL
+    note: 2w at w = 0.42
+checkers:
+  M: fdmgen.catalog.checks.layers.check_gap
+sources:
+- tag: U
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: U
+  ref: research/final/frodo.md section 3.2 (rule cards)

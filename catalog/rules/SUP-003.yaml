@@ -1,0 +1,19 @@
+# SUP-003: Support interface gap. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: SUP-003
+name: Support interface gap
+protects: Fused supported faces
+convention:
+  angle: slope_from_horizontal
+levels:
+- '-'
+enforcement:
+- process
+enforcement_text: process
+defaults:
+  petg: top z gap 0.15–0.2; PETG prefers ≥ 0.2
+  asa: 0.15–0.2
+evidence: S, V
+sources:
+- tag: S
+  ref: research/final/frodo.md section 3.1 (master table)

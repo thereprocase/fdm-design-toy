@@ -1,0 +1,43 @@
+# BED-002: Bed contact and stability. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: BED-002
+name: Bed contact and stability
+protects: Detachment, toppling
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+enforcement:
+- post_check
+enforcement_text: orientation-level post_check
+defaults:
+  petg: contact ≥ 100 mm² and ≥ 5% of footprint; CoM inside contact hull with 3 mm margin; height / min base width
+    ≤ 4 without brim
+  asa: same
+evidence: H (D9 precedent)
+parameters:
+  contact_min_mm2:
+    value: 100
+    unit: mm2
+    tag: H
+    status: PROVISIONAL
+  contact_min_fraction:
+    value: 0.05
+    unit: '1'
+    tag: H
+    status: PROVISIONAL
+  com_margin_mm:
+    value: 3
+    unit: mm
+    tag: H
+    status: PROVISIONAL
+  max_height_to_base:
+    value: 4
+    unit: '1'
+    tag: H
+    status: PROVISIONAL
+sources:
+- tag: H
+  ref: research/final/frodo.md section 3.1 (master table)
+- tag: H
+  ref: research/final/frodo.md section 3.2 (rule cards)

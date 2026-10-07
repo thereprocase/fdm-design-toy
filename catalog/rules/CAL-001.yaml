@@ -1,0 +1,19 @@
+# CAL-001: Values bound to calibration. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: CAL-001
+name: Values bound to calibration
+protects: Generic values passed off as calibrated
+convention:
+  angle: slope_from_horizontal
+levels:
+- '-'
+enforcement:
+- lint
+enforcement_text: lint
+defaults:
+  petg: every binding value tagged + receipt
+  asa: same
+evidence: policy
+sources:
+- tag: policy
+  ref: research/final/frodo.md section 3.1 (master table)

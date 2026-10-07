@@ -1,0 +1,28 @@
+# MOD-001: Helper (modifier) geometry. Catalog data, CC BY 4.0. Generated from the master table, then edited by hand.
+schema: fdmgen/rule@0.1
+id: MOD-001
+name: Helper (modifier) geometry
+protects: Slivers, unbonded helpers, lost roles
+convention:
+  angle: slope_from_horizontal
+levels:
+- M
+- T
+enforcement:
+- hard_filter
+- post_check
+enforcement_text: hard (massing); post_check
+defaults:
+  petg: boundaries ≥ 2w apart or overlapping ≥ 2w; bonded to credited material; roles survive
+  asa: same
+evidence: U (G2 audits), H
+parameters:
+  boundary_gap_min_mm:
+    value: 0.84
+    unit: mm
+    tag: U
+    status: PROVISIONAL
+    note: 2w apart or overlapping by >= 2w
+sources:
+- tag: U
+  ref: research/final/frodo.md section 3.1 (master table)
