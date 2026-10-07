@@ -86,11 +86,14 @@ class MGPCG:
             prev = lv
             lv = Level(nxc, nyc, nzc, lv.scale * 2.0, Ec, wp.array(fc, dtype=wp.int32, device=self.dev), fc)
             if coarse == "galerkin":
-                if prev.Kel_np is None:
-                    lv.Kel_np = galerkin.first_coarse(E, Ke, prev.nx, prev.ny, prev.nz)
+                if prev is self.levels[0]:
+                    lv.Kel_np = None            # level 1 is generated on the fly from the fine multipliers
+                elif prev is self.levels[1]:
+                    lv.Kel_np = galerkin.second_coarse_from_fine(E, Ke, self.levels[0].nx, self.levels[0].ny,
+                                                                 self.levels[0].nz)
                 else:
                     lv.Kel_np = galerkin.next_coarse(prev.Kel_np, prev.nx, prev.ny, prev.nz)
-                if prev is self.levels[0]:
+                if lv.Kel_np is None:
                     lv.Ef = prev.E          # level 1: Galerkin on the fly from the 8 children
                 else:
                     lv.Kel = wp.array(lv.Kel_np.reshape(-1), dtype=wp.float32, device=self.dev)

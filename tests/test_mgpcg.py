@@ -96,3 +96,13 @@ def test_masked_domain_matches_direct():
     u, info = s.solve(b, tol=1e-10, maxiter=500)
     assert info["converged"]
     assert np.linalg.norm(u - u_ref) / np.linalg.norm(u_ref) < 1e-7
+
+
+def test_second_coarse_from_fine_equals_two_steps():
+    from fdmgen.fem import galerkin
+    nx, ny, nz = 8, 8, 4
+    Ke = element.box_ke(element.ti_C(1.0, 0.87, 0.35, 0.3, 0.33), 0.5, 0.5, 0.6)
+    E = np.random.default_rng(9).random(nx * ny * nz)
+    two = galerkin.next_coarse(galerkin.first_coarse(E, Ke, nx, ny, nz, np.float64), nx // 2, ny // 2, nz // 2)
+    one = galerkin.second_coarse_from_fine(E, Ke, nx, ny, nz, np.float64)
+    assert np.allclose(one, two, rtol=1e-12, atol=1e-12)

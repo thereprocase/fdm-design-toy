@@ -73,3 +73,19 @@ def assemble_dense(K: np.ndarray, nx: int, ny: int, nz: int, fixed: np.ndarray) 
     A[:, f] = 0.0
     A[f, f] = 1.0
     return A
+
+
+def second_coarse_from_fine(E: np.ndarray, Ke: np.ndarray, nx: int, ny: int, nz: int, dtype=np.float32) -> np.ndarray:
+    """Level-2 element matrices straight from fine multipliers (level-1 matrices never materialised):
+    Kc2 = sum over the 64 grandchildren g = (j, k) of E_g * (P_k P_j)^T Ke (P_k P_j), where j is the child of the
+    level-2 element and k the child of j. One (n2, 64) @ (64, 576) product."""
+    n2x, n2y, n2z = nx // 4, ny // 4, nz // 4
+    M, cols = [], []
+    E6 = np.asarray(E, dtype).reshape(n2x, 4, n2y, 4, n2z, 4)
+    for j, cj in enumerate(CORNERS):
+        for k, ck in enumerate(CORNERS):
+            Pg = P_CHILD[k] @ P_CHILD[j]
+            M.append((Pg.T @ Ke @ Pg).reshape(576))
+            o = 2 * cj + ck
+            cols.append(E6[:, o[0], :, o[1], :, o[2]].reshape(-1))
+    return (np.stack(cols, axis=1) @ np.asarray(M, dtype)).reshape(-1, 24, 24)
