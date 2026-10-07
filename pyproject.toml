@@ -1,0 +1,22 @@
+[project]
+name = "fdmgen"
+version = "0.0.1"
+description = "Open generative design for FDM parts: orientation-driven massing, anisotropic material, printability rules as data"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = ["numpy>=2.0"]
+
+[project.optional-dependencies]
+gpu = ["warp-lang>=1.17,<1.19"]
+dev = ["pytest>=8", "scipy>=1.13"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fdmgen"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -5,9 +5,9 @@
   addresses, account handles other than the repo owner's, private hostnames, tailnet names,
   IP addresses, or local paths that contain a user name (`C:\Users\<name>`, `/home/<name>`).
 - Refer to people by role ("a collaborator", "the owner") and machines by role:
-  - **laptop GPU workstation**: NVIDIA RTX-class laptop GPU, the inner-loop solver machine
+  - **laptop GPU workstation**: RTX-class laptop GPU (development, smaller solves)
   - **compute box**: 40 Broadwell threads, 300 GB RAM, no GPU (Linux)
-  - **second workstation**: Ryzen desktop, Windows + WSL
+  - **second workstation**: Ryzen desktop with an RTX 3080 Ti, Windows + WSL (solver workhorse)
 - Commits use the GitHub no-reply address. A local pre-commit hook blocks known personal
   terms; it reads a denylist that lives outside the repo and is never committed.
 

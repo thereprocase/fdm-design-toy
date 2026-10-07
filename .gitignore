@@ -1,9 +1,10 @@
-.venv/
-__pycache__/
-*.pyc
-*.vtk
 *.npy
 *.npz
+*.pyc
+*.vtk
+.cache/
+.venv/
+__pycache__/
 out/
-scratch/
 pii-denylist*.txt
+scratch/
