@@ -561,3 +561,12 @@ the strand verdict, and their maxima need not come from the same road. Receipts
 and orientation columns without the additive ceiling field show **not recorded**;
 the UI never fills it from a newer run or interprets missing values as zero.
 Physical behaviour of these different support models remains a coupon question.
+
+The [fresh ceiling-enriched table](fixtures/ceiling/orientation-table.json)
+(SHA-256 `d1f365b2…`) was generated with `f8de335` from the original shell-enriched
+table and new, pose-bound bridge receipts, retained beside it. Browser acceptance
+checks its exact bytes: facet-00 external strand/ceiling maxima are 3.15/2.0 mm,
+internal maxima 122.1/15.678 mm; facet-01 external is 52.2 mm under both models.
+These are separate maxima, not necessarily measurements of the same road. All
+recorded strand verdicts remain unchanged; the smaller ceiling measurement does
+not establish physical performance. Existing pinned tables and drafts are untouched.
