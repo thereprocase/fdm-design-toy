@@ -1,0 +1,17 @@
+{
+  "evidence": "analytic allocation lower bound; device capacity measured with nvidia-smi",
+  "grid": [
+    528,
+    592,
+    64
+  ],
+  "device": "Quadro T2000",
+  "device_capacity_bytes": 4294967296,
+  "fine_nodes": 20390305,
+  "fine_work_arrays_bytes": 3670254900,
+  "second_galerkin_level_bytes": 720175104,
+  "lower_bound_bytes": 4390430004,
+  "establishes": "these currently allocated buffers alone exceed the available device capacity for this grid",
+  "does_not_establish": "measured peak VRAM or acceptance on a larger GPU",
+  "excludes": "element multipliers, fixed masks, diagonals, other levels, coarsest inverse, temporaries, driver and compilation memory"
+}

@@ -1,0 +1,57 @@
+{
+  "evidence": "measured local geometry benchmark",
+  "establishes": "occupancy parity and timing for the hashed input and software versions",
+  "does_not_establish": "physical accuracy, GPU performance, or bracket acceptance from synthetic input",
+  "input_kind": "synthetic annulus",
+  "mesh_sha256": "d672aa2e1ece86882ba320af189ccf0b1987e2f2c0b6499ed22f3df0dba80e1e",
+  "h_mm": 0.4,
+  "rows": [
+    {
+      "backend": "scanline",
+      "repeat": 0,
+      "seconds": 0.5311814430169761,
+      "shape": [
+        208,
+        208,
+        104
+      ],
+      "solid_cells": 2859200,
+      "occupancy_sha256": "2e2428136756dde41aeeeac8c36b434e6cb8e097faf66a233b286ab4a5ae4a00"
+    },
+    {
+      "backend": "section",
+      "repeat": 0,
+      "seconds": 1.046405289962422,
+      "shape": [
+        208,
+        208,
+        104
+      ],
+      "solid_cells": 2859200,
+      "occupancy_sha256": "2e2428136756dde41aeeeac8c36b434e6cb8e097faf66a233b286ab4a5ae4a00"
+    }
+  ],
+  "parity": true,
+  "node_build": {
+    "grid": [
+      200,
+      200,
+      200
+    ],
+    "cells": 8000000,
+    "nodes": 8120601,
+    "output_bytes": 194894424,
+    "seconds": 0.07349736301694065
+  },
+  "connectivity_build": {
+    "elements": 8000000,
+    "output_bytes": 1536000000,
+    "seconds": 3.1229121470241807,
+    "coordinates_plus_connectivity_s": 3.1964095100411214
+  },
+  "versions": {
+    "python": "3.14.7",
+    "numpy": "2.5.3",
+    "trimesh": "5.1.1"
+  }
+}

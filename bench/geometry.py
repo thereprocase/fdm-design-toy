@@ -23,6 +23,7 @@ def main():
     ap.add_argument("--mesh", type=Path)
     ap.add_argument("--h", type=float, default=0.4)
     ap.add_argument("--repeat", type=int, default=3)
+    ap.add_argument("--connectivity", action="store_true", help="also build full FEM element connectivity")
     ap.add_argument("--node-grid", default="200,200,100")
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args()
@@ -49,6 +50,12 @@ def main():
         ap.error("node-grid requires three positive counts")
     grid = Grid(np.zeros(3), (a.h,) * 3, shape)
     t0 = time.perf_counter(); nodes = grid.node_coords(); node_s = time.perf_counter() - t0
+    connectivity = None
+    if a.connectivity:
+        from fdmgen.fem.reference import element_dofs
+        t0 = time.perf_counter(); dofs = element_dofs(*shape); dof_s = time.perf_counter() - t0
+        connectivity = dict(elements=len(dofs), output_bytes=dofs.nbytes, seconds=dof_s,
+                            coordinates_plus_connectivity_s=node_s+dof_s)
     receipt = dict(evidence="measured local geometry benchmark",
                    establishes="occupancy parity and timing for the hashed input and software versions",
                    does_not_establish="physical accuracy, GPU performance, or bracket acceptance from synthetic input",
@@ -57,6 +64,7 @@ def main():
                    parity=len({r['occupancy_sha256'] for r in rows}) == 1,
                    node_build=dict(grid=shape, cells=int(np.prod(shape)), nodes=len(nodes),
                                    output_bytes=nodes.nbytes, seconds=node_s),
+                   connectivity_build=connectivity,
                    versions=dict(python=platform.python_version(), numpy=np.__version__, trimesh=trimesh.__version__))
     a.out.write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt, indent=2))

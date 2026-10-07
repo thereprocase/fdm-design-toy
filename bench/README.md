@@ -56,3 +56,16 @@ This supports investigating the coarsest solve but does not meet the <=40 gate,
 and neither R1 run establishes the 0.8 mm per-optimiser-iteration timing gate.
 The receipts pin device, precision, inputs and solver settings. Full R2/R3,
 E_min/TI sweeps, zero-ersatz gap and sustained/memory benchmarks remain open.
+
+#5 mesh scaling: `--connectivity --node-grid 200,200,100` and
+`--connectivity --node-grid 200,200,200` also build full 24-DOF element maps.
+Committed local receipts measure node coordinates plus connectivity at 1.53 s
+for 4 M cells and 3.20 s for 8 M cells, both below 30 s. They establish structured
+mesh build performance for those grids, not imported-mesh repair or physical accuracy.
+
+The 0.4 mm bracket grid cannot run the current full MG hierarchy on this actual
+4 GiB GPU. An analytic lower bound from only fine work vectors plus the second
+Galerkin level is 4.089 GiB, already above capacity, before masks, diagonals,
+other levels and driver memory. See `bracket-04-memory-lower-bound.json`.
+This is an allocation estimate, not measured peak VRAM; the requested #10 full
+0.4 mm hierarchy and thermal benchmarks need a larger GPU or storage changes.
