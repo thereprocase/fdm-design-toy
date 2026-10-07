@@ -82,6 +82,14 @@ def test_thick_bridges_are_sacrificial_and_height_rounding_is_normalised():
     assert tp.height[-1] == 0.2 and tp.declared_height[-1] == 0.200001
 
 
+def test_support_is_never_credited():
+    body = (OBJ + "G1 X10 Y0 E1\n;TYPE:Support\nG1 X20 Y0 E2\n;TYPE:Support interface\nG1 X30 Y0 E0.5\n"
+            ";TYPE:Outer wall\nG1 X40 Y0 E1\n; stop printing object part\n")
+    c = credit(read_gcode(_g(body, 4.5 * AREA / 1000)))
+    assert c["structurally_credited_extrusion_volume_mm3"] == pytest.approx(2 * AREA)
+    assert c["support_and_aux_volume_mm3"] == pytest.approx(2.5 * AREA) and c["support_segments"] == 2
+
+
 def test_arcs_are_read_and_match_their_polyline():
     r, e = 10.0, 3.0
     arc = OBJ.replace("G1 X0 Y0", f"G1 X{r} Y0") + f"G3 X{-r} Y0 I{-r} J0 E{e}\n; stop printing object part\n"

@@ -106,6 +106,17 @@ def _cmd_orient(a) -> int:
     return 0
 
 
+def _cmd_coupons(a) -> int:
+    from .coupons import plate, write_stl
+    (v, f), meta = plate()
+    a.out.mkdir(parents=True, exist_ok=True)
+    write_stl(a.out / "ladder-plate.stl", v, f, "fdmgen overhang + bridge ladders")
+    (a.out / "ladder-plate.json").write_text(json.dumps({"schema": "fdmgen/coupon-plate@0.1", "frame": "print",
+                                                         "units": "mm", "rungs": meta}, indent=1), encoding="utf-8")
+    print(f"wrote {a.out / 'ladder-plate.stl'} ({len(f)} triangles, {len(meta)} rungs) and ladder-plate.json")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fdmgen", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -131,6 +142,9 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("--voxel", action="store_true", help="add V-level OVH-001 and BRG-001 on the D5 grid")
     o.add_argument("--out", type=Path)
     o.set_defaults(fn=_cmd_orient)
+    cp = sub.add_parser("coupons", help="write the overhang + bridge ladder plate (STL + rung metadata)")
+    cp.add_argument("--out", type=Path, default=Path("out/coupons"))
+    cp.set_defaults(fn=_cmd_coupons)
     a = ap.parse_args(argv)
     return a.fn(a)
 

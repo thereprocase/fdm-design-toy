@@ -211,15 +211,21 @@ def credit(tp: Toolpath, *, nominal_height: float | None = None, thick_margin: f
     """
     h0 = tp.meta.get("nominal_height_mm", 0.2) if nominal_height is None else nominal_height
     obj = tp.in_object
-    thick = obj & (np.char.find(np.char.lower(tp.role.astype(str)), "bridge") >= 0) & (tp.height > h0 + thick_margin)
-    credited = obj & ~thick
+    low = np.char.lower(tp.role.astype(str))
+    thick = obj & (np.char.find(low, "bridge") >= 0) & (tp.height > h0 + thick_margin)
+    # support, skirt, brim and prime tower are never part (absent from every archived parity slice)
+    aux = obj & ((np.char.find(low, "support") >= 0) | np.isin(low, ["skirt", "brim", "prime tower", "wipe tower"]))
+    credited = obj & ~thick & ~aux
     return {
         "structurally_credited_extrusion_volume_mm3": float(tp.volume[credited].sum()),
         "sacrificial_thick_bridge_extrusion_volume_mm3": float(tp.volume[thick].sum()),
         "nonobject_spent_volume_mm3": float(tp.volume[~obj].sum()),
+        "support_and_aux_volume_mm3": float(tp.volume[aux].sum()),
+        "support_segments": int((obj & (np.char.find(low, "support") >= 0)).sum()),
         "thick_bridge_segments": int(thick.sum()),
         "thick_bridge_heights_mm": sorted(set(tp.height[thick].tolist())),
         "sparse_infill_volume_mm3": float(tp.volume[obj & (tp.role == "Sparse infill")].sum()),
         "credited_mask": credited,
-        "policy": "Thick bridges and priming lines are spent plastic only: no stiffness, strength or bond credit.",
+        "policy": ("Thick bridges, priming lines, support, skirt, brim and prime tower are spent plastic only: "
+                   "no stiffness, strength or bond credit."),
     }
