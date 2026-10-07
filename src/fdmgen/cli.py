@@ -166,6 +166,48 @@ def _cmd_modifier_spike(a) -> int:
     return 0
 
 
+def _cmd_massing(a) -> int:
+    import os
+    import zipfile
+
+    import trimesh
+
+    from .massing import export_plan, load_capabilities
+    from .planning import load_draft
+    table_bytes = a.table.read_bytes()
+    table = json.loads(table_bytes)
+    mesh = table["mesh"]
+    repo = mesh.get("source")
+    roots = [Path(os.environ["SPOOL_RACK_ROOT"])] if os.environ.get("SPOOL_RACK_ROOT") else []
+    roots.append(Path(__file__).resolve().parents[3] / (repo or ""))
+    mesh_path = next((r / mesh["path"] for r in roots if (r / mesh["path"]).is_file()), None)
+    if mesh_path is None:
+        print(f"ERROR   the body mesh {mesh['path']} was not found in the {repo} checkout")
+        return 1
+    try:
+        plan = load_draft(a.draft.read_bytes(), table_bytes, mesh_path.read_bytes())
+    except ValueError as e:
+        print(f"ERROR   the draft cannot be used: {e}")
+        return 1
+    template = (zipfile.ZipFile(a.template).read("audit.3mf") if a.template.suffix == ".zip" else a.template.read_bytes())
+    body = trimesh.load(mesh_path, force="mesh")
+    try:
+        data, report = export_plan(plan, body.vertices, body.faces, template, load_capabilities(a.capabilities))
+    except ValueError as e:
+        print(f"ERROR   {e}")
+        return 1
+    a.out.mkdir(parents=True, exist_ok=True)
+    stem = f"{plan.problem}-{plan.candidate_id}-massing"
+    (a.out / f"{stem}.3mf").write_bytes(data)
+    (a.out / f"{stem}.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
+    print(f"wrote {a.out / (stem + '.3mf')} and {stem}.json ({len(report['helpers'])} helpers)")
+    for c in report["checks"]:
+        print(f"  {c['verdict']:11} {c['message']}")
+    if report.get("warning"):
+        print(f"  WARNING     {report['warning']}")
+    return 0 if all(c["verdict"] != "FAIL" for c in report["checks"]) else 2
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fdmgen", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -209,6 +251,16 @@ def main(argv: list[str] | None = None) -> int:
                     "--command=orca-slicer com.orcaslicer.OrcaSlicer --datadir DIR'")
     ms.add_argument("--out", type=Path, default=Path("out/modifier-capabilities.yaml"))
     ms.set_defaults(fn=_cmd_modifier_spike)
+    mg = sub.add_parser("massing", help="turn a planning draft into an Orca project (body + helper modifiers)")
+    mg.add_argument("draft", type=Path, help="fdmgen.massing-plan JSON exported by the planning workspace")
+    mg.add_argument("--table", type=Path, required=True, help="the orientation table the draft was made from")
+    mg.add_argument("--template", type=Path, required=True,
+                    help="Orca-written 3MF (or slice-evidence zip with audit.3mf) that defines the profile context")
+    mg.add_argument("--capabilities", type=Path,
+                    default=Path(__file__).resolve().parents[2] / "catalog" / "slicer" /
+                    "orca-2.4.2-p1s-asa-modifier-capabilities.yaml")
+    mg.add_argument("--out", type=Path, default=Path("out/massing"))
+    mg.set_defaults(fn=_cmd_massing)
     a = ap.parse_args(argv)
     return a.fn(a)
 

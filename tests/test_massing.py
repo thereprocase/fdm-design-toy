@@ -117,3 +117,13 @@ def test_real_ui_draft_exports_and_flags_the_tiny_helper():
     fails = [c for c in rep["checks"] if c["verdict"] == "FAIL"]
     assert len(fails) == 1 and tiny.id in fails[0]["message"] and "0.50 mm" in fails[0]["message"]
     assert rep["plan"]["candidate_id"] == "facet-00" and len(rep["helpers"]) == 2
+
+
+@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="spool-wall-rack checkout not next to this repository")
+def test_cli_massing_exit_code_and_outputs(tmp_path, capsys):
+    from fdmgen.cli import main
+    rc = main(["massing", str(DRAFT), "--table", str(TABLE), "--template", str(TEMPLATE_ZIP), "--out", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert rc == 2 and "MOD-001 FAIL" in out and "NOT_CHECKED" in out          # the tiny helper fails, exit code says so
+    assert (tmp_path / "spool-rack-g2-ef-facet-00-massing.3mf").is_file()
+    assert (tmp_path / "spool-rack-g2-ef-facet-00-massing.json").is_file()
