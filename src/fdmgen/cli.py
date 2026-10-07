@@ -411,6 +411,25 @@ def _cmd_orient_shell(a) -> int:
     return 0
 
 
+def _cmd_bridge_check(a) -> int:
+    import hashlib
+
+    from .catalog.checks.toolpath import check_bridge_toolpath
+    from .gcode import extruder_offset, read_gcode
+    from .massing.export import _slicer_context
+    raw = a.gcode.read_bytes()
+    text = raw.decode("utf-8")
+    tp = read_gcode(text)
+    r = check_bridge_toolpath(tp, offset=extruder_offset(text), cell_mm=a.cell)
+    out = {"schema": "fdmgen/bridge-check@0.1", "gcode": {**_slicer_context(text, tp),
+                                                          "extruder_offset_mm": list(extruder_offset(text))},
+           "gcode_sha256": hashlib.sha256(raw).hexdigest(), "result": r.to_dict()}
+    a.out.parent.mkdir(parents=True, exist_ok=True)
+    a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
+    print(r.message)
+    return 2 if r.verdict.value == "FAIL" else 0
+
+
 def _cmd_shell_check(a) -> int:
 
     import numpy as np
@@ -543,6 +562,11 @@ def main(argv: list[str] | None = None) -> int:
                      help="a shell-check@0.2 receipt and its slice kind: shell-only or project")
     osh.add_argument("--out", type=Path, required=True)
     osh.set_defaults(fn=_cmd_orient_shell)
+    bc = sub.add_parser("bridge-check", help="BRG-001 at T level: longest unsupported bridge run in a slice")
+    bc.add_argument("gcode", type=Path)
+    bc.add_argument("--cell", type=float, default=0.1, help="raster cell of the layer below (mm)")
+    bc.add_argument("--out", type=Path, default=Path("out/bridge-check.json"))
+    bc.set_defaults(fn=_cmd_bridge_check)
     sc = sub.add_parser("shell-check", help="SHELL-001 at T level: printed shell thickness by slope from a slice")
     sc.add_argument("gcode", type=Path, help="slice of the posed body (plate coordinates = the table's pose)")
     sc.add_argument("--table", type=Path, required=True)

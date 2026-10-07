@@ -36,6 +36,7 @@ parameters:
     note: 2w at w = 0.42
 checkers:
   M: fdmgen.catalog.checks.layers.check_bridge
+  T: fdmgen.catalog.checks.toolpath.check_bridge_toolpath
 sources:
 - tag: L
   ref: research/final/frodo.md section 3.1 (master table)

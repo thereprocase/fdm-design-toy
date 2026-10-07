@@ -321,3 +321,47 @@ def test_flange_sweep_matches_the_load_model_and_catches_intrusions():
     b = check_boxes({"in": (np.array([c[0] - 1, c[1] - 1, 0]), np.array([c[0] + 1, c[1] + 1, 5])),
                      "out": (np.array([0, -60, 0]), np.array([5, -50, 5]))}, [ko], v.min(axis=0), v.max(axis=0), interfaces=ifs)
     assert {x.metrics["helper_id"]: x.verdict for x in b} == {"in": Verdict.FAIL, "out": Verdict.PASS}
+
+
+def _pads_and_bridge(gap, role="Bridge"):
+    """Layer 1: two 5 mm pads `gap` apart (solid lines). Layer 2: bridge roads across both pads."""
+    import math
+    area = math.pi * 1.75 ** 2 / 4
+
+    def road(x0, y0, x1, y1, w=0.42, h=0.2):
+        return [f"G1 X{x0:.3f} Y{y0:.3f}", f"G1 X{x1:.3f} Y{y1:.3f} E{w * h * math.hypot(x1 - x0, y1 - y0) / area:.6f}"]
+    g = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", ";WIDTH:0.42", ";HEIGHT:0.2",
+         ";Z:0.2", "G1 Z0.2", ";TYPE:Internal solid infill"]
+    for x0 in (0.0, 5.0 + gap):
+        for y in np.arange(0.21, 5.0, 0.4):
+            g += road(x0 + 0.21, y, x0 + 4.79, y)
+    g += [";Z:0.4", "G1 Z0.4", f";TYPE:{role}"]
+    for y in np.arange(0.21, 5.0, 0.4):
+        g += road(1.0, y, 9.0 + gap, y)
+    g.append("; stop printing object part")
+    from fdmgen.gcode import read_gcode
+    return read_gcode("\n".join(g) + "\n", footer_rel_tol=None)
+
+
+@pytest.mark.parametrize("gap,role,verdict", [(8.0, "Bridge", "PASS"), (12.0, "Bridge", "FAIL"),
+                                              (12.0, "Internal Bridge", "PASS"), (20.0, "Internal Bridge", "FAIL")])
+def test_brg001_t_measures_the_unsupported_run_over_the_layer_below(gap, role, verdict):
+    from fdmgen.catalog.checks.toolpath import bridge_spans, check_bridge_toolpath
+    tp = _pads_and_bridge(gap, role)
+    rows = bridge_spans(tp)
+    assert len(rows) == 12 and all(abs(r["span_mm"] - gap) <= 0.15 for r in rows)    # one cell of raster error
+    assert all(r["cantilever_mm"] == 0.0 for r in rows)                               # anchored on both pads
+    r = check_bridge_toolpath(tp)
+    assert r.verdict.value == verdict and r.level == "T" and r.rule == "BRG-001"
+
+
+def test_brg001_t_defaults_match_the_catalog():
+    import inspect
+
+    from fdmgen.catalog import load_rules
+    from fdmgen.catalog.checks.toolpath import check_bridge_toolpath
+    rule = load_rules()["BRG-001"]
+    sig = inspect.signature(check_bridge_toolpath).parameters
+    assert sig["max_span_external_mm"].default == rule.parameters["max_span_external_mm"]["value"]
+    assert sig["max_span_internal_mm"].default == rule.parameters["max_span_internal_mm"]["value"]
+    assert rule.data["checkers"]["T"] == "fdmgen.catalog.checks.toolpath.check_bridge_toolpath"

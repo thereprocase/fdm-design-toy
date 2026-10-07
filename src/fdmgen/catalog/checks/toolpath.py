@@ -67,3 +67,91 @@ def check_support(tp: Toolpath, regions: dict, design_bbox, *, offset=(0.0, 0.0,
                            does_not)
     return CheckResult(rule, "T", Verdict.PASS, f"{rule} T PASS: no support roads under any of {len(regions)} regions.",
                        False, metrics, [], "The slicer generated no support under these regions.", does_not)
+
+
+def bridge_spans(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), cell_mm: float = 0.1, support_density: float = 0.5,
+                 margin_mm: float = 2.0) -> list[dict]:
+    """Per bridge road: the longest run with nothing printed under it in the layer below.
+
+    The layer below is every object road (support included: a road over support is not bridging) whose
+    top is the highest top below the bridge layer, rasterised on an XY grid of cell_mm with road caps.
+    A point is supported where that layer's density is at least support_density. A run bounded by support
+    at both ends is a bridge span; a run that reaches a road end is reported as a cantilever instead.
+    """
+    from ...gcode.occupancy import deposit
+    off = np.asarray(offset, float)
+    role = np.char.lower(tp.role.astype(str))
+    bridge = tp.in_object & (np.char.find(role, "bridge") >= 0)
+    top = tp.end[:, 2]
+    out = []
+    for z in np.unique(np.round(top[bridge], 4)):
+        here = bridge & (np.abs(top - z) < 1e-4)
+        lower = tp.in_object & (top < z - 1e-4)
+        if not lower.any():
+            continue                                          # first layer: the bed supports it
+        z_prev = top[lower].max()
+        below = lower & (np.abs(top - z_prev) < 1e-4)
+        h_prev = float(np.median(tp.height[below]))
+        ends = np.vstack([tp.start[here], tp.end[here]])[:, :2] + off[:2]
+        lo = np.append(ends.min(axis=0) - margin_mm, z_prev - h_prev) + 1e-4 * np.pi
+        hi = np.append(ends.max(axis=0) + margin_mm, z_prev)
+        h = np.array([cell_mm, cell_mm, h_prev])
+        shape = (int(np.ceil((hi[0] - lo[0]) / cell_mm)), int(np.ceil((hi[1] - lo[1]) / cell_mm)), 1)
+        g, _ = deposit(tp, off, np.eye(3), np.zeros(3), lo, h, shape, mask=below, caps=True)
+        supported = (g[:, :, 0] / np.prod(h)) >= support_density
+        for i in np.flatnonzero(here):
+            a, b = tp.start[i, :2] + off[:2], tp.end[i, :2] + off[:2]
+            L = float(np.linalg.norm(b - a))
+            if L < 1e-9:
+                continue
+            step = cell_mm / 2
+            s = np.arange(step / 2, L, step)
+            p = a + (b - a) * (s / L)[:, None]
+            idx = np.floor((p - lo[:2]) / cell_mm).astype(int)
+            sup = supported[idx[:, 0], idx[:, 1]]
+            runs, k = [], 0
+            while k < len(sup):                               # maximal unsupported runs as (first, last) sample
+                if not sup[k]:
+                    j = k
+                    while j + 1 < len(sup) and not sup[j + 1]:
+                        j += 1
+                    runs.append((k, j))
+                    k = j + 1
+                else:
+                    k += 1
+            span = max(((j - k + 1) * step for k, j in runs if k > 0 and j < len(sup) - 1), default=0.0)
+            cant = max(((j - k + 1) * step for k, j in runs if k == 0 or j == len(sup) - 1), default=0.0)
+            out.append({"role": str(tp.role[i]), "z_mm": float(z), "length_mm": L, "span_mm": span,
+                        "cantilever_mm": cant, "supported_fraction": float(sup.mean())})
+    return out
+
+
+def check_bridge_toolpath(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), max_span_external_mm: float = 10.0,
+                          max_span_internal_mm: float = 18.0, cell_mm: float = 0.1,
+                          provisional: bool = True) -> CheckResult:
+    """BRG-001 at T: the longest unsupported run of any bridge road in the real slice, external vs internal."""
+    rows = bridge_spans(tp, offset=offset, cell_mm=cell_mm)
+    internal = np.array(["internal" in r["role"].lower() for r in rows], bool)
+    spans = np.array([r["span_mm"] for r in rows]) if rows else np.zeros(0)
+
+    def worst(sel):
+        return float(spans[sel].max()) if sel.any() else 0.0
+    ext, inn = worst(~internal), worst(internal)
+    metrics = {"bridge_roads": len(rows), "external_roads": int((~internal).sum()), "internal_roads": int(internal.sum()),
+               "max_span_external_mm": round(ext, 3), "max_span_internal_mm": round(inn, 3),
+               "max_cantilever_mm": round(max((r["cantilever_mm"] for r in rows), default=0.0), 3),
+               "limits_mm": {"external": max_span_external_mm, "internal": max_span_internal_mm}, "cell_mm": cell_mm,
+               "bridge_layers_z_mm": sorted({r["z_mm"] for r in rows})}
+    does_not = ("Sag or anchor quality in print (P level); spans are measured on a cell_mm raster of the layer below, "
+                "so they carry about one cell of error; cantilevers (runs reaching a road end) are reported, not judged.")
+    over = [f"external {ext:.1f} mm > {max_span_external_mm:g}" if ext > max_span_external_mm else None,
+            f"internal {inn:.1f} mm > {max_span_internal_mm:g}" if inn > max_span_internal_mm else None]
+    over = [o for o in over if o]
+    if over:
+        return CheckResult("BRG-001", "T", Verdict.FAIL, f"BRG-001 T FAIL: the slice bridges {'; '.join(over)}.",
+                           provisional, metrics, ["shorten the span with a pillar or rib", "or re-orient"], "", does_not)
+    msg = (f"BRG-001 T PASS: {len(rows)} bridge roads, longest span external {ext:.1f} mm "
+           f"(limit {max_span_external_mm:g}), internal {inn:.1f} mm (limit {max_span_internal_mm:g}).")
+    return CheckResult("BRG-001", "T", Verdict.PASS, msg, provisional, metrics, [],
+                       "Every bridge road in the slice spans no more than the limits over the printed layer below.",
+                       does_not)
