@@ -63,6 +63,16 @@ function choose(candidate) {
 function renderRows() {
   byId('rows').replaceChildren();
   const rows=analysis.candidates.filter(c=>(!byId('feasible-only').checked || c.feasible)&&(!byId('sliced-only').checked || Number.isFinite(c.columns?.t_support_segments?.value)));
+  const sortKey=byId('pose-sort').value;
+  if(sortKey!=='analysis'){
+    const value=c=>{const m=c.columns?.[sortKey];return m?.verdict!=='NOT_CHECKED'&&Number.isFinite(m?.value)?m.value:null;};
+    rows.sort((a,b)=>{
+      const x=value(a),y=value(b);
+      if(x===null)return y===null?0:1;
+      if(y===null)return -1;
+      return sortKey==='contact_mm2'?y-x:x-y;
+    });
+  }
   const sliced=analysis.candidates.filter(c=>Number.isFinite(c.columns?.t_support_segments?.value)).length;
   byId('pose-count').textContent=`Showing ${rows.length} of ${analysis.candidates.length} poses; ${sliced} have measured slices.${selected&&!rows.some(c=>c.id===selected.id)?' Selected pose '+selected.id+' is hidden by this filter.':''}`;
   for(const c of rows) {
@@ -99,7 +109,7 @@ byId('table-file').onchange=async event=>{
     byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
   }catch(error){if(request!==tableRequest)return;byId('status').textContent=`Could not load table: ${error.message}${analysis?' The previous table and current draft remain available.':''}`;}
 };
-byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};
+byId('pose-sort').onchange=byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};
 function addHelper(region={}) {
   const box=document.createElement('fieldset');box.className='helper-region';box.dataset.id=region.id||crypto.randomUUID();
   text('legend',region.name||'Helper region',box);

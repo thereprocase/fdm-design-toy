@@ -361,3 +361,11 @@ Rejected orientation-table imports leave the last accepted table and current
 draft available, including unsaved edits and helper-removal history. The import
 status explains the error; it does not switch the draft to the rejected file.
 A successfully loaded replacement table still starts a new plan.
+
+**Order poses by** compares one metric at a time: conservative layer-failure
+index, measured support-segment count, bed contact area or print height.
+Unchecked/missing values stay last, zero remains a measured value, and ties keep
+the source analysis order. Choose **Analysis order** to restore the supplied
+ordering. Sorting preserves your selected pose and draft; it is not a new
+combined ranking or qualification verdict. Check the selected pose's evidence
+level and slicer context before interpreting a difference.
