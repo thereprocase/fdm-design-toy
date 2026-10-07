@@ -1,0 +1,56 @@
+# Material card: Polymaker PolyLite ASA, tier T0 (datasheet + stated assumptions). CC BY 4.0.
+# Source of every value: research/final/sauron.md section 2.2-2.3 (vendor TDS V5.4 as recorded there,
+# Bambu ASA TDS V3.0 for the borrowed E_z ratio). T0 cards support RELATIVE studies only: report results
+# at the bracket corners and design to the conservative strength corner until coupons exist (#12, #15).
+schema: fdmgen/material@0.1
+id: polymaker-polylite-asa-t0
+grade: {vendor: Polymaker, product: PolyLite ASA, datasheet: TDS V5.4}
+tier: T0
+symmetry: transversely_isotropic          # about print +Z (the build direction)
+frame: print                              # p = in-layer plane, z = across layers
+poisson_convention: >-
+  nu_p = -eps_y/eps_x and nu_pz = -eps_z/eps_x under uniaxial in-plane stress sigma_x, so
+  eps_z = -nu_pz/E_p * sigma_x and nu_zp = nu_pz * E_z/E_p (same as fdmgen.fem.element.ti_C).
+  In-plane shear G_p = E_p / (2 (1 + nu_p)). Voigt order xx, yy, zz, yz, xz, xy, engineering shear.
+
+# Two modulus bases, never mixed silently (PLAN D10). Ratios (E_z/E_p, G_z/E_z, Poisson) are shared.
+moduli:
+  E_p:
+    short_term: {value: 2379, unit: MPa, tag: V, note: vendor tensile modulus (XY)}
+    sustained_effective: {value: 1000, unit: MPa, tag: policy,
+      note: "planning value for movement gates at sustained ~85 F; not a demonstrated lifetime law"}
+  E_z_over_E_p: {value: 0.87, interval: [0.85, 0.92], unit: '1', tag: V, borrowed: true,
+      note: "E_z is not published for PolyLite ASA; ratio borrowed from another grade (Bambu ASA, annealed specimens)"}
+  nu_p: {value: 0.38, interval: [0.33, 0.40], unit: '1', tag: H}
+  nu_pz: {value: 0.36, interval: [0.33, 0.40], unit: '1', tag: H}
+  G_z_over_E_z: {value: 0.32, interval: [0.20, 0.36], unit: '1', tag: H}
+
+strengths:
+  X_t: {value: 43.8, unit: MPa, tag: V, note: vendor tensile strength XY}
+  Z_t:
+    vendor_ratio: {value: 32.0, unit: MPa, tag: V, note: "vendor Z tensile strength (Z/XY = 0.73)"}
+    half_X_t: {value_from: 0.5 * X_t, unit: MPa, tag: H,
+      note: "lower corner for as-printed parts on this profile (passive chamber, own flow and speeds)"}
+  S_il_over_Z_t: {interval: [0.5, 1.0], unit: '1', tag: H, note: inter-layer shear strength, no data}
+  design_corner: conservative            # min over the corners until T1 coupons exist
+  interlayer_mode: "F_L = sqrt((<sigma_n>+ / Z_t)^2 + (tau / S_il)^2) on the layer plane (PLAN D9)"
+  not_established: [Z compressive strength, in-layer bead-transverse strength, any shear strength,
+                    behaviour on the owner's profile, Z_t from flexure (never calibrate Z_t from flexure)]
+
+known_inconsistencies:
+  - "Vendor flexural modulus 3206 MPa is far above the tensile 2379 MPa (other grades show the reverse); unexplained, not used."
+
+process_binding:                         # the card is valid only on this process (weld physics is process-locked)
+  calibration: p1s-0.4-polylite-asa-cal-2026-10
+  profile_sha256: {machine: null, process: null, filament: null}
+  settings:                              # PROC-001 checks these against every slice that uses the card
+    filament_type: ASA
+    nozzle_temperature: 260
+    filament_flow_ratio: 0.93
+    filament_shrink: "99.46%"
+    layer_height: 0.2
+
+provenance:
+  - {tag: V, ref: "research/final/sauron.md section 2.2 (PolyLite ASA TDS V5.4 values)"}
+  - {tag: V, ref: "research/final/sauron.md section 2.2 (Bambu ASA TDS V3.0, E_z/E_p ratio)"}
+  - {tag: H, ref: "research/final/sauron.md section 2.3 (T0 assumptions and brackets)"}

@@ -50,3 +50,17 @@ owner's sliced test wedges; the slice evidence for the 45°/55° threshold is ci
 - No T-level overhang, bridge or width checks yet (they need the G-code parser, issue #2).
 - No repair passes, no V-level width filter: those belong to the optimiser.
 - The calibration binding's profile hashes are not pinned yet, so every bound value reports UNBOUND.
+
+## Material cards (`materials/`, `fdmgen/material@0.1`)
+Transversely isotropic about print Z, tiered (T0 datasheet + assumptions, T1 own coupons, T2
+demonstrator-validated), every value tagged, every assumed value carrying an interval. `E_p` has two
+bases, `short_term` (strength work) and `sustained_effective` (1,000 MPa planning value for movement
+gates); the anisotropy ratios are shared, which is an assumption stated in every summary. Positive
+definiteness is checked at the nominal values and at all 16 corners of the stiffness intervals. Z_t is
+reported at both corners (vendor ratio and 0.5·X_t) and design uses the conservative one.
+
+| Card | Tier | Notes |
+|---|---|---|
+| `polymaker-polylite-asa-t0` | T0 | E_z/E_p borrowed from another ASA grade; ν, G_z, S_il are heuristics with intervals |
+
+PolyLite PETG is not carded yet: the grade used for the PETG prints is unrecorded (issue #8).
