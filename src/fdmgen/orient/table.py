@@ -114,6 +114,9 @@ def build_table(vertices, faces, *, card=None, stress: StressField | None = None
                             "centre. Bed coordinates: origin at a bed corner, X and Y along the bed edges."),
         "bed": {"x_mm": bed["bed_x_mm"], "y_mm": bed["bed_y_mm"], "max_height_mm": bed["max_height_mm"],
                 "margin_mm": bed["margin_mm"]},
+        "interfaces": [{k: i[k] for k in ("id", "type", "axis", "role", "support", "roof_variant", "center_xy_mm",
+                                          "center_yz_mm", "d_mm", "seat_radius_mm") if k in i}
+                       for i in (interfaces or [])],
         "feasible_scope": ("feasible covers BED-001 (fits the bed with margins) and BED-002 (contact, stability) only. "
                            "Every other column carries its own verdict; a feasible pose can still fail OVH-001."),
         "establishes": ("For each candidate pose: geometry-level printability (overhang area, flat ceilings, bed fit, "

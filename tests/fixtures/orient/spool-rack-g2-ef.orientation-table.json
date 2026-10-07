@@ -8,7 +8,7 @@
   "source": "spool-wall-rack"
  },
  "generated": {
-  "commit": "b44c3b4",
+  "commit": "8418822",
   "catalog": "v0",
   "card": "polymaker-polylite-asa-t0",
   "card_corner": "design",
@@ -36,6 +36,64 @@
   "max_height_mm": 250,
   "margin_mm": 10
  },
+ "interfaces": [
+  {
+   "id": "rear_seat",
+   "type": "rod_seat",
+   "axis": "Z",
+   "role": "interface",
+   "support": "forbidden",
+   "roof_variant": "teardrop_auto",
+   "center_xy_mm": [
+    90.0,
+    0.0
+   ],
+   "seat_radius_mm": [
+    12.4,
+    13.6
+   ]
+  },
+  {
+   "id": "front_seat",
+   "type": "rod_seat",
+   "axis": "Z",
+   "role": "interface",
+   "support": "forbidden",
+   "roof_variant": "teardrop_auto",
+   "center_xy_mm": [
+    190.0,
+    12.0
+   ],
+   "seat_radius_mm": [
+    12.4,
+    13.6
+   ]
+  },
+  {
+   "id": "mount_upper",
+   "type": "screw_clearance",
+   "axis": "X",
+   "role": "interface",
+   "support": "forbidden",
+   "center_yz_mm": [
+    164.0,
+    12.0
+   ],
+   "d_mm": 5.2
+  },
+  {
+   "id": "mount_lower",
+   "type": "screw_clearance",
+   "axis": "X",
+   "role": "interface",
+   "support": "forbidden",
+   "center_yz_mm": [
+    40.0,
+    12.0
+   ],
+   "d_mm": 5.2
+  }
+ ],
  "feasible_scope": "feasible covers BED-001 (fits the bed with margins) and BED-002 (contact, stability) only. Every other column carries its own verdict; a feasible pose can still fail OVH-001.",
  "establishes": "For each candidate pose: geometry-level printability (overhang area, flat ceilings, bed fit, contact and stability) from the catalog checkers, and the inter-layer index F_L from the supplied stress field.",
  "does_not_establish": "What Orca will generate (T level) or how the part prints (P level); interface variants such as teardrops per pose; strength beyond the supplied stress model; the bed exclusion zone. A first rank means best of these columns only.",

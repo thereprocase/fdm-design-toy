@@ -135,7 +135,11 @@ def test_sample_table_honours_the_ui_contract():
     import json
     t = json.loads(FIXTURE.read_text())
     assert t["schema"] == SCHEMA and t["problem"] == "spool-rack-g2-ef" and t["mesh"]["frame"] == "design"
-    assert {"establishes", "does_not_establish", "generated", "candidates"} <= set(t)
+    assert {"establishes", "does_not_establish", "generated", "candidates", "interfaces"} <= set(t)
+    ids = [i["id"] for i in t["interfaces"]]
+    assert ids == ["rear_seat", "front_seat", "mount_upper", "mount_lower"]          # stable keep-clear references
+    for c in t["candidates"]:
+        assert {r["id"] for r in c["columns"]["interface_roofs"]["value"]} <= set(ids)
     for c in t["candidates"]:
         assert CANDIDATE_KEYS <= set(c) and COLUMN_KEYS <= set(c["columns"])
         assert all(CELL_KEYS <= set(cell) for cell in c["columns"].values())
