@@ -99,6 +99,11 @@ Acceptance:
   **G load parity** (pinned interface loads to 1e-12; resultant [0, −117.72, 0] N).
 - **H solver gate (exit criterion)**: MG-PCG ≤ 40 iterations to 1e-6 on the real bracket across E_min ∈ {1e-6, 1e-4, 1e-3}
   and TI ratios 0.7–1, recording the zero-ersatz compliance gap; ≤ 3 s per optimiser iteration at 0.8 mm.
+  **Precision:** the solver is mixed precision (FP64 outer CG with FP64 residuals and dot products; FP32 multigrid
+  V-cycles and smoothers). Gate: the mixed solve matches a pure-FP64 solve to ≤ 1e-6 relative in compliance and max
+  displacement on the bracket at E_min = 1e-6, and reports the outer-iteration penalty. Pure FP32 is never used for a
+  whole solve (SIMP contrast × mesh refinement gives condition numbers ~1e10–1e11 ≫ 1/ε_FP32 ≈ 1.7e7);
+  finite-difference gradient checks and truth-stage solves stay FP64.
   **No-go → screen at R1 only and re-plan.**
 - **I** vectorised mesh build < 30 s at 4–8 M cells; voxeliser < 5 s at 0.4 mm.
 - Plus benchmarks B0–B10 (Warp version parity, FP32 smoothers, VRAM, thermal throttling, covariance tests).
