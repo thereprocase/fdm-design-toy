@@ -36,8 +36,11 @@ def plan(helpers, shell_only=False):
 
 def test_mod001_known_answers():
     b = body()
-    ok = check_helpers([helper("a", (0, 0, 5), (10, 10, 8)), helper("b", (12, 0, 5), (10, 10, 8))], b.vertices, b.faces)
-    assert all(c.verdict is Verdict.PASS for c in ok)                          # 2 mm gap; both reach the skins
+    ok = check_helpers([helper("a", (0, 0, 5), (10, 10, 8)), helper("b", (12, 0, 5), (10, 10, 8))], b.vertices, b.faces,
+                       shell_band_mm=1.6)
+    assert all(c.verdict is Verdict.PASS for c in ok)                          # 2 mm gap; both reach the 1.6 mm skins
+    thin_band = check_helpers([helper("a", (0, 0, 5), (10, 10, 8))], b.vertices, b.faces, shell_band_mm=0.8)
+    assert thin_band[-1].verdict is Verdict.NOT_CHECKED                         # 1 mm off the skins, band 0.8 mm
     floating = check_helpers([helper("mid", (0, 0, 5), (4, 4, 2))], b.vertices, b.faces, shell_band_mm=1.6)
     assert floating[-1].verdict is Verdict.NOT_CHECKED and "cannot rule out" in floating[-1].message
     r = check_helpers([helper("tiny", (0, 0, 5), (0.5, 10, 8))])
@@ -46,7 +49,7 @@ def test_mod001_known_answers():
     assert r[0].verdict is Verdict.FAIL and "0.50 mm apart" in r[0].message
     r = check_helpers([helper("a", (0, 0, 5), (10, 10, 8)), helper("b", (9.5, 0, 5), (10, 10, 8))])
     assert r[0].verdict is Verdict.FAIL and "overlap only 0.50 mm" in r[0].message
-    r = check_helpers([helper("tiny", (0, 0, 5), (0.5, 10, 8))], b.vertices, b.faces)
+    r = check_helpers([helper("tiny", (0, 0, 5), (0.5, 10, 8))], b.vertices, b.faces, shell_band_mm=1.6)
     assert [c.verdict for c in r] == [Verdict.FAIL, Verdict.PASS]              # size fails; bonding reports only bonding
     assert "sampled" in r[1].message and "slice" in r[1].does_not_establish
     r = check_helpers([helper("away", (100, 0, 5), (10, 10, 8))], b.vertices, b.faces)
