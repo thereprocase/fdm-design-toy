@@ -45,6 +45,10 @@ class StressField:
             meta.setdefault("model", f"{mat.get('model', '?')} E={mat.get('E_MPa', '?')} MPa nu={mat.get('nu', '?')}; "
                                      f"{r.get('establishes', '')}; {r.get('restraint_model', '')}")
             meta["receipt"] = receipt.name
+            meta["receipt_sha256"] = __import__("hashlib").sha256(receipt.read_bytes()).hexdigest()
+            for k in ("load_total_N", "restraint_model", "material", "sampling"):
+                if k in r:
+                    meta[k] = r[k]
         return cls(np.asarray(z["centres_mm"], float), s, np.asarray(z["cell_volume_mm3"], float), frame=frame,
                    meta=meta)
 

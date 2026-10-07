@@ -269,6 +269,42 @@ def hashlib_sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _cmd_massing_seed(a) -> int:
+    import trimesh
+    import yaml
+
+    from .massing.seed import dumps, load_stress_for_seed, seed_draft
+    from .materials import load_card
+    tb = a.table.read_bytes()
+    table = json.loads(tb)
+    roots = [Path(__file__).resolve().parents[3] / str(table["mesh"].get("source") or "")]
+    import os
+    if os.environ.get("SPOOL_RACK_ROOT"):
+        roots.insert(0, Path(os.environ["SPOOL_RACK_ROOT"]))
+    mesh_path = next((r / table["mesh"]["path"] for r in roots if (r / table["mesh"]["path"]).is_file()), None)
+    if mesh_path is None:
+        print(f"ERROR   the body mesh {table['mesh']['path']} was not found")
+        return 1
+    prob_file = Path(__file__).resolve().parents[2] / "problems" / str(table.get("problem")) / "problem.yaml"
+    prob = yaml.safe_load(prob_file.read_text(encoding="utf-8")) if prob_file.is_file() else {}
+    restraints = [s["at"] for s in prob.get("supports", []) if s.get("at")]
+    settings = (prob.get("process") or {}).get("settings", {})
+    walls = int(settings.get("wall_loops", 4))
+    skin = float(settings.get("top_shell_layers", 8)) * float(settings.get("layer_height", 0.2))
+    sf, sbytes = load_stress_for_seed(a.stress)
+    body = trimesh.load(mesh_path, force="mesh", process=False)
+    draft = seed_draft(table, tb, body.vertices, sf, sbytes, load_card(a.card), pose_id=a.pose, walls=walls, skin_mm=skin,
+                       restraint_ids=restraints, restraint_margin_mm=a.margin, clearance_mm=a.clearance)
+    a.out.parent.mkdir(parents=True, exist_ok=True)
+    a.out.write_bytes(dumps(draft))
+    p = draft["proposal"]
+    print(f"wrote {a.out}: {p['status']}, {len(p['accepted'])} helpers, {len(p['rejected'])} clusters rejected "
+          f"(restraints {restraints}, margin {a.margin} mm)")
+    for r in p["sensitivity"]:
+        print(f"  margin {r['restraint_margin_mm']:5.1f} mm -> clusters {r['accepted_clusters']}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fdmgen", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -336,6 +372,15 @@ def main(argv: list[str] | None = None) -> int:
     rp.add_argument("--workers", type=int, default=1, help="processes for the per-layer checks (use a big machine)")
     rp.add_argument("--out", type=Path, default=Path("out/report.md"))
     rp.set_defaults(fn=_cmd_report)
+    sd = sub.add_parser("massing-seed", help="machine proposal: helper boxes over high-F_L clusters (a v0.3 draft)")
+    sd.add_argument("--table", type=Path, required=True)
+    sd.add_argument("--stress", type=Path, required=True, help="stress export NPZ (schema v1) with its receipt")
+    sd.add_argument("--pose", help="candidate id (default: first ranked)")
+    sd.add_argument("--card", default="polymaker-polylite-asa-t0")
+    sd.add_argument("--margin", type=float, default=4.8, help="reject clusters this close to a modelled restraint (mm)")
+    sd.add_argument("--clearance", type=float, default=0.5, help="keep-clear clearance written for every interface (mm)")
+    sd.add_argument("--out", type=Path, default=Path("out/massing/seed-draft.json"))
+    sd.set_defaults(fn=_cmd_massing_seed)
     a = ap.parse_args(argv)
     return a.fn(a)
 
