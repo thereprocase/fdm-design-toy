@@ -2,7 +2,7 @@
  "schema": "fdmgen/massing-slice-evidence@0.1",
  "tier": "S",
  "level": "T",
- "project_3mf_sha256": "734c917cebed62ffe2134f1f60aad91837954864b65a87e34eda66c41ea821d3",
+ "project_3mf_sha256": "905ae83a60a94199bdd54b268054927065f31026e6ff01cf8489db6662dbf15e",
  "plan": {
   "draft_sha256": "3e14c3b9c56ec31866032ae4cf8bd88c8245fdc3b12ddeda84c2e1d5a29e719f",
   "table_sha256": "1e051040642fecfa32548b37f54d4e13493d8847ae2eb24cc139bd6f10b1bfbe",
@@ -12,7 +12,7 @@
  },
  "baseline": "shell-only slice",
  "slicer": {
-  "gcode_sha256": "51f7ba2d4495499a9f58e498602259501242f77abb68512c2984476b05dd97a2",
+  "gcode_sha256": "75f03088696ed59fe24cbbc8116a8d77e4a51210118809ccaa20488b52b3fdd1",
   "generator": "OrcaSlicer",
   "version": "2.4.2",
   "printer_model": "Bambu Lab P1S",
@@ -25,7 +25,7 @@
   "enable_support": "0"
  },
  "baseline_slicer": {
-  "gcode_sha256": "c3d058308dad8626d52ec9454e75a878689ed7f083a8af6734c70d27d3b3e11a",
+  "gcode_sha256": "d3707372f260e462cb990d7fbe357c7279af9eaed44e84504e48a91742608c40",
   "generator": "OrcaSlicer",
   "version": "2.4.2",
   "printer_model": "Bambu Lab P1S",

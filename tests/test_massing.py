@@ -1,4 +1,5 @@
 """Massing export (#14 handoff): MOD-001 on helper boxes, 3MF contents, refused settings."""
+import hashlib
 import io
 import zipfile
 from pathlib import Path
@@ -92,6 +93,9 @@ def test_export_plan_writes_body_and_helper_modifiers():
     other["context"]["template_3mf_sha256"] = "0" * 64                         # measured with another profile
     _, rep = export_plan(p, b.vertices, b.faces, template, other)
     assert rep["settings_evidence"]["sparse_infill_density"]["evidence"].startswith("unverified")
+    again, rep2 = export_plan(p, b.vertices, b.faces, template, CAP)
+    assert again == export_plan(p, b.vertices, b.faces, template, CAP)[0]      # byte-reproducible project
+    assert rep2["project_3mf_sha256"] == hashlib.sha256(again).hexdigest()
     shell = plan([], shell_only=True)
     data, report = export_plan(shell, b.vertices, b.faces, template, CAP)
     assert report["helpers"] == [] and report["checks"] == []
@@ -121,6 +125,8 @@ def test_real_ui_draft_exports_and_flags_the_tiny_helper():
                          interfaces=json.loads(table)["interfaces"])
     kc = [c for c in rep["checks"] if c["rule"] == "KEEP-CLEAR"]
     assert len(kc) == 2 and {c["metrics"]["interface_id"] for c in kc} == {"rear_seat"}
+    fixture = json.loads((REPO / "tests/fixtures/massing/sample-export-report.json").read_text())
+    assert rep["project_3mf_sha256"] == fixture["project_3mf_sha256"]          # regenerates the sliced project exactly
     backing = next(c for c in kc if c["metrics"]["helper_id"] != tiny.id)
     assert backing["verdict"] == "FAIL" and backing["metrics"]["distance_mm"] == pytest.approx(13.0)   # 0.6 mm inside
 

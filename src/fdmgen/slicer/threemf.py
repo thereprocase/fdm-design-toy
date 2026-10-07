@@ -119,5 +119,13 @@ def write_project(template: bytes, parts: list[Part], *, object_name: str, objec
                 data = ET.tostring(croot, xml_declaration=True, encoding="UTF-8")
             else:
                 data = zin.read(name)
-            z.writestr(name, data)
+            z.writestr(_entry(name), data)
     return out.getvalue()
+
+
+def _entry(name: str) -> zipfile.ZipInfo:
+    """Fixed timestamp and attributes, so the same parts and template always give the same bytes (and hash)."""
+    info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.external_attr = 0o644 << 16
+    return info

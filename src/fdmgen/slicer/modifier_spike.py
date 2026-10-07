@@ -153,7 +153,10 @@ def build_variant(template: bytes, overrides: dict | None = None, *, body: str =
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for name, data in files.items():
-            z.writestr(name, data)
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))    # reproducible bytes
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            z.writestr(info, data)
 
     def plate(lo, hi, T):
         c = np.array([[x, y, zz] for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for zz in (lo[2], hi[2])])
