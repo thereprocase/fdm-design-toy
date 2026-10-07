@@ -20,6 +20,34 @@ MODIFIER = ((15.0, 35.0), (-25.0, 25.0), (0.0, 10.0))       # covers the +X end 
 NS = {"m": "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"}
 
 
+TAPER = ((-30.0, -0.3), (30.0, -1.2), (30.0, 1.2), (-30.0, 0.3))   # wall 0.6 -> 2.4 mm thick along X
+TAPER_MODIFIER = ((0.0, 35.0), (-5.0, 5.0), (0.0, 10.0))           # covers the thick half
+
+
+def _prism_mesh_xml(obj, poly_xy, z0, z1):
+    """Closed prism from a convex CCW polygon in XY, extruded from z0 to z1 (outward wound)."""
+    mesh = obj.find("m:mesh", NS)
+    for child in list(mesh):
+        mesh.remove(child)
+    p = np.asarray(poly_xy, float)
+    n = len(p)
+    v = np.vstack([np.c_[p, np.full(n, z0)], np.c_[p, np.full(n, z1)]])
+    tris = []
+    for i in range(1, n - 1):
+        tris += [(0, i + 1, i), (n, n + i, n + i + 1)]
+    for i in range(n):
+        j = (i + 1) % n
+        tris += [(i, j, j + n), (i, j + n, i + n)]
+    t = np.array(tris)
+    vol = np.einsum("ij,ij->i", v[t[:, 0]], np.cross(v[t[:, 1]], v[t[:, 2]])).sum()
+    vs = ET.SubElement(mesh, f"{{{NS['m']}}}vertices")
+    for x, y, z in v:
+        ET.SubElement(vs, f"{{{NS['m']}}}vertex", x=f"{x:.6f}", y=f"{y:.6f}", z=f"{z:.6f}")
+    ts = ET.SubElement(mesh, f"{{{NS['m']}}}triangles")
+    for a, b, c in (t if vol > 0 else t[:, ::-1]):
+        ET.SubElement(ts, f"{{{NS['m']}}}triangle", v1=str(a), v2=str(b), v3=str(c))
+
+
 def _box_mesh_xml(obj, lo, hi):
     mesh = obj.find("m:mesh", NS)
     for child in list(mesh):
@@ -44,8 +72,13 @@ def _xf(s):
     return np.array([float(v) for v in s.split()]).reshape(4, 3)
 
 
-def build_variant(template: bytes, overrides: dict | None = None) -> tuple[bytes, dict]:
-    """A 3MF with the box body + one modifier carrying `overrides`; returns (bytes, geometry in plate frame)."""
+def build_variant(template: bytes, overrides: dict | None = None, *, body: str = "box",
+                  object_overrides: dict | None = None) -> tuple[bytes, dict]:
+    """A 3MF with the probe body + one modifier carrying `overrides`; returns (bytes, geometry in plate frame).
+
+    body = "box" (60 x 40 x 10 mm, modifier over one end) or "taper" (a 10 mm tall wall whose thickness
+    grows from 0.6 to 2.4 mm, modifier over the thick half), which separates classic from Arachne walls.
+    """
     zin = zipfile.ZipFile(io.BytesIO(template))
     for prefix, uri in (("", NS["m"]), ("p", "http://schemas.microsoft.com/3dmanufacturing/production/2015/06"),
                         ("BambuStudio", "http://schemas.bambulab.com/package/2021")):
@@ -61,11 +94,20 @@ def build_variant(template: bytes, overrides: dict | None = None) -> tuple[bytes
     B = _xf(root.find("m:build/m:item", NS).get("transform"))
     # body box in the body component's frame; the modifier box expressed in the modifier component's frame
     z0 = -T_body[3, 2]                                     # local z that lands on the bed
-    body_lo = np.array([BODY[0][0], BODY[1][0], z0 + BODY[2][0]])
-    body_hi = np.array([BODY[0][1], BODY[1][1], z0 + BODY[2][1]])
+    if body == "taper":
+        poly = np.asarray(TAPER)
+        body_lo = np.array([poly[:, 0].min(), poly[:, 1].min(), z0])
+        body_hi = np.array([poly[:, 0].max(), poly[:, 1].max(), z0 + 10.0])
+        modbox = TAPER_MODIFIER
+    elif body == "box":
+        body_lo = np.array([BODY[0][0], BODY[1][0], z0 + BODY[2][0]])
+        body_hi = np.array([BODY[0][1], BODY[1][1], z0 + BODY[2][1]])
+        modbox = MODIFIER
+    else:
+        raise ValueError(f"unknown probe body {body!r}")
     shift = T_body[3] - T_mod[3]                            # same rotation (identity) in the template
-    mod_lo = np.array([MODIFIER[0][0], MODIFIER[1][0], z0 + MODIFIER[2][0]]) + shift
-    mod_hi = np.array([MODIFIER[0][1], MODIFIER[1][1], z0 + MODIFIER[2][1]]) + shift
+    mod_lo = np.array([modbox[0][0], modbox[1][0], z0 + modbox[2][0]]) + shift
+    mod_hi = np.array([modbox[0][1], modbox[1][1], z0 + modbox[2][1]]) + shift
     files = {}
     for name in zin.namelist():
         if name in ("Metadata/plate_1.gcode", "Metadata/plate_1.gcode.md5"):
@@ -78,7 +120,10 @@ def build_variant(template: bytes, overrides: dict | None = None) -> tuple[bytes
                 if o.get("id") not in keep_ids:
                     res.remove(o)
                 elif o.get("id") == body_c.get("objectid"):
-                    _box_mesh_xml(o, body_lo, body_hi)
+                    if body == "taper":
+                        _prism_mesh_xml(o, TAPER, body_lo[2], body_hi[2])
+                    else:
+                        _box_mesh_xml(o, body_lo, body_hi)
                 else:
                     _box_mesh_xml(o, mod_lo, mod_hi)
             data = ET.tostring(oroot, xml_declaration=True, encoding="UTF-8")
@@ -95,6 +140,12 @@ def build_variant(template: bytes, overrides: dict | None = None) -> tuple[bytes
                     mod.remove(md)
             for k, v in (overrides or {}).items():
                 ET.SubElement(mod, "metadata", key=k, value=str(v))
+            for k, v in (object_overrides or {}).items():      # positive controls: the same key on the whole object
+                md = next((m for m in obj.findall("metadata") if m.get("key") == k), None)
+                if md is None:
+                    md = ET.Element("metadata", key=k)
+                    obj.insert(1, md)
+                md.set("value", str(v))
             data = ET.tostring(croot, xml_declaration=True, encoding="UTF-8")
         elif name == "3D/3dmodel.model":
             data = ET.tostring(root, xml_declaration=True, encoding="UTF-8")

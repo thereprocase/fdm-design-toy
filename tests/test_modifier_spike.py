@@ -58,5 +58,9 @@ def test_committed_capability_file_contract():
     status = {(s["key"], tuple(sorted(s["requested"].items()))): s["status"] for s in cap["settings"]}
     assert status[("sparse_infill_density", (("sparse_infill_density", "100%"),))] == "honoured"
     assert status[("layer_height", (("layer_height", "0.1"),))] == "ignored"
+    wg = next(s for s in cap["settings"] if s["key"] == "wall_generator")
+    assert wg["status"] == "ignored"                                            # proven with a positive control
+    assert wg["measured"]["positive_control_object_classic_inside_wall_widths_distinct"] < \
+        wg["measured"]["inside_wall_widths_distinct"]
     walls = [s for s in cap["settings"] if s["key"] == "wall_loops"]
     assert all(s["status"] == "honoured" and "internal boundary" in s["non_local_side_effect"] for s in walls)

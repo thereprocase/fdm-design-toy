@@ -191,10 +191,15 @@ def read_gcode(source, *, nominal_height: float = 0.2, footer_rel_tol: float | N
                                  "be checked; pass footer_rel_tol=None only if you accept that")
         rel = abs(total / tp.meta["footer_volume_mm3"] - 1)
         tp.meta["footer_relative_difference"] = rel
-        if rel > footer_rel_tol:
+        # the footer is printed in cm3 with a few decimals; half a unit of its last digit is not a mismatch
+        decimals = len(footer.group(1).split(".")[1]) if "." in footer.group(1) else 0
+        rounding_mm3 = 0.5 * 10.0 ** -decimals * 1000.0
+        tp.meta["footer_rounding_mm3"] = rounding_mm3
+        if abs(total - tp.meta["footer_volume_mm3"]) > max(footer_rel_tol * tp.meta["footer_volume_mm3"], rounding_mm3):
             raise FooterMismatch(
                 f"the reader found {total:.3f} mm3 of moving extrusion but the slicer's footer says "
-                f"{tp.meta['footer_volume_mm3']:.3f} mm3 (relative difference {rel:.2e} > {footer_rel_tol:g}). "
+                f"{tp.meta['footer_volume_mm3']:.3f} mm3 (relative difference {rel:.2e} > {footer_rel_tol:g}, and more "
+                f"than the footer's rounding of {rounding_mm3:g} mm3). "
                 "Some extrusion was not understood (arc moves, unusual commands?) and no volume from this file "
                 "can be trusted.")
     else:

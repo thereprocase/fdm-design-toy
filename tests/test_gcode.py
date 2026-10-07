@@ -72,6 +72,14 @@ def test_relative_absolute_e_priming_and_footer():
     assert read_gcode(_g(body), footer_rel_tol=None).meta["footer_check"] == "skipped by caller"
 
 
+def test_footer_rounding_of_small_parts_is_not_a_mismatch():
+    body = OBJ + "G1 X10 Y0 E374.9\n; stop printing object part\n"          # 901.8 mm3
+    tp = read_gcode(_g(body).replace("M83", "M83") + "; filament used [cm3] = 0.90\n")
+    assert tp.meta["footer_rounding_mm3"] == pytest.approx(5.0)
+    with pytest.raises(FooterMismatch, match="rounding of 5 mm3"):
+        read_gcode(_g(body) + "; filament used [cm3] = 0.88\n")             # 21.8 mm3 off: a real mismatch
+
+
 def test_thick_bridges_are_sacrificial_and_height_rounding_is_normalised():
     body = (OBJ + "G1 X10 Y0 E1\n;TYPE:Bridge\n;HEIGHT:0.4\nG1 X20 Y0 E2\n;TYPE:Internal Bridge\n;HEIGHT:0.200001\n"
             "G1 X30 Y0 E1\n; stop printing object part\n")

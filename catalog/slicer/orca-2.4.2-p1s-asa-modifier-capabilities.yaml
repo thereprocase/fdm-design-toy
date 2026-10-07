@@ -134,14 +134,23 @@ settings:
 - key: wall_generator
   requested:
     wall_generator: classic
-  status: unknown
+  status: ignored
   measured:
-    inside_role_delta_mm3: {}
+    probe: tapered wall 0.6 -> 2.4 mm, modifier over half of it
+    inside_wall_widths_distinct: 32
+    inside_gap_infill_mm3: 0.0
+    baseline_arachne_inside_wall_widths_distinct: 32
+    positive_control_object_classic_inside_wall_widths_distinct: 2
+    positive_control_object_classic_inside_gap_infill_mm3: 66.37
   non_local_side_effect: null
-  note: the probe box has constant wall thickness, where classic and Arachne walls coincide; needs a tapered probe
+  note: 'the per-modifier value is dropped: the region keeps Arachne walls (32 bead widths, no gap fill) while the
+    same key on the whole object gives classic walls (2 widths, 66 mm3 gap fill); wall_generator is an object-level
+    setting'
   receipt:
-    probe: wall_generator=classic
-    gcode_sha256: 01637e5aecbdb21ab4c298394b96845297cf8b9cbb038c7236becfe8ee1cd8ce
+    probe: wall_generator=classic (taper)
+    gcode_sha256: 7432fd816252ddf49782ed4bea0dc1e65e6ad61d41ab32978b9ab33dc14ba55f
+    positive_control_gcode_sha256: b47e9f5984cd4cc85ac97dbbe1b79c4435ddd37ae5ff3685f400c0fa3c99e812
+    slicer_build: OrcaSlicer 2.4.2, Windows executable sha256 481c9f071fdb3cda033d1677ce7a9442c41a25cbeeb42cfc808af179b4dc85c3
 - key: outer_wall_line_width
   requested:
     outer_wall_line_width: '0.6'
