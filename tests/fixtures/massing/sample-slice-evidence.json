@@ -1,0 +1,45 @@
+{
+ "schema": "fdmgen/massing-slice-evidence@0.1",
+ "tier": "S",
+ "level": "T",
+ "project_3mf_sha256": "734c917cebed62ffe2134f1f60aad91837954864b65a87e34eda66c41ea821d3",
+ "plan": {
+  "draft_sha256": "3e14c3b9c56ec31866032ae4cf8bd88c8245fdc3b12ddeda84c2e1d5a29e719f",
+  "table_sha256": "1e051040642fecfa32548b37f54d4e13493d8847ae2eb24cc139bd6f10b1bfbe",
+  "mesh_sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e",
+  "problem": "spool-rack-g2-ef",
+  "candidate_id": "facet-00"
+ },
+ "baseline": "shell-only slice",
+ "placement_shift_xy_mm": [
+  -0.0005,
+  0.004
+ ],
+ "credited_mm3": 72300.0,
+ "min_fill_fraction": 0.1,
+ "min_added_mm3": 0.5,
+ "helpers": [
+  {
+   "id": "34d4f9dc-e1d8-470f-938d-591a419ecb37",
+   "solid_infill_in_box_mm3": 2746.233,
+   "box_volume_mm3": 3200.0,
+   "baseline_solid_infill_mm3": 37.731,
+   "added_solid_mm3": 2708.502,
+   "added_fill_fraction": 0.846,
+   "verdict": "PASS",
+   "message": "helper 34d4f9dc-e1d8-470f-938d-591a419ecb37: added 2708.5 mm3 of solid infill (85 % of its box)"
+  },
+  {
+   "id": "64440f04-4cdc-4e5a-af33-565e7fe9a19d",
+   "solid_infill_in_box_mm3": 0.026,
+   "box_volume_mm3": 0.125,
+   "baseline_solid_infill_mm3": 0.0,
+   "added_solid_mm3": 0.026,
+   "added_fill_fraction": 0.207,
+   "verdict": "FAIL",
+   "message": "helper 64440f04-4cdc-4e5a-af33-565e7fe9a19d: added only 0.026 mm3 of solid infill (20.7 % of its box; needs 10 % and 0.5 mm3); the slicer dropped it or it lies outside the body"
+  }
+ ],
+ "establishes": "How much solid infill each helper added in its box in the real slice (MOD-001 T).",
+ "does_not_establish": "Bond continuity with the shell, or strength; physical testing is separate."
+}

@@ -153,3 +153,18 @@ def test_massing_slice_evidence_is_differential():
     assert ev["placement_shift_xy_mm"] == pytest.approx([0, 0], abs=1e-6) and ev["baseline"] == "shell-only slice"
     single = {h["id"]: h for h in slice_evidence(report, with_helpers)["helpers"]}
     assert single["dropped"]["verdict"] == "NOT_CHECKED" and single["kept"]["verdict"] == "PASS"
+
+
+def test_sample_slice_evidence_contract():
+    """Real receipts: the UI sample draft exported, sliced (with its shell-only baseline) and read back."""
+    import json
+    rep = json.loads((REPO / "tests/fixtures/massing/sample-export-report.json").read_text())
+    ev = json.loads((REPO / "tests/fixtures/massing/sample-slice-evidence.json").read_text())
+    assert ev["schema"] == "fdmgen/massing-slice-evidence@0.1" and ev["tier"] == "S" and ev["level"] == "T"
+    assert ev["project_3mf_sha256"] == rep["project_3mf_sha256"] and ev["plan"] == rep["plan"]
+    assert ev["baseline"] == "shell-only slice" and max(abs(x) for x in ev["placement_shift_xy_mm"]) < 0.01
+    assert [h["id"] for h in ev["helpers"]] == [h["id"] for h in rep["helpers"]]
+    for h in ev["helpers"]:
+        assert {"id", "verdict", "message", "added_solid_mm3", "added_fill_fraction", "box_volume_mm3",
+                "baseline_solid_infill_mm3", "solid_infill_in_box_mm3"} <= set(h)
+    assert sorted(h["verdict"] for h in ev["helpers"]) == ["FAIL", "PASS"]
