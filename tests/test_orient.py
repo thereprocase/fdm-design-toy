@@ -273,6 +273,8 @@ def test_shell_column_from_receipts_reproduces_the_enriched_fixture():
     assert col["facet-00"]["value"] == 0.0022 and col["facet-00"]["verdict"] == "PASS"
     assert col["facet-00"]["unit"] == "fraction" and col["facet-00"]["level"] == "T"
     assert col["facet-01"]["receipt"]["slice_kind"] == "shell-only" and col["facet-02"] is None
+    assert col["facet-00"]["coverage"] == {"samples_requested": 20000, "measured": 20000, "unmeasured": 0,
+                                           "clipped_outside_grid_mm3": 0.0}
     assert out["enriched"]["from_table_sha256"] == hashlib.sha256(raw).hexdigest()
 
 
@@ -296,5 +298,13 @@ def test_shell_receipts_are_never_relabelled():
         add_shell_columns(table, sha, [(legacy, "y" * 64, "shell-only")])
     with pytest.raises(ValueError, match="two receipts"):
         add_shell_columns(table, sha, [rec[0], rec[0]])
+    bad = copy.deepcopy(rec[0][0])
+    bad["result"]["level"] = "M"
+    with pytest.raises(ValueError, match="not SHELL-001 T"):
+        add_shell_columns(table, sha, [(bad, "z" * 64, "shell-only")])
+    bad = copy.deepcopy(rec[0][0])
+    bad["result"]["metrics"]["thin_fraction"] = 1.5
+    with pytest.raises(ValueError, match="0..1"):
+        add_shell_columns(table, sha, [(bad, "w" * 64, "shell-only")])
     with pytest.raises(ValueError, match="slice kind"):
         add_shell_columns(table, sha, [(rec[0][0], rec[0][1], "baseline")])

@@ -382,6 +382,12 @@
        "fdmgen/gcode/occupancy.py": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
        "fdmgen/gcode/reader.py": "8d7bc6b5a1472a22f276445cd385868502e5544d0c5706b031754586d329674b"
       }
+     },
+     "coverage": {
+      "samples_requested": 20000,
+      "measured": 20000,
+      "unmeasured": 0,
+      "clipped_outside_grid_mm3": 0.0
      }
     }
    }
@@ -628,6 +634,12 @@
        "fdmgen/gcode/occupancy.py": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
        "fdmgen/gcode/reader.py": "8d7bc6b5a1472a22f276445cd385868502e5544d0c5706b031754586d329674b"
       }
+     },
+     "coverage": {
+      "samples_requested": 20000,
+      "measured": 20000,
+      "unmeasured": 0,
+      "clipped_outside_grid_mm3": 0.0
      }
     }
    }

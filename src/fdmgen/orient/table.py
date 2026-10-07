@@ -207,13 +207,22 @@ def add_shell_columns(table: dict, table_sha256: str, receipts: list[tuple[dict,
         if "t_shell_thin_fraction" in c["columns"]:
             raise ValueError(f"two receipts for pose {pose}; give one per pose")
         res, g, m = rec["result"], rec["gcode"], rec["method"]
+        if (res.get("rule"), res.get("level")) != ("SHELL-001", "T"):
+            raise ValueError(f"receipt {rec_sha[:12]}: result is {res.get('rule')} {res.get('level')}, not SHELL-001 T")
+        frac = res["metrics"]["thin_fraction"]
+        if not (isinstance(frac, (int, float)) and 0.0 <= frac <= 1.0):
+            raise ValueError(f"receipt {rec_sha[:12]}: thin_fraction {frac!r} is not a fraction in 0..1")
         fid = (f"{kind} slice {g['gcode_sha256'][:12]} ({g.get('generator')} {g.get('version')}, "
                f"{g.get('print_settings_id')} / {g.get('filament_settings_id')}); raster {rec['grid']['cell_mm']} mm, "
                f"caps {m['deposit']['caps']}, {m['surface_samples']} surface samples, seed {m['seed']}, "
                f"limit {m['thin_fraction_limit']}")
-        col = _col(res["metrics"]["thin_fraction"], "fraction", "SHELL-001", "T", res["verdict"], res["provisional"], fid)
+        col = _col(frac, "fraction", "SHELL-001", "T", res["verdict"], res["provisional"], fid)
         col["receipt"] = {"sha256": rec_sha, "slice_kind": kind, "gcode_sha256": g["gcode_sha256"],
                           "source_sha256": rec["source_sha256"]}
+        # coverage: the fraction is over measured samples only, so partial coverage must travel with it
+        col["coverage"] = {"samples_requested": m["surface_samples"], "measured": res["metrics"]["samples"],
+                           "unmeasured": res["metrics"]["unmeasured"],
+                           "clipped_outside_grid_mm3": rec["grid"]["clipped_outside_grid_mm3"]}
         c["columns"]["t_shell_thin_fraction"] = col
         used.append({"pose": pose, "receipt_sha256": rec_sha, "slice_kind": kind})
     out["enriched"] = {"from_table_sha256": table_sha256, "columns_added": ["t_shell_thin_fraction"],
