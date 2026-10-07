@@ -33,7 +33,7 @@ mesh cell indices and installed-frame stresses are never treated as print coordi
 Drag or use arrow keys to orbit, or choose a top view. The ground rectangle is an
 orientation cue, not a printer bed-fit check. Shading is not stress or support evidence.
 
-Current limits: no helper geometry editor yet. Planning exports are drafts. The
+Current limits: helper boxes are sketches, not validated modifier meshes. Planning exports are drafts. The
 viewer has been exercised with the real bracket table and STL in Chromium, including
 wrong-mesh rejection and desktop/mobile layout. Synthetic interaction checks cover
 selection, unchecked metrics, feasible filtering, exported source hash and invalid
@@ -46,7 +46,7 @@ repository root. `CHROMIUM_PATH` defaults to `/usr/bin/chromium`. The test check
 the committed real table, matched/mismatched meshes, visible FAIL verdicts,
 camera controls and mobile overflow. It does not verify physical correctness.
 
-Planning drafts now use `fdmgen.massing-plan.v0.2`. Each requested helper has a
+Planning drafts use `fdmgen.massing-plan.v0.3`. Each requested helper has a
 name, location, load purpose and interface/clearance constraints. Shell-only is
 an explicit option. Geometry is not created by these intent records. Changing
 shell or helper settings does not recompute the source analysis.
@@ -55,7 +55,7 @@ Reopen a draft after loading its original orientation table. The exact table
 SHA256 must match; stale/other-table drafts are rejected without replacing the
 current plan. Reopened evidence comes from the loaded table, not from copied
 metrics in the draft. v0.1 free-text helper notes are retained as one region;
-location and clearance fields must be completed before exporting v0.2.
+location and clearance fields must be completed before exporting a current draft.
 
 Run `node --test ui/plan.test.cjs` for round-trip and provenance checks. With
 Playwright exposed through `NODE_PATH`, `node ui/planning.browser.test.cjs`
@@ -116,3 +116,24 @@ selected-pose panel retains the producer's slicer/profile/placement fidelity
 text and credited-volume exclusions. Changing the helper draft does not refresh
 these measurements. `node ui/toolpath.browser.test.cjs` (with Playwright exposed)
 checks real measured and unmeasured candidates, filter behavior and mobile layout.
+
+## Run all UI checks on a test worker
+
+Keep browser automation and full Python suites off the development laptop. Copy a
+source snapshot and the matching part fixture to the compute box, then run inside
+a named detached tmux job with a log and exit-code file. No GPU is needed for
+these browser checks. Install Node and Playwright in a separate tools directory;
+install its Chromium browser and system libraries on the worker.
+
+```bash
+export NODE_PATH=/path/to/browser-tools/node_modules
+export PLAYWRIGHT_BROWSERS_PATH=/path/to/browser-tools/browsers
+export FDM_PREVIEW_MESH=/path/to/body-mounted.stl
+bash ui/run-tests.sh
+```
+
+The runner uses Playwright's installed Chromium unless `CHROMIUM_PATH` is set.
+It requires the real mesh fixture and runs all Node checks plus the planning,
+pose-toolpath, coupon, spatial-editing and mesh-import browser checks sequentially.
+A missing fixture or browser is an error, not a silently skipped check. Run the
+Python suite separately; the UI runner does not establish solver correctness.
