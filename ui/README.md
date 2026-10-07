@@ -337,3 +337,14 @@ sampling on a 1.6 mm FE grid; it is not a 0.1 mm mechanics solve. Older receipts
 without sampling metadata say “not recorded”. The view links the threshold and
 sampling studies beside the comparison so a single percentage is not presented
 as a robust design benefit.
+
+### Recover a removed helper
+
+Use **Undo remove** beside **Add helper region** to restore the most recently
+removed helper. Up to 20 removals can be undone in reverse order, preserving
+helper IDs, order, notes, interface/keep-out selections and box inputs, including
+incomplete edits. The restored helper becomes active in the preview. This
+history lasts only in the current browser page and resets when a different
+table or saved draft is successfully loaded; a rejected draft leaves it intact.
+It does not undo other edits or rerun verification. Save a draft to keep work
+across page reloads.

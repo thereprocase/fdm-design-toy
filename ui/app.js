@@ -3,6 +3,7 @@ const byId = id => document.getElementById(id);
 let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draftRequest = 0;
 const decisions = new Map();
 let proposalOrigin=null;
+const removedHelpers=[];
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
 byId('review-poses').onclick=()=>document.querySelector('.candidates').scrollIntoView({block:'start'});
 const viewer = new PartViewer(byId('part-view'));
@@ -122,10 +123,20 @@ function addHelper(region={}) {
   toggle.onchange=()=>{spatial.hidden=!toggle.checked;updateRegions();};
   box.addEventListener('input',updateRegions);
   box.addEventListener('focusin',()=>setActiveHelper(box));
-  const remove=text('button','Remove region',box);remove.type='button';remove.className='secondary';remove.onclick=()=>{box.remove();if(activeHelper===box){activeHelper=null;byId('return-helper').hidden=true;}viewer.onPick=null;byId('part-view').style.cursor='';updateRegions();};
+  const remove=text('button','Remove region',box);remove.type='button';remove.className='secondary';remove.onclick=()=>{
+    const name=box.querySelector('[data-key="name"]').value.trim()||'Unnamed helper';
+    removedHelpers.push({box,index:[...byId('helper-regions').children].indexOf(box)});
+    if(removedHelpers.length>20)removedHelpers.shift();
+    box.remove();if(activeHelper===box)activeHelper=null;
+    viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='';
+    byId('undo-remove').disabled=false;
+    byId('remove-status').textContent=`Removed ${name}. Undo remove restores its fields and position. Up to 20 removals are kept until another draft or table is loaded.`;
+    updateRegions();byId('undo-remove').focus({preventScroll:true});
+  };
   byId('helper-regions').append(box);updateRegions();
 }
 function resetPlan(){
+  clearRemovalHistory();
   proposalOrigin=null;renderProposal();
   activeHelper=null;byId('return-helper').hidden=true;byId('mesh-options').open=true;
   byId('walls').value=4;byId('skin').value=1.6;byId('shell-only').checked=false;byId('helper-panel').hidden=false;
@@ -154,6 +165,17 @@ function updateRegions(){
  }
  viewer.setRegions(valid);
 }
+function clearRemovalHistory(){
+ removedHelpers.length=0;byId('undo-remove').disabled=true;byId('remove-status').textContent='';
+}
+byId('undo-remove').onclick=()=>{
+ const entry=removedHelpers.pop();if(!entry)return;
+ const parent=byId('helper-regions');parent.insertBefore(entry.box,parent.children[entry.index]||null);
+ setActiveHelper(entry.box);
+ const name=entry.box.querySelector('[data-key="name"]');name.focus({preventScroll:true});entry.box.scrollIntoView({block:'nearest'});
+ byId('undo-remove').disabled=!removedHelpers.length;
+ byId('remove-status').textContent=`Restored ${name.value.trim()||'unnamed helper'}. ${removedHelpers.length} earlier removal(s) can still be undone.`;
+};
 byId('add-helper').onclick=()=>addHelper();
 byId('shell-only').onchange=()=>{byId('helper-panel').hidden=byId('shell-only').checked;updateRegions();};
 byId('draft-file').onchange=async event=>{
@@ -177,6 +199,7 @@ byId('export').onclick=()=>{
 
 function restoreDraft(raw){
     const restored=Plan.restore(raw,analysis,fingerprint),input=restored.input;
+    clearRemovalHistory();
     proposalOrigin=input.proposal||null;renderProposal();
     choose(restored.candidate);byId('rationale').value=input.rationale;decisions.set(restored.candidate.id,input.rationale);
     byId('walls').value=input.walls;byId('skin').value=input.skin_mm;byId('shell-only').checked=input.shell_only;byId('helper-panel').hidden=input.shell_only;
