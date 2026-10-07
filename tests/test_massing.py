@@ -37,7 +37,9 @@ def plan(helpers, shell_only=False):
 def test_mod001_known_answers():
     b = body()
     ok = check_helpers([helper("a", (0, 0, 5), (10, 10, 8)), helper("b", (12, 0, 5), (10, 10, 8))], b.vertices, b.faces)
-    assert all(c.verdict is Verdict.PASS for c in ok)                          # 2 mm gap between them
+    assert all(c.verdict is Verdict.PASS for c in ok)                          # 2 mm gap; both reach the skins
+    floating = check_helpers([helper("mid", (0, 0, 5), (4, 4, 2))], b.vertices, b.faces, shell_band_mm=1.6)
+    assert floating[-1].verdict is Verdict.NOT_CHECKED and "cannot rule out" in floating[-1].message
     r = check_helpers([helper("tiny", (0, 0, 5), (0.5, 10, 8))])
     assert r[0].verdict is Verdict.FAIL and "tiny" in r[0].message
     r = check_helpers([helper("a", (0, 0, 5), (10, 10, 8)), helper("b", (10.5, 0, 5), (10, 10, 8))])
@@ -46,8 +48,9 @@ def test_mod001_known_answers():
     assert r[0].verdict is Verdict.FAIL and "overlap only 0.50 mm" in r[0].message
     r = check_helpers([helper("tiny", (0, 0, 5), (0.5, 10, 8))], b.vertices, b.faces)
     assert [c.verdict for c in r] == [Verdict.FAIL, Verdict.PASS]              # size fails; bonding reports only bonding
+    assert "sampled" in r[1].message and "slice" in r[1].does_not_establish
     r = check_helpers([helper("away", (100, 0, 5), (10, 10, 8))], b.vertices, b.faces)
-    assert any(c.verdict is Verdict.FAIL and "do not reach into the body" in c.message for c in r)
+    assert any(c.verdict is Verdict.FAIL and "entirely outside" in c.message for c in r)
 
 
 def test_write_project_requires_a_body_first():
@@ -67,6 +70,7 @@ def test_export_plan_writes_body_and_helper_modifiers():
     cfg = z.read("Metadata/model_settings.config").decode()
     assert cfg.count('subtype="modifier_part"') == 2 and cfg.count('subtype="normal_part"') == 1
     assert cfg.count('key="sparse_infill_density" value="100%"') == 2
+    assert report["settings_evidence"]["sparse_infill_density"]["evidence"] == "measured"
     assert 'key="gcode_file"' not in cfg and "Metadata/plate_1.gcode" not in z.namelist()
     assert report["helpers"][0]["print_bbox_mm"][0] == pytest.approx([143.0, 113.0, 1.0])     # design + (128, 128, 0)
     assert all(c["verdict"] == "PASS" for c in report["checks"])
@@ -74,6 +78,17 @@ def test_export_plan_writes_body_and_helper_modifiers():
         export_plan(p, b.vertices, b.faces, template, CAP, helper_settings={"wall_generator": "classic"})
     with pytest.raises(ValueError, match=r"ironing_type \(not measured\)"):
         export_plan(p, b.vertices, b.faces, template, CAP, helper_settings={"ironing_type": "top"})
+    with pytest.raises(ValueError, match=r"sparse_infill_pattern \(value 'rectilinear' not measured\)"):
+        export_plan(p, b.vertices, b.faces, template, CAP,
+                    helper_settings={"sparse_infill_density": "100%", "sparse_infill_pattern": "rectilinear"})
+    _, rep = export_plan(p, b.vertices, b.faces, template, CAP, allow_unmeasured_values=True,
+                         helper_settings={"sparse_infill_density": "100%", "sparse_infill_pattern": "rectilinear"})
+    assert rep["settings_evidence"]["sparse_infill_pattern"]["evidence"].startswith("unverified")
+    import copy
+    other = copy.deepcopy(CAP)
+    other["context"]["template_3mf_sha256"] = "0" * 64                         # measured with another profile
+    _, rep = export_plan(p, b.vertices, b.faces, template, other)
+    assert rep["settings_evidence"]["sparse_infill_density"]["evidence"].startswith("unverified")
     shell = plan([], shell_only=True)
     data, report = export_plan(shell, b.vertices, b.faces, template, CAP)
     assert report["helpers"] == [] and report["checks"] == []
