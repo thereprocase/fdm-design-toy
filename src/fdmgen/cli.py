@@ -54,6 +54,58 @@ def _cmd_problem_spool(a) -> int:
     return 0
 
 
+def _cmd_orient(a) -> int:
+    import hashlib
+    import subprocess
+
+    import trimesh
+    import yaml
+
+    from .materials import load_card
+    from .orient import StressField, build_table
+    from .problem.lint import _source_root
+
+    prob = yaml.safe_load(Path(a.problem).read_text(encoding="utf-8"))
+    body = prob["geometry"]["body"]
+    if body.get("frame") not in ("installed", "design", prob.get("frames", {}).get("design")):
+        print(f"ERROR   the body mesh is in frame {body.get('frame')!r}; orientation analysis needs the design frame")
+        return 1
+    root = _source_root(prob)
+    if root is None:
+        print("ERROR   the source checkout for this problem was not found; set its root_env or place it next to the repo")
+        return 1
+    mesh_path = root / body["path"]
+    mesh = trimesh.load(mesh_path, force="mesh")
+    card = load_card(prob["refs"]["material"])
+    sf = next((r["min"] for r in prob["requirements"] if r.get("metric") == "fracture_factor"), 1.0)
+    stress = StressField.load(a.stress) if a.stress else None
+    try:
+        commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=False,
+                                cwd=Path(__file__).parent).stdout.strip() or None
+    except OSError:
+        commit = None
+    prov = {"problem": prob["id"],
+            "mesh": {"path": body["path"], "sha256": hashlib.sha256(mesh_path.read_bytes()).hexdigest(),
+                     "frame": "design", "source": prob.get("generated_by", {}).get("source", {}).get("repo")},
+            "generated": {"commit": commit, "catalog": prob["refs"].get("catalog"), "card": card.id,
+                          "card_corner": "design", "fracture_factor": sf,
+                          "stress": None if stress is None else {"path": Path(a.stress).name, **(stress.meta or {})}}}
+    table = build_table(mesh.vertices, mesh.faces, card=card, stress=stress, sf=sf, sphere=a.sphere,
+                        voxel=a.voxel, provenance=prov)
+    out = a.out or Path("out") / prob["id"] / "orientation-table.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(table, indent=1), encoding="utf-8")
+    feas = [c for c in table["candidates"] if c["feasible"]]
+    print(f"wrote {out}: {len(table['candidates'])} poses, {len(feas)} feasible")
+    for c in table["candidates"][:5]:
+        col = c["columns"]
+        fl = col["F_L_max"]["value"]
+        print(f"  rank {c['rank']!s:4} {c['id']:12} d={c['build_dir_design']} overhang {col['ovh_fail_mm2']['value']:.0f} mm2, "
+              f"height {col['height_mm']['value']:.0f} mm, F_L max {'not checked' if fl is None else f'{fl:.3f}'}"
+              + ("" if c["feasible"] else "  (infeasible: " + "; ".join(c["reasons"]) + ")"))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fdmgen", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -72,6 +124,13 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--root", help="spool-wall-rack checkout at the pinned commit")
     sp.add_argument("--out", type=Path, default=Path("problems/spool-rack-g2-ef/problem.yaml"))
     sp.set_defaults(fn=_cmd_problem_spool)
+    o = sub.add_parser("orient", help="rank candidate print orientations of a problem's body")
+    o.add_argument("problem", type=Path)
+    o.add_argument("--stress", type=Path, help="stress export NPZ (schema v1) for the F_L column")
+    o.add_argument("--sphere", type=int, default=0, help="also sample N directions on the sphere")
+    o.add_argument("--voxel", action="store_true", help="add V-level OVH-001 and BRG-001 on the D5 grid")
+    o.add_argument("--out", type=Path)
+    o.set_defaults(fn=_cmd_orient)
     a = ap.parse_args(argv)
     return a.fn(a)
 

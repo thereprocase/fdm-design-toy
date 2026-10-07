@@ -15,6 +15,34 @@ defaults:
   petg: 256×256×250; exclude 0–18 × 0–28; margin ≥ 10; spacing ≥ 12
   asa: same
 evidence: S
+parameters:
+  bed_x_mm:
+    value: 256
+    unit: mm
+    tag: S
+    status: PROVISIONAL
+    note: P1S printable area 0x0..256x256 (printable_area in the archived slices)
+  bed_y_mm:
+    value: 256
+    unit: mm
+    tag: S
+    status: PROVISIONAL
+  max_height_mm:
+    value: 250
+    unit: mm
+    tag: S
+    status: PROVISIONAL
+  margin_mm:
+    value: 10
+    unit: mm
+    tag: H
+    status: PROVISIONAL
+  spin_step_deg:
+    value: 1
+    unit: deg
+    tag: logic
+    status: PROVISIONAL
+    note: spins searched 0..179 deg; the exclusion zone (0..18 x 0..28 mm) is not modelled yet
 sources:
 - tag: S
   ref: research/final/frodo.md section 3.1 (master table)
