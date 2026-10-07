@@ -14,10 +14,21 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  f.files[0].buffer=Buffer.from('{}');await page.locator('#review-bundle').setInputFiles(files());
  await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.includes('fingerprint differs'));
  assert(await page.locator('#bundle-results').isVisible());assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
+ // Exact files from the real producer run; no receipt fields or hashes changed.
+ const fs=require('node:fs'),dir=path.join(__dirname,'fixtures/seed-evidence-bundle');
+ assert.equal(fixture.sha(fs.readFileSync(path.join(dir,'evidence-bundle.json'))),'9ac5182352d61b8e759c180b9268cf2e04d781db00a17e79dc79d1ed3493f303');
+ await page.locator('#review-bundle').setInputFiles(fs.readdirSync(dir).filter(n=>n.endsWith('.json')).map(n=>path.join(dir,n)));
+ await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('All five'));
+ const real=JSON.parse(await page.locator('#bundle-provenance').textContent());
+ assert.equal(real.receipts.find(r=>r.check==='bridge-check'&&r.slice_kind==='project').sha256,'e82806aa7543dff15d94459ab1eff1d7af221bd06a871ad905ba687eb46fd76b');
+ assert.match(await page.locator('#bundle-bridges').innerText(),/Project bridges · T FAIL/);
+ assert.match(await page.locator('#bundle-bridges').innerText(),/Shell-only baseline bridges · T FAIL/);
+ assert.match(await page.locator('#bundle-bridges').innerText(),/internal: 122.1 mm \(limit 18 mm\)/);
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-shell').setInputFiles(path.join(__dirname,'fixtures/seed-project-shell-check-v03.json'));
  await page.waitForFunction(()=>document.querySelector('#bundle-results').hidden);
  await page.locator('#review-draft').setInputFiles(path.join(__dirname,'fixtures/revised-draft.json'));
  await page.waitForFunction(()=>document.querySelector('#review-bundle').disabled);
- assert.deepEqual(errors,[]);console.log('PASS synthetic bundle atomic import, fingerprint rejection, retention, manual override invalidation and mobile');
+ assert.deepEqual(errors,[]);console.log('PASS synthetic and exact real bundle import, bridge failures retained, fingerprint rejection, retention, manual override invalidation and mobile');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

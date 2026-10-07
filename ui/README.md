@@ -533,3 +533,11 @@ not independent verification of G-code contents or physical performance.
 The bundle contract/browser fixture is synthetic and explicitly labelled as
 such. It uses existing receipts to exercise hash and identity gates; it is not a
 receipt of a real `fdmgen evidence` run.
+
+The separate [real seed bundle](fixtures/seed-evidence-bundle/evidence-bundle.json)
+is the unchanged output of producer `f3e53da` (manifest SHA-256 `9ac51823…`).
+Its five receipt hashes are checked during browser acceptance. Helper checks and
+both shell screens PASS, but both bridge checks FAIL: internal span 122.1 mm
+against the provisional 18 mm limit. The seeded helpers did not reduce this
+maximum span. Both shell screens report 0.22% thin samples; neither equal screen
+values nor successful bundle import establishes printed performance.
