@@ -371,10 +371,7 @@ def _shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, 
                    "outer_width_mm")
     return {
         "gcode": {**_slicer_context(text, tp), "extruder_offset_mm": list(extruder_offset(text))},
-        "pose": {"id": a.pose, "R_design_to_print": cand["R_design_to_print"], "t_mm": cand["t_mm"]},
-        "table": {"name": a.table.name, "sha256": sha(a.table)},
-        "mesh": {"path": table["mesh"]["path"], "source": table["mesh"].get("source"),
-                 "frame": table["mesh"].get("frame"), "sha256": sha(mesh_path)},
+        **_pose_provenance(a, table, cand, mesh_path),
         "grid": {"frame": "print (plate) frame of the pose", "origin_mm": [float(x) for x in origin],
                  "cell_mm": a.cell, "shape": list(shape), "clipped_outside_grid_mm3": outside},
         "method": {"deposit": {"roads": "credited", "caps": True, "step_frac": 0.5},
@@ -388,70 +385,131 @@ def _shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, 
 
 
 def _cmd_orient_shell(a) -> int:
+    return _orient_enrich(a, "shell")
+
+
+def _cmd_orient_bridge(a) -> int:
+    return _orient_enrich(a, "bridge")
+
+
+def _orient_enrich(a, what: str) -> int:
     import hashlib
 
-    from .orient.table import add_shell_columns
+    from .orient.table import add_bridge_columns, add_shell_columns
     raw = a.table.read_bytes()
     receipts = []
     for path, kind in a.receipt:
         rb = Path(path).read_bytes()
         receipts.append((json.loads(rb), hashlib.sha256(rb).hexdigest(), kind))
+    fn = add_shell_columns if what == "shell" else add_bridge_columns
     try:
-        out = add_shell_columns(json.loads(raw), hashlib.sha256(raw).hexdigest(), receipts)
+        out = fn(json.loads(raw), hashlib.sha256(raw).hexdigest(), receipts)
     except ValueError as e:
         print(f"ERROR   {e}")
         return 1
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
     for c in out["candidates"]:
-        col = c["columns"].get("t_shell_thin_fraction")
-        if col:
-            print(f"  {c['id']}: SHELL-001 T {col['verdict']} thin {100 * col['value']:.2f} % ({col['receipt']['slice_kind']})")
-    print(f"wrote {a.out} (enriched from table {out['enriched']['from_table_sha256'][:12]})")
+        col = c["columns"]
+        if what == "shell" and "t_shell_thin_fraction" in col:
+            x = col["t_shell_thin_fraction"]
+            print(f"  {c['id']}: SHELL-001 T {x['verdict']} thin {100 * x['value']:.2f} % ({x['receipt']['slice_kind']})")
+        if what == "bridge" and "t_bridge_span_external_mm" in col:
+            e, i = col["t_bridge_span_external_mm"], col["t_bridge_span_internal_mm"]
+            print(f"  {c['id']}: BRG-001 T external {e['value']} mm {e['verdict']}, internal {i['value']} mm {i['verdict']} "
+                  f"({e['receipt']['slice_kind']})")
+    print(f"wrote {a.out} (receipts pinned to table {out['enriched']['from_table_sha256'][:12]})")
     return 0
 
 
 def _cmd_bridge_check(a) -> int:
     import hashlib
+    import inspect
 
-    from .catalog.checks.toolpath import check_bridge_toolpath
-    from .gcode import extruder_offset, read_gcode
+    import numpy as np
+
+    from .catalog.checks import toolpath
+    from .gcode import extruder_offset, read_gcode, reader
+    from .gcode import occupancy as occ
     from .massing.export import _slicer_context
+    if (a.table is None) != (a.pose is None):
+        print("ERROR   give --table and --pose together (or neither)")
+        return 1
     raw = a.gcode.read_bytes()
     text = raw.decode("utf-8")
     tp = read_gcode(text)
-    r = check_bridge_toolpath(tp, offset=extruder_offset(text), cell_mm=a.cell)
-    out = {"schema": "fdmgen/bridge-check@0.1", "gcode": {**_slicer_context(text, tp),
-                                                          "extruder_offset_mm": list(extruder_offset(text))},
-           "gcode_sha256": hashlib.sha256(raw).hexdigest(), "result": r.to_dict()}
+    off = extruder_offset(text)
+    pose_block = {}
+    if a.table is not None:
+        posed = _posed_body(a.table, a.pose)
+        if isinstance(posed, str):
+            print(f"ERROR   {posed}")
+            return 1
+        table, cand, mesh_path, _, V = posed
+        try:
+            shift = toolpath.locate(tp, V.min(axis=0)[:2], V.max(axis=0)[:2], off)
+        except ValueError as e:
+            print(f"ERROR   this slice is not pose {a.pose}: {e}")
+            return 1
+        pose_block = {**_pose_provenance(a, table, cand, mesh_path),
+                      "placement": {"shift_xy_mm": np.round(shift, 4).tolist(), "verified": "slice footprint vs posed mesh"}}
+    r = toolpath.check_bridge_toolpath(tp, offset=off, cell_mm=a.cell)
+    sig = {**inspect.signature(toolpath.bridge_spans).parameters, **inspect.signature(toolpath.check_bridge_toolpath).parameters}
+    out = {"schema": "fdmgen/bridge-check@0.2", "result": r.to_dict(),
+           "gcode": {**_slicer_context(text, tp), "extruder_offset_mm": list(off)}, **pose_block,
+           "method": {"cell_mm": a.cell, "support_density": sig["support_density"].default,
+                      "margin_mm": sig["margin_mm"].default, "caps": True,
+                      "max_span_external_mm": sig["max_span_external_mm"].default,
+                      "max_span_internal_mm": sig["max_span_internal_mm"].default},
+           "source_sha256": {f"fdmgen/{Path(m.__file__).relative_to(Path(__file__).parent).as_posix()}":
+                             hashlib.sha256(Path(m.__file__).read_bytes()).hexdigest() for m in (toolpath, occ, reader)}}
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(r.message)
     return 2 if r.verdict.value == "FAIL" else 0
 
 
-def _cmd_shell_check(a) -> int:
-
+def _posed_body(table_path: Path, pose: str):
+    """(table dict, candidate, mesh path, trimesh body, posed vertices) or an error message string."""
     import numpy as np
     import trimesh
-
-    from .catalog.checks.shell import check_shell, grid_origin
-    from .gcode import extruder_offset, read_gcode
-    from .gcode.occupancy import deposit
-    table = json.loads(a.table.read_text(encoding="utf-8"))
-    cand = next((c for c in table["candidates"] if c["id"] == a.pose), None)
+    table = json.loads(table_path.read_text(encoding="utf-8"))
+    cand = next((c for c in table["candidates"] if c["id"] == pose), None)
     if cand is None:
-        print(f"ERROR   pose {a.pose!r} is not in the table")
-        return 1
-    import os
+        return f"pose {pose!r} is not in the table"
     roots = ([Path(os.environ["SPOOL_RACK_ROOT"])] if os.environ.get("SPOOL_RACK_ROOT") else []) + \
         [Path(__file__).resolve().parents[3] / str(table["mesh"].get("source") or "")]
     mesh_path = next((r / table["mesh"]["path"] for r in roots if (r / table["mesh"]["path"]).is_file()), None)
     if mesh_path is None:
-        print(f"ERROR   the body mesh {table['mesh']['path']} was not found")
-        return 1
+        return f"the body mesh {table['mesh']['path']} was not found"
     body = trimesh.load(mesh_path, force="mesh", process=True)
     V = body.vertices @ np.asarray(cand["R_design_to_print"]).T + np.asarray(cand["t_mm"])
+    return table, cand, mesh_path, body, V
+
+
+def _pose_provenance(a, table, cand, mesh_path) -> dict:
+    """Table, mesh and pose block shared by the shell and bridge receipts (paths as the table gives them)."""
+    import hashlib
+
+    def sha(path):
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    return {"pose": {"id": a.pose, "R_design_to_print": cand["R_design_to_print"], "t_mm": cand["t_mm"]},
+            "table": {"name": a.table.name, "sha256": sha(a.table)},
+            "mesh": {"path": table["mesh"]["path"], "source": table["mesh"].get("source"),
+                     "frame": table["mesh"].get("frame"), "sha256": sha(mesh_path)}}
+
+
+def _cmd_shell_check(a) -> int:
+    import numpy as np
+
+    from .catalog.checks.shell import check_shell, grid_origin
+    from .gcode import extruder_offset, read_gcode
+    from .gcode.occupancy import deposit
+    posed = _posed_body(a.table, a.pose)
+    if isinstance(posed, str):
+        print(f"ERROR   {posed}")
+        return 1
+    table, cand, mesh_path, body, V = posed
     raw = a.gcode.read_bytes()
     text = raw.decode("utf-8")
     tp = read_gcode(text)
@@ -565,8 +623,16 @@ def main(argv: list[str] | None = None) -> int:
     bc = sub.add_parser("bridge-check", help="BRG-001 at T level: longest unsupported bridge run in a slice")
     bc.add_argument("gcode", type=Path)
     bc.add_argument("--cell", type=float, default=0.1, help="raster cell of the layer below (mm)")
+    bc.add_argument("--table", type=Path, help="orientation table the slice was made from (with --pose)")
+    bc.add_argument("--pose", help="candidate id in --table; the slice footprint is verified against it")
     bc.add_argument("--out", type=Path, default=Path("out/bridge-check.json"))
     bc.set_defaults(fn=_cmd_bridge_check)
+    obr = sub.add_parser("orient-bridge", help="new orientation table with BRG-001 T span columns from bridge-check receipts")
+    obr.add_argument("table", type=Path, help="the pinned orientation table, or one already enriched from it")
+    obr.add_argument("--receipt", nargs=2, action="append", required=True, metavar=("RECEIPT", "KIND"),
+                     help="a bridge-check@0.2 receipt made with --table/--pose, and its slice kind: shell-only or project")
+    obr.add_argument("--out", type=Path, required=True)
+    obr.set_defaults(fn=_cmd_orient_bridge)
     sc = sub.add_parser("shell-check", help="SHELL-001 at T level: printed shell thickness by slope from a slice")
     sc.add_argument("gcode", type=Path, help="slice of the posed body (plate coordinates = the table's pose)")
     sc.add_argument("--table", type=Path, required=True)

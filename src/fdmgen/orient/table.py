@@ -170,50 +170,80 @@ def add_toolpath_columns(table: dict, vertices, gcode_by_id: dict) -> dict:
     return table
 
 
-SHELL_KINDS = ("shell-only", "project")
+SLICE_KINDS = ("shell-only", "project")
+SHELL_KINDS = SLICE_KINDS
+
+
+def _root_table_sha(table: dict, table_sha256: str) -> str:
+    """Receipts are measured against the pinned table; an enriched table names it in enriched.from_table_sha256."""
+    return (table.get("enriched") or {}).get("from_table_sha256") or table_sha256
+
+
+def _pair(table: dict, root_sha: str, by_id: dict, rec: dict, rec_sha: str, kind: str, schema: str,
+          rule: str, column: str) -> dict:
+    """The candidate a receipt belongs to, or ValueError: never relabel a receipt to another table or pose."""
+    if rec.get("schema") != schema:
+        raise ValueError(f"receipt {rec_sha[:12]}: schema {rec.get('schema')!r}, need {schema}")
+    if kind not in SLICE_KINDS:
+        raise ValueError(f"receipt {rec_sha[:12]}: slice kind {kind!r}, use one of {SLICE_KINDS}")
+    if not all(k in rec for k in ("table", "mesh", "pose")):
+        raise ValueError(f"receipt {rec_sha[:12]} records no table, mesh and pose, so it cannot be paired with a pose")
+    if rec["table"]["sha256"] != root_sha:
+        raise ValueError(f"receipt {rec_sha[:12]} was measured against table {rec['table']['sha256'][:12]}, "
+                         f"not this one ({root_sha[:12]})")
+    if rec["mesh"]["sha256"] != table["mesh"]["sha256"]:
+        raise ValueError(f"receipt {rec_sha[:12]} measured mesh {rec['mesh']['sha256'][:12]}, "
+                         f"the table's body is {table['mesh']['sha256'][:12]}")
+    pose = rec["pose"]["id"]
+    c = by_id.get(pose)
+    if c is None:
+        raise ValueError(f"receipt {rec_sha[:12]}: pose {pose!r} is not in the table")
+    if rec["pose"]["R_design_to_print"] != c["R_design_to_print"] or rec["pose"]["t_mm"] != c["t_mm"]:
+        raise ValueError(f"receipt {rec_sha[:12]}: pose {pose} R/t differ from the table's")
+    if column in c["columns"]:
+        raise ValueError(f"two receipts for pose {pose}; give one per pose")
+    res = rec["result"]
+    if (res.get("rule"), res.get("level")) != (rule, "T"):
+        raise ValueError(f"receipt {rec_sha[:12]}: result is {res.get('rule')} {res.get('level')}, not {rule} T")
+    return c
+
+
+def _enrich(out: dict, root_sha: str, columns: list[str], key: str, used: list[dict], does_not: str) -> None:
+    prev = out.get("enriched")
+    if prev is None:
+        out["enriched"] = {"from_table_sha256": root_sha, "columns_added": columns, key: used, "does_not_establish": does_not}
+        return
+    prev["columns_added"] = prev["columns_added"] + [c for c in columns if c not in prev["columns_added"]]
+    prev[key] = used
+
+
+def _slice_fidelity(kind, g):
+    return (f"{kind} slice {g['gcode_sha256'][:12]} ({g.get('generator')} {g.get('version')}, "
+            f"{g.get('print_settings_id')} / {g.get('filament_settings_id')})")
 
 
 def add_shell_columns(table: dict, table_sha256: str, receipts: list[tuple[dict, str, str]]) -> dict:
     """A new table with a T-level SHELL-001 column from shell-check@0.2 receipts; the input is not modified.
 
     receipts: (receipt dict, receipt sha256, slice kind "shell-only" | "project"). A receipt is accepted only if
-    it was measured against this exact table (table sha256), mesh (sha256) and pose (R and t equal), so a
-    receipt is never relabelled to another table. Poses without a receipt get no column.
+    it was measured against the root pinned table (this table, or the one an enriched table names), its mesh
+    and this pose (R and t equal), so a receipt is never relabelled. Poses without a receipt get no column.
     """
     import copy
 
     if table.get("mesh", {}).get("sha256") is None:
         raise ValueError("the table records no mesh sha256, so receipts cannot be matched to its body")
     out = copy.deepcopy(table)
+    root = _root_table_sha(table, table_sha256)
     by_id = {c["id"]: c for c in out["candidates"]}
     used = []
     for rec, rec_sha, kind in receipts:
-        if rec.get("schema") != "fdmgen/shell-check@0.2":
-            raise ValueError(f"receipt {rec_sha[:12]}: schema {rec.get('schema')!r}, need fdmgen/shell-check@0.2")
-        if kind not in SHELL_KINDS:
-            raise ValueError(f"receipt {rec_sha[:12]}: slice kind {kind!r}, use one of {SHELL_KINDS}")
-        pose = rec["pose"]["id"]
-        if rec["table"]["sha256"] != table_sha256:
-            raise ValueError(f"receipt {rec_sha[:12]} was measured against table {rec['table']['sha256'][:12]}, "
-                             f"not this one ({table_sha256[:12]})")
-        if rec["mesh"]["sha256"] != table["mesh"]["sha256"]:
-            raise ValueError(f"receipt {rec_sha[:12]} measured mesh {rec['mesh']['sha256'][:12]}, "
-                             f"the table's body is {table['mesh']['sha256'][:12]}")
-        c = by_id.get(pose)
-        if c is None:
-            raise ValueError(f"receipt {rec_sha[:12]}: pose {pose!r} is not in the table")
-        if rec["pose"]["R_design_to_print"] != c["R_design_to_print"] or rec["pose"]["t_mm"] != c["t_mm"]:
-            raise ValueError(f"receipt {rec_sha[:12]}: pose {pose} R/t differ from the table's")
-        if "t_shell_thin_fraction" in c["columns"]:
-            raise ValueError(f"two receipts for pose {pose}; give one per pose")
+        c = _pair(table, root, by_id, rec, rec_sha, kind, "fdmgen/shell-check@0.2", "SHELL-001", "t_shell_thin_fraction")
         res, g, m = rec["result"], rec["gcode"], rec["method"]
-        if (res.get("rule"), res.get("level")) != ("SHELL-001", "T"):
-            raise ValueError(f"receipt {rec_sha[:12]}: result is {res.get('rule')} {res.get('level')}, not SHELL-001 T")
         frac = res["metrics"]["thin_fraction"]
         if not (isinstance(frac, (int, float)) and 0.0 <= frac <= 1.0):
             raise ValueError(f"receipt {rec_sha[:12]}: thin_fraction {frac!r} is not a fraction in 0..1")
-        fid = (f"{kind} slice {g['gcode_sha256'][:12]} ({g.get('generator')} {g.get('version')}, "
-               f"{g.get('print_settings_id')} / {g.get('filament_settings_id')}); raster {rec['grid']['cell_mm']} mm, "
+        fid = (f"{_slice_fidelity(kind, g)}; raster {rec['grid']['cell_mm']} mm, "
                f"caps {m['deposit']['caps']}, {m['surface_samples']} surface samples, seed {m['seed']}, "
                f"limit {m['thin_fraction_limit']}")
         col = _col(frac, "fraction", "SHELL-001", "T", res["verdict"], res["provisional"], fid)
@@ -224,9 +254,48 @@ def add_shell_columns(table: dict, table_sha256: str, receipts: list[tuple[dict,
                            "unmeasured": res["metrics"]["unmeasured"],
                            "clipped_outside_grid_mm3": rec["grid"]["clipped_outside_grid_mm3"]}
         c["columns"]["t_shell_thin_fraction"] = col
-        used.append({"pose": pose, "receipt_sha256": rec_sha, "slice_kind": kind})
-    out["enriched"] = {"from_table_sha256": table_sha256, "columns_added": ["t_shell_thin_fraction"],
-                       "shell_receipts": used,
-                       "does_not_establish": "anything about poses without a receipt, or about a different slice of "
-                                             "the same pose; the column is one slice's measured shell"}
+        used.append({"pose": c["id"], "receipt_sha256": rec_sha, "slice_kind": kind})
+    _enrich(out, root, ["t_shell_thin_fraction"], "shell_receipts", used,
+            "anything about poses without a receipt, or about a different slice of the same pose; "
+            "the column is one slice's measured shell")
+    return out
+
+
+def add_bridge_columns(table: dict, table_sha256: str, receipts: list[tuple[dict, str, str]]) -> dict:
+    """A new table with T-level BRG-001 columns (longest external and internal bridge span) from bridge-check@0.2
+    receipts bound to a pose; same pairing rules as add_shell_columns. Each column has its own verdict against
+    its own limit; the receipt's overall verdict is kept in the receipt block."""
+    import copy
+    import math
+
+    if table.get("mesh", {}).get("sha256") is None:
+        raise ValueError("the table records no mesh sha256, so receipts cannot be matched to its body")
+    out = copy.deepcopy(table)
+    root = _root_table_sha(table, table_sha256)
+    by_id = {c["id"]: c for c in out["candidates"]}
+    used = []
+    names = ("t_bridge_span_external_mm", "t_bridge_span_internal_mm")
+    for rec, rec_sha, kind in receipts:
+        c = _pair(table, root, by_id, rec, rec_sha, kind, "fdmgen/bridge-check@0.2", "BRG-001", names[0])
+        res, g, m = rec["result"], rec["gcode"], rec["method"]
+        mt = res["metrics"]
+        fid = f"{_slice_fidelity(kind, g)}; layer-below raster {m['cell_mm']} mm, caps {m['caps']}, support density {m['support_density']}"
+        cover = {k: mt[k] for k in ("bridge_roads", "external_roads", "internal_roads", "max_cantilever_mm",
+                                    "bridge_layers_z_mm")}
+        cover["cell_mm"] = m["cell_mm"]
+        for name, key, lim in ((names[0], "max_span_external_mm", m["max_span_external_mm"]),
+                               (names[1], "max_span_internal_mm", m["max_span_internal_mm"])):
+            v = mt[key]
+            if not (isinstance(v, (int, float)) and math.isfinite(v) and v >= 0):
+                raise ValueError(f"receipt {rec_sha[:12]}: {key} {v!r} is not a non-negative length")
+            col = _col(v, "mm", "BRG-001", "T", "FAIL" if v > lim else "PASS", res["provisional"], fid)
+            col["limit_mm"] = lim
+            col["receipt"] = {"sha256": rec_sha, "slice_kind": kind, "gcode_sha256": g["gcode_sha256"],
+                              "overall_verdict": res["verdict"], "source_sha256": rec["source_sha256"]}
+            col["coverage"] = cover
+            c["columns"][name] = col
+        used.append({"pose": c["id"], "receipt_sha256": rec_sha, "slice_kind": kind})
+    _enrich(out, root, list(names), "bridge_receipts", used,
+            "anything about poses without a receipt, or about a different slice of the same pose; "
+            "the columns are one slice's measured spans")
     return out
