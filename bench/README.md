@@ -432,3 +432,44 @@ grid and every number above.
 ```bash
 PYTHONPATH=src python bench/arc_parity.py PLAIN.gcode ARCED.gcode --project-sha256 PLAIN_SHA ARCED_SHA --out receipt.json
 ```
+
+### Corner-cap mechanics sensitivity on the R1 grid
+
+The revised optional road-end/turn caps were tested on the same slices, h/16
+bead sampling and 1.6 mm solver grid as the uncapped sampling study above.
+Input hashes, embedded provenance against sidecars, zero clipping and credited
+volume accounting were verified before solving. The producer reports caps=True;
+this is an approximate bead raster, not measured printed material.
+
+| Raster model | Baseline compliance N·mm | Project compliance N·mm | Project change | Common seat nodes, rear / front | Removed cells, baseline / project |
+|---|---:|---:|---:|---:|---:|
+| Uncapped | 476.874 | 462.627 | −2.988% | 618 / 600 | 45 / 45 |
+| End/turn caps | 485.325 | 474.219 | −2.288% | 618 / 602 | 58 / 58 |
+
+The apparent reduction is smaller by 0.699 percentage points. This is combined
+raster/domain/load-discretisation sensitivity: the transferred front-seat load
+array changes, and retained fixed DOFs rise from 1993 to 2015. It does not isolate
+corner filling under an identical nodal load and restraint set. The physical
+restraint selection rule, E = 1000 MPa, nu = 0.3, density threshold 0.5 and explicit
+largest-face-component policy remain the same. Each baseline/project/context
+triple uses one common transferred load array.
+
+The unmodified capped masks remain **blocked**: both have five face-connected
+components and lose original loaded DOFs (106 baseline / 108 project;
+6.435 / 6.605 N L1 load). The modified-domain sensitivity removes 58 cells
+(237.568 mm³) from each printed mask; none exclusively carries an original load
+or fixed DOF. Each seat's resultant and moment are conserved to below 2e-13 N
+and 3e-11 N·mm. All three solves pass the unchanged true-residual acceptance
+criterion (largest observed residual 9.04e-10). The full-solid contextual
+compliance is 108.551 N·mm; it is not a guaranteed stiffness bound for raster
+boundary cells. Maximum linear-model movement is 8.060 / 7.910 mm for the
+baseline/project, without physical validation.
+
+Receipts: `receipts/occupancy-caps-sf16-raw-r1.json` preserves the blocked raw
+audits; `receipts/occupancy-caps-sf16-connected-r1.json` records the explicitly
+modified solve. Original uncapped receipts are unchanged. Reproduce using
+`compare_occupancy.py --audit-only` and
+`seat_load_transfer.py --threshold .5 --largest-face-component --solve` with the
+capped NPZ hashes pinned in the new receipts. Solver source was `32c96bf`.
+This result does not resolve the threshold sign reversal or establish helper
+strength, grid convergence, realistic contact, anisotropy or physical performance.
