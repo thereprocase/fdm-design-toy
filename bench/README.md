@@ -69,3 +69,17 @@ Galerkin level is 4.089 GiB, already above capacity, before masks, diagonals,
 other levels and driver memory. See `bracket-04-memory-lower-bound.json`.
 This is an allocation estimate, not measured peak VRAM; the requested #10 full
 0.4 mm hierarchy and thermal benchmarks need a larger GPU or storage changes.
+
+CPU aggregation pilot (#4): with optional `pyamg==5.3.0` installed, run
+`python bench/amg_bracket.py --root <checkout> --out amg.json` in detached tmux.
+Limit BLAS/OpenMP threads and wrap the command in an external timeout. The
+pilot assembles active cells only, keeps homogeneous constrained rows as
+identity, and validates against a sparse direct solve. It compares translation
+candidates, six rigid-body candidates, and six candidates with energy-smoothed
+interpolation. All use symmetric block Gauss–Seidel smoothing and FP64 CG.
+A fixed random seed makes candidate setup reproducible within the same environment.
+The diagnostic solve timings include an extra true-residual matvec per iteration.
+This experiment tests interpolation on one uniform-density R1 design field;
+it is not the mixed-precision GPU gate or an optimisation sweep. Candidate
+construction follows the elasticity example in the
+[PyAMG examples](https://github.com/pyamg/pyamg-examples/tree/main/linear_elasticity).
