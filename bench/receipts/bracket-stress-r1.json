@@ -1,0 +1,94 @@
+{
+  "schema": "fdmgen.stress-field.v1",
+  "frame": "installed",
+  "sampling": "cell centre",
+  "establishes": "linear fully-solid-envelope stress prescreen under the G2 full load",
+  "does_not_establish": [
+    "printed shell/helper truth",
+    "stress peaks within a cell",
+    "contact realism",
+    "mesh convergence",
+    "physical qualification"
+  ],
+  "material": {
+    "model": "isotropic",
+    "E_MPa": 1000.0,
+    "nu": 0.3,
+    "density": 1.0
+  },
+  "restraint_model": "mount bores clamped; wall bilateral roller; solver-gate simplification",
+  "load_total_N": 117.72,
+  "loads_installed_N": {
+    "rear_seat": [
+      -31.293062243765473,
+      -75.1207488871594,
+      0.0
+    ],
+    "front_seat": [
+      31.293062243765473,
+      -42.59925111284059,
+      0.0
+    ]
+  },
+  "installed_to_print": {
+    "R": [
+      [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "t_mm": [
+      250.0,
+      182.0,
+      0.0
+    ]
+  },
+  "grid": {
+    "shape": [
+      144,
+      160,
+      16
+    ],
+    "h_mm": [
+      1.6,
+      1.6,
+      1.6
+    ],
+    "origin_print_mm": [
+      40.89395370483398,
+      4.4,
+      -9.177843387890312e-15
+    ]
+  },
+  "bc": {
+    "seat_nodes": {
+      "rear_seat": 626,
+      "front_seat": 648
+    },
+    "clamped_nodes": 1751,
+    "wall_nodes": 1631
+  },
+  "cells": 42648,
+  "dofs": 164364,
+  "iterations": 29,
+  "true_relative_residual": 7.927671903056531e-09,
+  "compliance_N_mm": 108.51413704370246,
+  "elapsed_s": 17.544716480988427,
+  "stress_sha256": "5fb155c32f2b7423f1b2e9505b1bef2721093068c22c0b6fcf33982877552ffb",
+  "mesh_sha256": "565d0e8fb8d452e3d1b86352be97a980f85ba8a97ce2bbe915292db0fdb63843",
+  "versions": {
+    "numpy": "2.5.3",
+    "pyamg": "5.3.0"
+  }
+}

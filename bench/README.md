@@ -99,3 +99,17 @@ thread while other bounded jobs ran. Setup/solve seconds were 2.15/37.52,
 once setup is included. This supports testing elasticity-aware interpolation
 in the production solver; it does not establish GPU runtime, mixed-precision
 accuracy, a material/resolution sweep, or the full <=40-iteration solver gate.
+
+`python bench/export_bracket_stress.py --root <checkout> --out stress.npz`
+exports an orientation prescreen under the full G2 load. The default R1 model
+is a fully solid envelope with isotropic E=1000 MPa and nu=0.3. It is not the
+printed shell/helper material model. It retains the solver-gate mounting clamp
+and bilateral wall roller approximation. The JSON sidecar records convergence,
+mesh/output hashes, transforms, units and limitations.
+
+NPZ `fdmgen.stress-field.v1` stores installed-frame `centres_mm` (N,3),
+`stress_mpa` (N,6: xx yy zz yz xz xy), `cell_volume_mm3` (N,), and
+`cell_indices` (N,3) in `argwhere(solid_mask)` order. `solid_mask` is the complete
+3D print-grid occupancy; indices are in that grid, not installed coordinates.
+`frame` and `voigt_order` are strings in the archive. Samples are at cell
+centres; they do not establish within-cell peak stress or mesh convergence.
