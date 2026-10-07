@@ -20,14 +20,24 @@ function render(r){
  el('review-scope').textContent=`${r.establishes||''} Does not establish: ${r.does_not_establish||'printed performance or strength.'}`;
  const failed=r.checks.filter(c=>c.verdict==='FAIL').length,unchecked=r.checks.filter(c=>c.verdict==='NOT_CHECKED').length;
  el('review-count').textContent=r.checks.length?`${failed} failed checks; ${unchecked} not checked. Passing checks apply only to the stated method and evidence level.`:'No helper checks reported; this is not a checked result.';
- el('review-checks').replaceChildren();
- const names=new Map(saved.massing.helper_regions.map(h=>[h.id,h.name]));
- for(const c of r.checks){const row=add('article','',el('review-checks'));add('h3',`${c.rule} · ${c.level} · ${c.verdict}${c.provisional?' · provisional':''}`,row);let message=c.message;for(const [id,name]of names)message=message.split(id).join(`${name} [${id}]`);add('p',message,row);if(names.has(c.metrics?.helper_id))editButton(c.metrics.helper_id,names.get(c.metrics.helper_id),row);const fixes=add('ul','',row);for(const fix of c.fixes)add('li',fix,fixes);if(c.establishes)add('p',c.establishes,row);if(c.does_not_establish)add('p','Does not establish: '+c.does_not_establish,row);const details=add('details','',row);add('summary','Measurements',details);add('pre',JSON.stringify(c.metrics||{},null,2),details);}
+ el('check-filter').value='attention';renderChecks();
  el('review-helpers').replaceChildren();
  for(const h of r.helpers){const planned=saved.massing.helper_regions.find(p=>p.id===h.id),row=add('article','',el('review-helpers'));add('h3',planned.name,row);editButton(h.id,planned.name,row);add('p',`Helper ID: ${h.id}`,row);add('p',planned.purpose||'',row);add('pre',JSON.stringify({design_box:planned.geometry,exported_settings:h.settings,print_bbox_mm:h.print_bbox_mm},null,2),row);}
  if(!r.helpers.length)add('p','Shell-only draft; no helpers.',el('review-helpers'));
  el('review-setting-evidence').textContent=r.settings_evidence?JSON.stringify(r.settings_evidence,null,2):'Per-value setting evidence was not recorded in this receipt.';
  el('review-settings').textContent=JSON.stringify(r.object_settings,null,2);el('review-skin').textContent=r.skin_note||'';el('review-provenance').textContent=JSON.stringify(r,null,2);
+}
+
+el('check-filter').onchange=()=>renderChecks();
+function renderChecks(){
+ if(!matchedReport)return;
+ const checks=matchedReport.checks,filter=el('check-filter').value;
+ const visible=checks.filter(c=>filter==='all'||(filter==='attention'?c.verdict!=='PASS':c.verdict===filter));
+ const passed=checks.filter(c=>c.verdict==='PASS').length;
+ el('check-filter-status').textContent=`Showing ${visible.length} of ${checks.length} recorded export checks.`+(filter==='attention'?` ${passed} passed checks are available under All checks or Passed checks.`:'')+(!visible.length?' No checks in this view. This does not qualify the part.':'');
+ el('review-checks').replaceChildren();
+ const names=new Map(saved.massing.helper_regions.map(h=>[h.id,h.name]));
+ for(const c of visible){const row=add('article','',el('review-checks'));add('h3',`${c.rule} · ${c.level} · ${c.verdict}${c.provisional?' · provisional':''}`,row);let message=c.message;for(const [id,name]of names)message=message.split(id).join(`${name} [${id}]`);add('p',message,row);if(names.has(c.metrics?.helper_id))editButton(c.metrics.helper_id,names.get(c.metrics.helper_id),row);const fixes=add('ul','',row);for(const fix of c.fixes)add('li',fix,fixes);if(c.establishes)add('p',c.establishes,row);if(c.does_not_establish)add('p','Does not establish: '+c.does_not_establish,row);const details=add('details','',row);add('summary','Measurements',details);add('pre',JSON.stringify(c.metrics||{},null,2),details);}
 }
 
 function clearSlice(){clearShell();clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}

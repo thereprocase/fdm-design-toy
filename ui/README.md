@@ -501,3 +501,9 @@ source hashes, pose and placement correction. Their sampled thin fractions are
 both 0.22%, a difference of zero percentage points; this does not establish
 pointwise shell equality or printed strength. The browser checks the real pair
 and retains it if a project receipt is mistakenly loaded as the baseline.
+
+Export review starts with failed and not-checked geometry checks so that passing
+rows do not bury the slice evidence. **Show export checks** reveals all checks or
+one verdict, with the visible and total counts stated. Opening another matched
+export resets this view to items needing attention. An empty view is explicitly
+not a qualified result; complete receipts and helper editing remain available.

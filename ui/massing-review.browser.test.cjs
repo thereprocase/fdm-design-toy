@@ -5,6 +5,11 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const draftPath=path.join(__dirname,'../tests/fixtures/massing/sample-draft.json'),receiptPath=path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json');
  await page.locator('#review-draft').setInputFiles(draftPath);await page.locator('#review-receipt').setInputFiles(receiptPath);
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
+ const checks=JSON.parse(fs.readFileSync(receiptPath)).checks;
+ assert.equal(await page.locator('#review-checks article').count(),checks.filter(c=>c.verdict!=='PASS').length);
+ await page.locator('#check-filter').selectOption('all');assert.equal(await page.locator('#review-checks article').count(),checks.length);
+ await page.locator('#check-filter').selectOption('NOT_CHECKED');assert.equal(await page.locator('#review-checks article').count(),checks.filter(c=>c.verdict==='NOT_CHECKED').length);
+ await page.locator('#check-filter').selectOption('attention');
  assert.match(await page.locator('#review-checks').innerText(),/Deliberately tiny box/);assert.match(await page.locator('#review-count').innerText(),/2 failed/);assert.match(await page.locator('#review-helpers').innerText(),/Rear seat backing/);assert.match(await page.locator('#review-setting-evidence').innerText(),/sparse_infill_density/);
  const changed=JSON.parse(fs.readFileSync(receiptPath));changed.capability_context_matches_template=false;
  await page.locator('#review-receipt').setInputFiles({name:'different-context.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});
@@ -36,6 +41,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#review-draft').setInputFiles(path.join(__dirname,'fixtures/revised-draft.json'));
  await page.locator('#review-receipt').setInputFiles(path.join(__dirname,'fixtures/revised-export-report.json'));
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
+ assert.equal(await page.locator('#check-filter').inputValue(),'attention');
+ assert.equal(await page.locator('#review-checks article').count(),0);
+ assert.match(await page.locator('#check-filter-status').innerText(),/does not qualify the part/);
+ await page.locator('#check-filter').selectOption('PASS');
  assert.match(await page.locator('#review-checks').innerText(),/15.00 mm/);
  await page.locator('#review-slice').setInputFiles(path.join(__dirname,'fixtures/revised-slice-evidence.json'));
  await page.waitForFunction(()=>document.querySelector('#slice-status').textContent.startsWith('Slice receipt matches'));
