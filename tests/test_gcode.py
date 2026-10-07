@@ -2,6 +2,7 @@
 import io
 import json
 import math
+import re
 import zipfile
 from pathlib import Path
 
@@ -163,3 +164,33 @@ def test_offset_restore_lands_on_the_placed_body(archive, offset):
     assert np.allclose(r["scale_xy"], 1.0, atol=1e-4)
     wrong = xy_scale_vs_model(read_gcode(text), off + [0, 2, 0], lo, hi, half_width=0.21)
     assert not np.allclose(wrong["inset_lo_xy"] + wrong["inset_hi_xy"], 0.21, atol=0.015)  # a 2 mm error shows
+
+
+ARC_PARITY = Path(__file__).parent / "fixtures" / "gcode" / "arc-parity"
+
+
+def test_p0b_arc_fitted_and_plain_slices_of_one_part_agree():
+    """P0-B on a small curved part. Arc fitting changes Orca's plan as well as the move encoding: its own
+    filament totals differ by about 0.1 %, mostly gap infill. So the reader is held to what it controls:
+    the walls (where the arcs are) agree within 0.1 %, the totals differ exactly as the slicer's footers do,
+    and both outer walls sit on the same radius."""
+    texts = {n: (ARC_PARITY / f"{n}.gcode").read_text(encoding="utf-8") for n in ("no-arc", "arc")}
+    tps = {n: read_gcode(t) for n, t in texts.items()}                     # footer guard on
+    plain, arced = tps["no-arc"], tps["arc"]
+    assert arced.from_arc[arced.in_object].sum() > 1000 and not plain.from_arc[plain.in_object].any()
+
+    def walls(tp):
+        return float(tp.volume[tp.in_object & np.isin(tp.role, ["Outer wall", "Inner wall"])].sum())
+    assert abs(walls(arced) - walls(plain)) / walls(plain) < 1e-3
+
+    def footer_mm(text):
+        return float(re.search(r"; filament used \[mm\] = ([0-9.]+)", text).group(1))
+    total = {n: float(tp.volume.sum()) for n, tp in tps.items()}
+    ours, slicer = total["arc"] / total["no-arc"], footer_mm(texts["arc"]) / footer_mm(texts["no-arc"])
+    assert ours == pytest.approx(slicer, abs=1e-4)                        # footers print 0.01 mm of ~191 mm
+
+    for n, tp in tps.items():                                            # same outer radius, arcs or chords
+        m = tp.in_object & (tp.role == "Outer wall")
+        e = tp.end[m] + np.asarray(extruder_offset(texts[n]), float)
+        r = np.hypot(e[:, 0] - 128.0, e[:, 1] - 128.0)
+        assert r.max() == pytest.approx(8.0 - 0.21, abs=0.01) and r.min() > 8.0 - 0.21 - 0.03
