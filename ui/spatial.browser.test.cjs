@@ -25,6 +25,18 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert(await region.locator('[data-geometry="center_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));
   assert(await page.evaluate(()=>{const v=document.querySelector('#part-view').getBoundingClientRect(),p=document.querySelector('.preview').getBoundingClientRect(),e=document.querySelector('.editor').getBoundingClientRect();return v.top>=0&&v.bottom<=innerHeight&&p.right<=e.left;}));
   const centers=await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value));
+  await region.locator('[data-nudge-step]').selectOption('0.4');
+  const sizes=await region.locator('[data-geometry="size_mm"]').evaluateAll(fields=>fields.map(f=>f.value));
+  await region.getByRole('button',{name:'Move X +',exact:true}).click();
+  assert(Math.abs(Number(await region.locator('[data-geometry="center_mm"][data-axis="0"]').inputValue())-Number(centers[0])-.4)<1e-6);
+  assert.deepEqual(await region.locator('[data-geometry="size_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),sizes);
+  assert.match(await region.locator('[data-nudge-status]').innerText(),/along design X/);
+  await region.getByRole('button',{name:'Undo last centre move'}).click();
+  assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),centers);
+  const cy=region.locator('[data-geometry="center_mm"][data-axis="1"]');await cy.fill('');
+  await region.getByRole('button',{name:'Move X +',exact:true}).click();
+  assert.equal(await cy.inputValue(),'');assert.match(await region.locator('[data-nudge-status]').innerText(),/Complete all three/);
+  await cy.fill(centers[1]);assert(await region.getByRole('button',{name:'Undo last centre move'}).isDisabled());
   await page.getByRole('button',{name:'facet-01',exact:true}).click();await page.locator('#rationale').fill('Alternative pose for the same reinforcement.');
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),centers);
   await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('0.5');await page.waitForFunction(()=>document.querySelector('#region-warnings').textContent.includes('0.84'));

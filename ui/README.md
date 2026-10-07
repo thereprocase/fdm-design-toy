@@ -581,3 +581,10 @@ Both bridge views label the figures as independent maxima over evaluated roads
 of each type; adjacent values need not describe the same road. Draft export also
 focuses a missing choice rationale, marks it invalid, and clears that marker on
 edit, including for shell-only plans.
+
+Box helpers have **Move X/Y/Z** controls with an explicit step in millimetres
+(0.1, 0.4, 1 or 5). They move the centre in the design frame and preserve box size
+and references. **Undo last centre move** restores the previous coordinates;
+typing a centre or picking another surface clears that undo to avoid restoring
+an obsolete position. Incomplete centres must be filled first. Moves update the
+preview and draft only; export and geometry checks are still required.

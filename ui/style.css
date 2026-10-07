@@ -31,3 +31,5 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 .pose-table:focus-visible{outline:3px solid #d79730;outline-offset:3px}
 .pose-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:16px 0}
 .pose-actions a{font-size:.85rem;color:#245c47}
+.nudge-buttons{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.nudge-controls{margin:12px 0}.nudge-controls p{font-size:.85rem}

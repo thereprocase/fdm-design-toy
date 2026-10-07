@@ -196,12 +196,33 @@ function addHelper(region={}) {
     const label=text('label',`${key==='center_mm'?'Centre':'Size'} ${'XYZ'[axis]}, mm`,fields),field=document.createElement('input');
     field.type='number';field.step='0.1';field.dataset.geometry=key;field.dataset.axis=axis;field.value=region.geometry?.[key]?.[axis]??(key==='center_mm'?0:10);label.append(field);
   }
+  const nudge=text('div','',spatial);nudge.className='nudge-controls';
+  const stepLabel=text('label','Move centre by',nudge),step=document.createElement('select');step.dataset.nudgeStep='';
+  for(const value of [.1,.4,1,5]){const option=text('option',value+' mm',step);option.value=value;}step.value='1';stepLabel.append(step);
+  const moves=text('div','',nudge);moves.className='nudge-buttons';
+  const status=text('p','Moves use design axes, independent of the print pose. Clearance and bonding are not checked here.',nudge);status.setAttribute('role','status');status.dataset.nudgeStatus='';
+  let lastMove=null;
+  const centres=()=>[...box.querySelectorAll('[data-geometry="center_mm"]')];
+  const undo=text('button','Undo last centre move',nudge);undo.type='button';undo.className='secondary';undo.disabled=true;
+  for(let axis=0;axis<3;axis++)for(const sign of [-1,1]){
+    const move=text('button',`Move ${'XYZ'[axis]} ${sign<0?'−':'+'}`,moves);move.type='button';move.className='secondary';
+    move.onclick=()=>{
+      const fields=centres(),before=fields.map(f=>f.value);
+      if(before.some(v=>v.trim()===''||!Number.isFinite(Number(v)))){status.textContent='Complete all three centre coordinates before moving.';return;}
+      const value=Number(before[axis])+sign*Number(step.value);
+      if(!Number.isFinite(value)){status.textContent='Centre move is outside the numeric range.';return;}
+      lastMove=before;fields[axis].value=Number(value.toFixed(6));undo.disabled=false;setActiveHelper(box);updateRegions();
+      status.textContent=`Moved centre ${sign<0?'−':'+'}${step.value} mm along design ${'XYZ'[axis]}. Geometry checks have not been rerun.`;
+    };
+  }
+  undo.onclick=()=>{if(!lastMove)return;centres().forEach((f,i)=>f.value=lastMove[i]);lastMove=null;undo.disabled=true;updateRegions();status.textContent='Previous centre restored. Geometry checks have not been rerun.';};
+  box.addEventListener('input',event=>{if(event.target.matches('[data-geometry="center_mm"]')){lastMove=null;undo.disabled=true;}});
   const place=text('button','Place centre on part',spatial);place.type='button';place.className='secondary';
   place.onclick=()=>{
     if(!mesh||!selected){byId('placement-status').textContent='Load a matching mesh and choose a pose first.';byId('part-view').scrollIntoView({block:'center'});return;}
     setActiveHelper(box);byId('return-helper').hidden=false;
     byId('placement-status').textContent='Click a surface to place the region centre. Orbit first if needed.';byId('part-view').style.cursor='crosshair';byId('part-view').scrollIntoView({block:'center'});
-    viewer.onPick=point=>{if(!point){byId('placement-status').textContent='No surface at that point. Click the part.';return;}for(let a=0;a<3;a++)box.querySelector(`[data-geometry="center_mm"][data-axis="${a}"]`).value=point[a].toFixed(3);viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='Region centre placed on the surface; edit its size or move the centre inward as needed.';updateRegions();};
+    viewer.onPick=point=>{if(!point){byId('placement-status').textContent='No surface at that point. Click the part.';return;}lastMove=null;undo.disabled=true;for(let a=0;a<3;a++)box.querySelector(`[data-geometry="center_mm"][data-axis="${a}"]`).value=point[a].toFixed(3);viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='Region centre placed on the surface; edit its size or move the centre inward as needed.';updateRegions();};
   };
   const z=text('p','',spatial);z.className='hint';z.dataset.printZ='';
   toggle.onchange=()=>{spatial.hidden=!toggle.checked;updateRegions();};
