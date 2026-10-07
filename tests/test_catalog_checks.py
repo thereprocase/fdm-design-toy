@@ -368,22 +368,24 @@ def test_brg001_t_defaults_match_the_catalog():
 
 
 def _stepped_part_and_slice():
-    """A 10 mm long part whose profile steps: 10 mm wide up to z 2, 5 mm wide to z 4; and a perimeter-only
-    slice of it in that pose. Flipped about X it has the same footprint and extent but other sections."""
+    """A 10 mm long part whose width steps: 10 mm up to z 2.1, 5 mm to z 4 (two stacked boxes, no triangulation
+    engine needed); and a perimeter-only slice of it in that pose. Flipped about X it has the same footprint
+    and extent but other sections."""
     import itertools
     import math
 
     trimesh = pytest.importorskip("trimesh")
-    shapely = pytest.importorskip("shapely")
+    pytest.importorskip("shapely")
     from fdmgen.gcode import read_gcode
-    prof = shapely.Polygon([(0, 0), (10, 0), (10, 2), (5, 2), (5, 4), (0, 4)])        # (y, z)
-    ext = trimesh.creation.extrude_polygon(prof, 10.0)                                 # (y, z, x)
-    V, F = ext.vertices[:, [2, 0, 1]], ext.faces                                       # cyclic: still a rotation
+    low = trimesh.creation.box(bounds=[[0, 0, 0], [10, 10, 2.1]])
+    high = trimesh.creation.box(bounds=[[0, 0, 2.1], [10, 5, 4.0]])
+    both = trimesh.util.concatenate([low, high])
+    V, F = both.vertices, both.faces
     area = math.pi * 1.75 ** 2 / 4
     g = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", ";WIDTH:0.42", ";HEIGHT:0.2"]
     for k in range(1, 21):
         z = round(0.2 * k, 3)
-        y1 = 10 - 0.21 if z <= 2.0 else 5 - 0.21
+        y1 = 10 - 0.21 if z <= 2.1 else 5 - 0.21
         pts = [(0.21, 0.21), (9.79, 0.21), (9.79, y1), (0.21, y1), (0.21, 0.21)]
         g += [f";Z:{z}", f"G1 Z{z}", ";TYPE:Outer wall", f"G1 X{pts[0][0]} Y{pts[0][1]}"]
         for (x0, y0), (x, y) in itertools.pairwise(pts):
