@@ -365,3 +365,39 @@ def test_brg001_t_defaults_match_the_catalog():
     assert sig["max_span_external_mm"].default == rule.parameters["max_span_external_mm"]["value"]
     assert sig["max_span_internal_mm"].default == rule.parameters["max_span_internal_mm"]["value"]
     assert rule.data["checkers"]["T"] == "fdmgen.catalog.checks.toolpath.check_bridge_toolpath"
+
+
+def _stepped_part_and_slice():
+    """A 10 mm long part whose profile steps: 10 mm wide up to z 2, 5 mm wide to z 4; and a perimeter-only
+    slice of it in that pose. Flipped about X it has the same footprint and extent but other sections."""
+    import itertools
+    import math
+
+    trimesh = pytest.importorskip("trimesh")
+    shapely = pytest.importorskip("shapely")
+    from fdmgen.gcode import read_gcode
+    prof = shapely.Polygon([(0, 0), (10, 0), (10, 2), (5, 2), (5, 4), (0, 4)])        # (y, z)
+    ext = trimesh.creation.extrude_polygon(prof, 10.0)                                 # (y, z, x)
+    V, F = ext.vertices[:, [2, 0, 1]], ext.faces                                       # cyclic: still a rotation
+    area = math.pi * 1.75 ** 2 / 4
+    g = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", ";WIDTH:0.42", ";HEIGHT:0.2"]
+    for k in range(1, 21):
+        z = round(0.2 * k, 3)
+        y1 = 10 - 0.21 if z <= 2.0 else 5 - 0.21
+        pts = [(0.21, 0.21), (9.79, 0.21), (9.79, y1), (0.21, y1), (0.21, 0.21)]
+        g += [f";Z:{z}", f"G1 Z{z}", ";TYPE:Outer wall", f"G1 X{pts[0][0]} Y{pts[0][1]}"]
+        for (x0, y0), (x, y) in itertools.pairwise(pts):
+            g.append(f"G1 X{x} Y{y} E{0.42 * 0.2 * math.hypot(x - x0, y - y0) / area:.6f}")
+    g.append("; stop printing object part")
+    return V, F, read_gcode("\n".join(g) + "\n", footer_rel_tol=None)
+
+
+def test_verify_pose_tells_a_flip_from_the_right_pose():
+    from fdmgen.catalog.checks.toolpath import verify_pose
+    V, F, tp = _stepped_part_and_slice()
+    ok = verify_pose(tp, V, F)
+    assert len(ok["bands"]) == 5 and all(b["inside_fraction"] == 1.0 for b in ok["bands"])
+    flipped = V @ np.diag([1.0, -1.0, -1.0]).T + np.array([0.0, 10.0, 4.0])          # same footprint, same extent
+    assert np.allclose(flipped.min(axis=0), V.min(axis=0)) and np.allclose(flipped.max(axis=0), V.max(axis=0))
+    with pytest.raises(ValueError, match="not that pose"):
+        verify_pose(tp, flipped, F[:, ::-1])                                           # the mirror flips winding

@@ -171,6 +171,7 @@ def add_toolpath_columns(table: dict, vertices, gcode_by_id: dict) -> dict:
 
 
 SLICE_KINDS = ("shell-only", "project")
+MIN_POSE_BANDS = 3          # heights at which a bridge receipt's slice must have been checked against the pose
 SHELL_KINDS = SLICE_KINDS
 
 
@@ -263,8 +264,9 @@ def add_shell_columns(table: dict, table_sha256: str, receipts: list[tuple[dict,
 
 def add_bridge_columns(table: dict, table_sha256: str, receipts: list[tuple[dict, str, str]]) -> dict:
     """A new table with T-level BRG-001 columns (longest external and internal bridge span) from bridge-check@0.2
-    receipts bound to a pose; same pairing rules as add_shell_columns. Each column has its own verdict against
-    its own limit; the receipt's overall verdict is kept in the receipt block."""
+    receipts bound to a pose; same pairing rules as add_shell_columns, and the receipt's slice must have been
+    checked against the pose at MIN_POSE_BANDS heights or more. Each column has its own verdict against its own
+    limit; the receipt's overall verdict is kept in the receipt block."""
     import copy
     import math
 
@@ -277,6 +279,10 @@ def add_bridge_columns(table: dict, table_sha256: str, receipts: list[tuple[dict
     names = ("t_bridge_span_external_mm", "t_bridge_span_internal_mm")
     for rec, rec_sha, kind in receipts:
         c = _pair(table, root, by_id, rec, rec_sha, kind, "fdmgen/bridge-check@0.2", "BRG-001", names[0])
+        bands = (rec.get("placement") or {}).get("bands") or []
+        if len(bands) < MIN_POSE_BANDS:
+            raise ValueError(f"receipt {rec_sha[:12]}: its slice was checked against the pose at {len(bands)} heights, "
+                             f"fewer than {MIN_POSE_BANDS}; a truncated or few-layer slice is not pose evidence")
         res, g, m = rec["result"], rec["gcode"], rec["method"]
         mt = res["metrics"]
         fid = f"{_slice_fidelity(kind, g)}; layer-below raster {m['cell_mm']} mm, caps {m['caps']}, support density {m['support_density']}"

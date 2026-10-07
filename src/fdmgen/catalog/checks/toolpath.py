@@ -158,14 +158,17 @@ def check_bridge_toolpath(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), max_span_exte
 
 
 def verify_pose(tp: Toolpath, vertices, faces, offset=(0.0, 0.0, 0.0), *, bands=(0.1, 0.3, 0.5, 0.7, 0.9),
-                half_width: float = 0.21, tol_mm: float = 0.5) -> dict:
-    """Check that a slice is this pose of this body, not just the same footprint (a flip keeps the footprint).
+                tol_mm: float = 0.5, min_inside: float = 0.99, max_points: int = 4000) -> dict:
+    """Check that a slice is this pose of this body, not just the same footprint (a flip keeps the footprint,
+    and a nearly prismatic part keeps its extent at every height too).
 
-    At several heights the XY extent of the slice's non-support object roads (extruder offset restored,
-    placement shift removed) is compared with the posed mesh's cross-section there, less half a line width.
-    Raises ValueError on a mismatch; returns the shift, the per-height errors and what was verified (only the
-    footprint when no height band has both roads and a section, as for a slice of a few layers).
+    At several heights, the slice's non-support object roads in that layer (extruder offset restored,
+    placement shift removed) must lie inside the posed body's cross-section grown by tol_mm, for at least
+    min_inside of the sampled road points. Raises ValueError on a mismatch; returns the shift, the per-height
+    inside fractions and what was verified (only the footprint when no height has both roads and a section,
+    as for a slice of a few layers).
     """
+    import shapely
     import trimesh
     V = np.asarray(vertices, float)
     shift = locate(tp, V.min(axis=0)[:2], V.max(axis=0)[:2], offset)
@@ -177,16 +180,23 @@ def verify_pose(tp: Toolpath, vertices, faces, offset=(0.0, 0.0, 0.0), *, bands=
     for f in bands:
         z = f * zmax
         sec = mesh.section(plane_origin=(0, 0, z), plane_normal=(0, 0, 1))
-        layer = m & (top >= z) & (top - tp.height < z)
-        if sec is None or not layer.any():
+        layer = np.flatnonzero(m & (top >= z) & (top - tp.height < z))
+        if sec is None or len(layer) == 0:
             continue
-        mlo, mhi = sec.bounds[0][:2] + half_width, sec.bounds[1][:2] - half_width
-        q = np.vstack([tp.start[layer], tp.end[layer]])[:, :2] + np.asarray(offset, float)[:2] - shift
-        err = float(max(np.abs(q.min(axis=0) - mlo).max(), np.abs(q.max(axis=0) - mhi).max()))
-        rows.append({"z_mm": round(z, 3), "max_error_mm": round(err, 3)})
-        if err > tol_mm:
-            raise ValueError(f"at z {z:.2f} mm the slice's extent differs from the posed body's section by {err:.2f} mm; "
-                             "this is not that pose of that body")
-    method = (f"slice extent vs posed body section at {len(rows)} heights" if rows
-              else "footprint only: no height band had both slice roads and a body section")
-    return {"shift_xy_mm": np.round(shift, 4).tolist(), "bands": rows, "tol_mm": tol_mm, "verified": method}
+        to_plane = np.eye(4)
+        to_plane[2, 3] = -z
+        planar, _ = sec.to_2D(to_2D=to_plane)
+        region = shapely.union_all(planar.polygons_full).buffer(tol_mm)
+        layer = layer[:: max(1, len(layer) // max_points)]
+        q = np.vstack([tp.start[layer], (tp.start[layer] + tp.end[layer]) / 2, tp.end[layer]])[:, :2]
+        q = q + np.asarray(offset, float)[:2] - shift
+        inside = float(shapely.contains_xy(region, q[:, 0], q[:, 1]).mean())
+        rows.append({"z_mm": round(z, 3), "inside_fraction": round(inside, 4), "points": len(q)})
+        if inside < min_inside:
+            raise ValueError(f"at z {z:.2f} mm only {100 * inside:.1f} % of the slice's roads lie inside the posed "
+                             f"body's section (+{tol_mm} mm); this is not that pose of that body")
+    method = (f"consistent with this pose: slice road points lie inside the posed body section (+{tol_mm} mm) at "
+              f"{len(rows)} heights; one-way containment, not proof of pose identity" if rows
+              else "footprint only: no height band had both slice roads and a body section; NOT pose evidence")
+    return {"shift_xy_mm": np.round(shift, 4).tolist(), "bands": rows, "tol_mm": tol_mm, "min_inside": min_inside,
+            "verified": method}
