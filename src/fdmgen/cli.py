@@ -349,8 +349,45 @@ def _cmd_gcode_occupancy(a) -> int:
     return 0
 
 
-def _cmd_shell_check(a) -> int:
+def _shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, outside) -> dict:
+    """Everything needed to say which slice, part, pose, grid and method a SHELL-001 receipt measured.
+    Paths are recorded as the table gives them (relative), never as resolved on this machine."""
     import hashlib
+    import inspect
+
+    from .catalog.checks import shell
+    from .gcode import extruder_offset, reader
+    from .gcode import occupancy as occ
+    from .massing.export import _slicer_context
+
+    def sha(path):
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+    def defaults(fn, *names):
+        sig = inspect.signature(fn).parameters
+        return {n: sig[n].default for n in names}
+
+    chk = defaults(shell.check_shell, "seed", "min_beads", "bead_spacing_mm", "layer_mm", "thin_fraction_limit",
+                   "outer_width_mm")
+    return {
+        "gcode": {**_slicer_context(text, tp), "extruder_offset_mm": list(extruder_offset(text))},
+        "pose": {"id": a.pose, "R_design_to_print": cand["R_design_to_print"], "t_mm": cand["t_mm"]},
+        "table": {"name": a.table.name, "sha256": sha(a.table)},
+        "mesh": {"path": table["mesh"]["path"], "source": table["mesh"].get("source"),
+                 "frame": table["mesh"].get("frame"), "sha256": sha(mesh_path)},
+        "grid": {"frame": "print (plate) frame of the pose", "origin_mm": [float(x) for x in origin],
+                 "cell_mm": a.cell, "shape": list(shape), "clipped_outside_grid_mm3": outside},
+        "method": {"deposit": {"roads": "credited", "caps": True, "step_frac": 0.5},
+                   "tie_break_mm": shell.TIE_BREAK_MM,
+                   "surface_samples": a.samples, **chk,
+                   "march": defaults(shell.march, "step_mm", "max_mm", "empty"),
+                   "entry_mm": chk["outer_width_mm"] / 2 + 1.5 * a.cell},
+        "source_sha256": {f"fdmgen/{Path(m.__file__).relative_to(Path(__file__).parent).as_posix()}": sha(m.__file__)
+                          for m in (shell, occ, reader)},
+    }
+
+
+def _cmd_shell_check(a) -> int:
 
     import numpy as np
     import trimesh
@@ -380,8 +417,8 @@ def _cmd_shell_check(a) -> int:
     vgrid, outside = deposit(tp, extruder_offset(text), np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5,
                              caps=True)
     r = check_shell(vgrid / a.cell ** 3, origin, a.cell, V, body.faces, n_samples=a.samples)
-    out = {"schema": "fdmgen/shell-check@0.1", "gcode_sha256": hashlib.sha256(raw).hexdigest(), "pose": a.pose,
-           "cell_mm": a.cell, "grid_shape": list(shape), "clipped_outside_grid_mm3": outside, "result": r.to_dict()}
+    out = {"schema": "fdmgen/shell-check@0.2", "result": r.to_dict(),
+           **_shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, outside)}
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(r.message)
