@@ -9,7 +9,7 @@ test('bundle refuses missing, duplicate, corrupt and cross-export files',async()
  }
 });
 test('hash agreement alone cannot substitute wrong pose, slice or verdict',async()=>{
- for(const mutate of [r=>r.pose.t_mm[0]++,r=>r.gcode.gcode_sha256='0'.repeat(64),r=>r.placement.bands=[],r=>r.result.metrics.max_span_external_mm=-1]){
+ for(const mutate of [r=>r.pose.t_mm[0]++,r=>r.gcode.gcode_sha256='0'.repeat(64),r=>r.placement.bands=[],r=>r.result.metrics.max_span_external_mm=-1,r=>r.result.metrics.max_ceiling_span_internal_mm=-1]){
   const f=fixture(),r=JSON.parse(f.files[3].buffer);mutate(r);f.files[3].buffer=Buffer.from(JSON.stringify(r));f.manifest.receipts[3].sha256=fixture.sha(f.files[3].buffer);await assert.rejects(Bundle.load(inputs(f),f.context));
  }
  const f=fixture();f.manifest.receipts[3].verdict='PASS';await assert.rejects(Bundle.load(inputs(f),f.context),/verdict differs/);

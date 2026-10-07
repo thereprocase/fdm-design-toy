@@ -537,9 +537,9 @@ receipt of a real `fdmgen evidence` run.
 The separate [real seed bundle](fixtures/seed-evidence-bundle/evidence-bundle.json)
 is the unchanged output of producer `f3e53da` (manifest SHA-256 `9ac51823…`).
 Its five receipt hashes are checked during browser acceptance. Helper checks and
-both shell screens PASS, but both bridge checks FAIL: internal span 122.1 mm
+both shell screens PASS, but both bridge checks FAIL: internal strand span 122.1 mm
 against the provisional 18 mm limit. The seeded helpers did not reduce this
-maximum span. Both shell screens report 0.22% thin samples; neither equal screen
+maximum strand span. Both shell screens report 0.22% thin samples; neither equal screen
 values nor successful bundle import establishes printed performance.
 
 **Revise this draft** returns any matched export to the orientation workspace,
@@ -552,3 +552,12 @@ Review section buttons jump directly to export checks, helpers, slice evidence,
 bundle/bridge results, shell results, mechanics and next steps. Unloaded sections
 are disabled and labelled; replacing an export disables its old evidence links.
 Navigation places keyboard focus on the section heading.
+
+Bridge displays distinguish the strand span (unsupported run along an individual
+road, used for the recorded verdict) from an optional ceiling span (twice the
+distance to the nearest support below). They can differ substantially when the
+slicer runs roads along a narrow channel. Ceiling measurements do not replace
+the strand verdict, and their maxima need not come from the same road. Receipts
+and orientation columns without the additive ceiling field show **not recorded**;
+the UI never fills it from a newer run or interprets missing values as zero.
+Physical behaviour of these different support models remains a coupon question.

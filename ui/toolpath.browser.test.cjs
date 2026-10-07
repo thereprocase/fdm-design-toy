@@ -22,7 +22,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   t_shell_thin_fraction:{value:[.02,0,.1,.02][i],unit:'fraction',rule:'SHELL-001',level:'T',verdict:i===2?'NOT_CHECKED':i===0?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only screen; seed 0, cell 0.1 mm. <b>inert</b>'}}}));
  await page.locator('#table-file').setInputFiles({name:'sort-fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.getByRole('button',{name:'large',exact:true}).click();await page.locator('#rationale').fill('Keep this choice while comparing.');
- assert.match(await page.locator('#pose-bridges').innerText(),/PASS · 3.2 mm longest unsupported run; recorded limit 10 mm/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/PASS · 3.2 mm longest unsupported strand run; recorded limit 10 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122 mm/);assert.equal(await page.locator('#pose-bridges b').count(),0);
  assert.match(await page.locator('#pose-bridges').innerText(),/Bridge-road coverage is not established/);
  assert.match(await page.locator('#pose-bridges').innerText(),/longest cantilever across all bridge roads 2 mm \(reported, not judged\)/);
@@ -77,7 +77,16 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
 
  await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 53.95 mm/);
  assert.match(await page.locator('#failed-checks').innerText(),/External bridge span · BRG-001 · T/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span: not recorded/);
  await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.equal(await page.locator('#pose-bridges details').count(),0);
+ // Synthetic additive column coverage; no legacy receipt is changed.
+ const ceilingTable=JSON.parse(fs.readFileSync(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json')));
+ ceilingTable.candidates.find(c=>c.id==='facet-00').columns.t_bridge_span_internal_mm.ceiling_span_mm=15.7;
+ await page.locator('#table-file').setInputFiles({name:'synthetic-ceiling-table.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(ceilingTable))});
+ await page.getByRole('button',{name:'facet-00',exact:true}).click();
+ assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span: 15.7 mm/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122.1 mm longest unsupported strand run/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/recorded verdict uses the strand span/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

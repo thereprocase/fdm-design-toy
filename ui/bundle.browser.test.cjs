@@ -11,6 +11,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('All five'));
  assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/122.1 mm/);
+ assert.match(await page.locator('#bundle-bridges').innerText(),/Ceiling model: external not recorded; internal not recorded/);
+ // Synthetic additive ceiling measurement, with a freshly computed matching file hash.
+ const ceiling=JSON.parse(f.files[3].buffer);ceiling.result.metrics.max_ceiling_span_external_mm=7.8;ceiling.result.metrics.max_ceiling_span_internal_mm=15.7;
+ f.files[3].buffer=Buffer.from(JSON.stringify(ceiling));f.manifest.receipts[3].sha256=fixture.sha(f.files[3].buffer);
+ await page.locator('#review-bundle').setInputFiles(files());
+ await page.waitForFunction(()=>document.querySelector('#bundle-bridges').textContent.includes('external 7.8 mm; internal 15.7 mm'));
+ assert.match(await page.locator('#bundle-bridges').innerText(),/Project bridges · T FAIL/);
+ assert.match(await page.locator('#bundle-bridges').innerText(),/does not override the recorded strand verdict/);
  f.files[0].buffer=Buffer.from('{}');await page.locator('#review-bundle').setInputFiles(files());
  await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.includes('fingerprint differs'));
  assert(await page.locator('#bundle-results').isVisible());assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);

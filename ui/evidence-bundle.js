@@ -20,6 +20,7 @@
   const c=r.result,m=c?.metrics;
   if(c?.rule!=='BRG-001'||c.level!=='T'||!verdicts.includes(c.verdict)||typeof c.provisional!=='boolean'||typeof c.does_not_establish!=='string')throw Error('Invalid bundled bridge result.');
   for(const k of ['max_span_external_mm','max_span_internal_mm','max_cantilever_mm'])if(!Number.isFinite(m?.[k])||m[k]<0)throw Error('Invalid bridge measurement: '+k);
+  for(const k of ['max_ceiling_span_external_mm','max_ceiling_span_internal_mm'])if(k in m&&(!Number.isFinite(m[k])||m[k]<0))throw Error('Invalid ceiling measurement: '+k);
   for(const k of ['bridge_roads','external_roads','internal_roads'])if(!Number.isInteger(m?.[k])||m[k]<0)throw Error('Invalid bridge coverage.');
   for(const k of ['cell_mm','max_span_external_mm','max_span_internal_mm'])if(!Number.isFinite(r.method?.[k])||r.method[k]<=0)throw Error('Invalid bridge method.');
   for(const k of ['fdmgen/catalog/checks/toolpath.py','fdmgen/gcode/occupancy.py','fdmgen/gcode/reader.py'])if(!hash(r.source_sha256?.[k]))throw Error('Missing bridge source hash.');
