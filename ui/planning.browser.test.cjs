@@ -13,12 +13,17 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await fill(page.locator('.helper-region').first(),'Seat rib');await page.locator('#add-helper').click();await fill(page.locator('.helper-region').last(),'Mount backing');
   const download=async()=>{const pending=page.waitForEvent('download');await page.locator('#export').click();return JSON.parse(await fs.readFile(await (await pending).path(),'utf8'));};
   const original=await download();assert.equal(original.massing.helper_regions.length,2);assert.match(await page.locator('#handoff-readiness').innerText(),/2 helper\(s\) without a box/);assert(await page.locator('#handoff').evaluate(e=>e.open));
+  assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since the last draft download/);
+  await page.locator('#view-top').click();assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since/);
+  await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
+  await page.getByRole('button',{name:'facet-00',exact:true}).click();assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since/);
   assert(await page.locator('#undo-remove').isDisabled());
   // Restore multiple deletions without changing identity, order or export values.
   await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();
   await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();
-  assert.equal(await page.locator('.helper-region').count(),0);
+  assert.equal(await page.locator('.helper-region').count(),0);assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   await page.locator('#undo-remove').click();await page.locator('#undo-remove').click();
+  assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since/);
   assert.deepEqual(await download(),original);assert(await page.locator('#undo-remove').isDisabled());
   // Incomplete edits must survive too; undo must not coerce blanks into zero.
   const first=page.locator('.helper-region').first();
@@ -28,13 +33,18 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.equal(await first.locator('[data-geometry="size_mm"]').first().inputValue(),'');
   assert(await first.locator('[data-spatial]').isChecked());assert(await first.locator('[data-interface-id]').first().isChecked());
   assert.equal(await first.locator('[data-clearance]').inputValue(),'1.7');
+  await page.locator('#export').click(); // Invalid box must not checkpoint failed export.
+  assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
+  await page.locator('#walls').fill('6');assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   await page.locator('#walls').fill('7');await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();
   const upload=async object=>page.locator('#draft-file').setInputFiles({name:'draft.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(object))});
   await upload(original);await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
+  assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since reopening this draft/);
   assert.equal(await page.locator('#walls').inputValue(),'4');assert.equal(await page.locator('.helper-region').count(),2);assert.deepEqual(await download(),original);assert(await page.locator('#undo-remove').isDisabled());
   await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();
   const wrong=structuredClone(original);wrong.source.orientation_table_sha256='0'.repeat(64);await upload(wrong);
   await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.includes('different orientation table'));assert.equal(await page.locator('.helper-region').count(),1);
+  assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   assert(await page.locator('#undo-remove').isEnabled());await page.locator('#undo-remove').click();assert.deepEqual(await download(),original);
   await page.locator('#shell-only').check();assert.deepEqual((await download()).massing.helper_regions,[]);assert.match(await page.locator('#handoff-readiness').innerText(),/geometry inputs needed/);
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);

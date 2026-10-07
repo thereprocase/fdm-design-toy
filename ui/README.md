@@ -348,3 +348,11 @@ history lasts only in the current browser page and resets when a different
 table or saved draft is successfully loaded; a rejected draft leaves it intact.
 It does not undo other edits or rerun verification. Save a draft to keep work
 across page reloads.
+
+The draft status above **Export planning draft** tracks edits since the last
+reopen or download in this session. It includes pose, rationale, shell settings
+and helper inputs; camera controls do not mark a draft edited. Reverting the
+form, including undoing a removal, clears the edit indication when it matches
+the checkpoint again. A failed export leaves the indication intact. This is
+a form comparison, not autosave or evidence that a downloaded file was retained
+on disk. Browser refresh still discards unsaved work.

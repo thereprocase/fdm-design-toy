@@ -4,6 +4,7 @@ let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draf
 const decisions = new Map();
 let proposalOrigin=null;
 const removedHelpers=[];
+let draftCheckpoint=null,draftCheckpointKind='new';
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
 byId('review-poses').onclick=()=>document.querySelector('.candidates').scrollIntoView({block:'start'});
 const viewer = new PartViewer(byId('part-view'));
@@ -140,7 +141,7 @@ function resetPlan(){
   proposalOrigin=null;renderProposal();
   activeHelper=null;byId('return-helper').hidden=true;byId('mesh-options').open=true;
   byId('walls').value=4;byId('skin').value=1.6;byId('shell-only').checked=false;byId('helper-panel').hidden=false;
-  byId('helper-regions').replaceChildren();byId('draft-status').textContent='';addHelper();
+  byId('helper-regions').replaceChildren();byId('draft-status').textContent='';addHelper();checkpointDraft('new');
 }
 function regionInput(box){
  const r={id:box.dataset.id,...Object.fromEntries(Array.from(box.querySelectorAll('[data-key]'),field=>[field.dataset.key,field.value]))};
@@ -150,6 +151,25 @@ function regionInput(box){
 }
 function planInput(){return {walls:Number(byId('walls').value),skin_mm:Number(byId('skin').value),rationale:byId('rationale').value,shell_only:byId('shell-only').checked,
  helper_regions:Array.from(byId('helper-regions').children,regionInput),...(proposalOrigin?{proposal:proposalOrigin}:{})};}
+// Preserve raw form values: incomplete numeric fields must still count as edits.
+function draftFormState(){
+ return JSON.stringify({pose:selected?.id||null,walls:byId('walls').value,skin:byId('skin').value,
+  rationale:byId('rationale').value,shellOnly:byId('shell-only').checked,
+  helpers:[...byId('helper-regions').children].map(box=>({id:box.dataset.id,
+   fields:[...box.querySelectorAll('input,textarea')].map(field=>field.type==='checkbox'?field.checked:field.value)}))});
+}
+function updateDraftState(){
+ const changed=draftCheckpoint!==null&&draftFormState()!==draftCheckpoint;
+ const label=byId('draft-edit-state');label.className=changed?'warning':'hint';
+ label.textContent=draftCheckpointKind==='new'
+  ?(changed?'Draft edited. Download it to keep these changes.':'No draft downloaded in this session.')
+  :changed?`Changes since ${draftCheckpointKind==='opened'?'reopening':'the last download'}. Export an updated draft before running checks.`
+  :`No edits since ${draftCheckpointKind==='opened'?'reopening this draft':'the last draft download'}.`;
+}
+function checkpointDraft(kind){draftCheckpointKind=kind;draftCheckpoint=draftFormState();updateDraftState();}
+document.addEventListener('input',event=>{
+ if(event.target.matches('#rationale,#walls,#skin,#shell-only,.helper-region input,.helper-region textarea'))updateDraftState();
+});
 function updateRegions(){
  const valid=[],warnings=byId('region-warnings');warnings.replaceChildren();
  refreshHelperSelector();
@@ -163,7 +183,7 @@ function updateRegions(){
  for(let i=0;i<valid.length;i++)for(let j=i+1;j<valid.length;j++){
   if(Plan.boxSeparation(valid[i].geometry,valid[j].geometry).needs_review)text('li',`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: overlap or separation is below the nominal 0.84 mm screen. Review sliver modifiers.`,warnings);
  }
- viewer.setRegions(valid);
+ viewer.setRegions(valid);updateDraftState();
 }
 function clearRemovalHistory(){
  removedHelpers.length=0;byId('undo-remove').disabled=true;byId('remove-status').textContent='';
@@ -189,7 +209,7 @@ byId('export').onclick=()=>{
   try{
     remember();const draft=Plan.create(analysis,fingerprint,selected,planInput());
     const blob=new Blob([JSON.stringify(draft,null,2)+'\n'],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download='massing-plan.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    a.href=url;a.download='massing-plan.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);checkpointDraft('downloaded');
     byId('export-status').textContent='Draft exported. It includes the source fingerprint and outstanding verification steps.';
     const incomplete=draft.massing.helper_regions.filter(h=>!h.geometry);
     byId('handoff-readiness').textContent=incomplete.length?`Last exported draft: ${incomplete.length} helper(s) without a box: ${incomplete.map(h=>h.name).join(', ')}. Enable their spatial controls and set centre/size, then save again before running the exporter.`:'Last exported draft: geometry inputs needed for export are present. The command still checks source fingerprints and helper geometry.';
@@ -205,7 +225,7 @@ function restoreDraft(raw){
     byId('walls').value=input.walls;byId('skin').value=input.skin_mm;byId('shell-only').checked=input.shell_only;byId('helper-panel').hidden=input.shell_only;
     byId('helper-regions').replaceChildren();input.helper_regions.forEach(addHelper);
     byId('draft-status').textContent=restored.migrated?'Legacy notes restored. Complete each helper location and interface constraint before exporting.':'Draft restored against its original analysis. You can revise it and export again.';
-    byId('export-status').textContent='';updateRegions();
+    byId('export-status').textContent='';updateRegions();checkpointDraft('opened');
 }
 
 let pendingReview=null;
