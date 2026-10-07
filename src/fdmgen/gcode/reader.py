@@ -53,11 +53,16 @@ class Toolpath:
 
 
 def _arc_chords(p0, p1, i, j, clockwise, max_chord_angle):
-    """Chord end points of an XY arc from p0 to p1 about p0 + (i, j) (Z interpolated)."""
+    """Chord end points of an XY arc from p0 to p1 about p0 + (i, j) (Z interpolated).
+
+    G-code rounds coordinates (Orca: 0.001 mm), so start and end radii differ slightly; like printer
+    firmware, the radius is interpolated along the sweep so the arc ends exactly at p1. A mismatch
+    above 0.01 mm (or 1 % of the radius) is a malformed arc and raises.
+    """
     cx, cy = p0[0] + i, p0[1] + j
     r0 = math.hypot(p0[0] - cx, p0[1] - cy)
     r1 = math.hypot(p1[0] - cx, p1[1] - cy)
-    if r0 < 1e-9 or abs(r0 - r1) > max(1e-3, 1e-3 * r0):
+    if r0 < 1e-9 or abs(r0 - r1) > max(0.01, 0.01 * r0):
         raise ValueError(f"inconsistent arc: radius {r0:.6f} at start, {r1:.6f} at end")
     a0 = math.atan2(p0[1] - cy, p0[0] - cx)
     a1 = math.atan2(p1[1] - cy, p1[0] - cx)
@@ -69,8 +74,9 @@ def _arc_chords(p0, p1, i, j, clockwise, max_chord_angle):
     n = max(1, math.ceil(abs(sweep) / max_chord_angle))
     t = np.arange(1, n + 1) / n
     pts = np.empty((n, 3))
-    pts[:, 0] = cx + r0 * np.cos(a0 + sweep * t)
-    pts[:, 1] = cy + r0 * np.sin(a0 + sweep * t)
+    r = r0 + (r1 - r0) * t
+    pts[:, 0] = cx + r * np.cos(a0 + sweep * t)
+    pts[:, 1] = cy + r * np.sin(a0 + sweep * t)
     pts[:, 2] = p0[2] + (p1[2] - p0[2]) * t
     pts[-1] = p1
     return pts

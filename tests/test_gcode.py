@@ -125,3 +125,25 @@ def test_frame_chain_known_answers(tmp_path):
         z.writestr("3D/3dmodel.model", '<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'
                    '<build><item objectid="1" transform="-1 0 0 0 -1 0 0 0 1 128 130 0"/></build></model>')
     assert np.allclose(build_transform_from_3mf(f), xf)
+
+
+ASA_SLICE = SRC / "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/slice-evidence.zip"
+
+
+@pytest.mark.skipif(not (SLICE.is_file() and ASA_SLICE.is_file()), reason="spool-wall-rack@14338e9 checkout not present")
+@pytest.mark.parametrize("archive,offset", [(SLICE, [0, 0, 0]), (ASA_SLICE, [0, 2, 0])])
+def test_offset_restore_lands_on_the_placed_body(archive, offset):
+    """G-code + extruder offset sits half a line width inside the 3MF-placed body on all four sides,
+    and the footprint is unscaled (both archives were sliced at filament_shrink 100 %)."""
+    from fdmgen.gcode import placed_component_bbox, xy_scale_vs_model
+    with zipfile.ZipFile(archive) as z:
+        text = z.read("plate_1.gcode").decode()
+        lo, hi = placed_component_bbox(io.BytesIO(z.read("audit.3mf")))
+    assert "; filament_shrink = 100%" in text
+    off = extruder_offset(text)
+    assert off.tolist() == offset
+    r = xy_scale_vs_model(read_gcode(text), off, lo, hi, half_width=0.21)
+    assert np.allclose(r["inset_lo_xy"] + r["inset_hi_xy"], 0.21, atol=0.015)   # outer wall 0.42 mm; measured 0.2095..0.2204
+    assert np.allclose(r["scale_xy"], 1.0, atol=1e-4)
+    wrong = xy_scale_vs_model(read_gcode(text), off + [0, 2, 0], lo, hi, half_width=0.21)
+    assert not np.allclose(wrong["inset_lo_xy"] + wrong["inset_hi_xy"], 0.21, atol=0.015)  # a 2 mm error shows
