@@ -123,3 +123,39 @@ the sequential variants is 9.88 GB. All three completed within the external
 900-second timeout. Compliance agrees to 3.2e-12 relative across variants;
 there is no independent direct reference. This remains a uniform-density,
 isotropic FP64 CPU test, not the TI/E_min/mixed-precision production gate.
+
+### Slice occupancy mechanics audit
+
+`compare_occupancy.py` compares thresholded baseline/project occupancy on the
+pinned solver grid. It validates the grid receipt, body mesh, pose and boundary
+selection before assembling anything. The reference loads are retained exactly;
+missing loaded DOFs, face-disconnected pieces, or insufficient restraints block
+a solve. Edge/point connections are counted separately. There is no ersatz
+material and no implicit force redistribution.
+
+```bash
+python bench/compare_occupancy.py --root /path/to/part-checkout \
+  --reference bench/receipts/bracket-stress-r1.json \
+  --baseline shell-only.npz --project helpers.npz \
+  --threshold 0.5 --audit-only --out audit.json
+```
+
+Without `--audit-only`, eligible domains use CPU AMG with isotropic E = 1000 MPa,
+nu = 0.3, the original full-load boundary arrays and a true-residual check. A
+fully solid solve must reproduce the pinned compliance before a comparison is
+reported. This is a coarse thresholded-raster experiment, not printed-material
+truth, anisotropic strength or physical qualification. Run on a compute worker
+in a named detached job with logs and an exit-code file.
+
+The R1 seeded-helper audit found that the 0.5 threshold loses 108 original
+loaded DOFs in both slices (6.493 N summed absolute missing DOF forces; this is
+not the magnitude of a resultant). Both retain about 113.844 N in the vertical
+load direction instead of 117.720 N and acquire a 2.018 N horizontal resultant.
+The slice domains have 7 / 6 face-connected components and 3 / 3 node-connected
+components. Lowering the threshold to 0.25 retains all original load DOFs but
+still leaves a 30-cell piece joined only through edges or nodes. The full-body
+centre-sampled reference itself has five face components, all node-connected.
+At 0.75, 648 loaded DOFs are missing. These receipts establish sensitivity to
+coarse occupancy and load discretisation; they do not establish helper stiffness
+improvement. A revised contact-load discretisation must explicitly preserve each
+seat's resultant and moment before such a comparison can be interpreted.
