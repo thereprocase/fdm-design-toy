@@ -588,3 +588,7 @@ and references. **Undo last centre move** restores the previous coordinates;
 typing a centre or picking another surface clears that undo to avoid restoring
 an obsolete position. Incomplete centres must be filled first. Moves update the
 preview and draft only; export and geometry checks are still required.
+
+Typing a centre, moving it with the axis controls or undoing a move cancels any
+pending surface-pick action. A subsequent viewer click cannot replace that
+position unless **Place centre on part** is selected again.

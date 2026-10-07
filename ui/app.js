@@ -211,12 +211,12 @@ function addHelper(region={}) {
       if(before.some(v=>v.trim()===''||!Number.isFinite(Number(v)))){status.textContent='Complete all three centre coordinates before moving.';return;}
       const value=Number(before[axis])+sign*Number(step.value);
       if(!Number.isFinite(value)){status.textContent='Centre move is outside the numeric range.';return;}
-      lastMove=before;fields[axis].value=Number(value.toFixed(6));undo.disabled=false;setActiveHelper(box);updateRegions();
+      cancelSurfacePlacement();lastMove=before;fields[axis].value=Number(value.toFixed(6));undo.disabled=false;setActiveHelper(box);updateRegions();
       status.textContent=`Moved centre ${sign<0?'−':'+'}${step.value} mm along design ${'XYZ'[axis]}. Geometry checks have not been rerun.`;
     };
   }
-  undo.onclick=()=>{if(!lastMove)return;centres().forEach((f,i)=>f.value=lastMove[i]);lastMove=null;undo.disabled=true;updateRegions();status.textContent='Previous centre restored. Geometry checks have not been rerun.';};
-  box.addEventListener('input',event=>{if(event.target.matches('[data-geometry="center_mm"]')){lastMove=null;undo.disabled=true;}});
+  undo.onclick=()=>{if(!lastMove)return;cancelSurfacePlacement();centres().forEach((f,i)=>f.value=lastMove[i]);lastMove=null;undo.disabled=true;updateRegions();status.textContent='Previous centre restored. Geometry checks have not been rerun.';};
+  box.addEventListener('input',event=>{if(event.target.matches('[data-geometry="center_mm"]')){cancelSurfacePlacement();lastMove=null;undo.disabled=true;}});
   const place=text('button','Place centre on part',spatial);place.type='button';place.className='secondary';
   place.onclick=()=>{
     if(!mesh||!selected){byId('placement-status').textContent='Load a matching mesh and choose a pose first.';byId('part-view').scrollIntoView({block:'center'});return;}
@@ -402,8 +402,9 @@ if(location.hash==='#review-edit'){
  }catch(error){pendingReview=null;byId('review-transfer-status').textContent=error.message+' Load the original table and reopen the saved draft manually.';}
 }
 
+function cancelSurfacePlacement(){viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='';}
 function setActiveHelper(box){
- if(activeHelper!==box){viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='';}
+ if(activeHelper!==box)cancelSurfacePlacement();
  activeHelper=box;byId('return-helper').hidden=!box;updateRegions();
 }
 function refreshHelperSelector(){
