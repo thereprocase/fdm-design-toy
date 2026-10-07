@@ -1,0 +1,1088 @@
+{
+ "schema": "fdmgen.massing-plan.v0.3",
+ "status": "draft_requires_verification",
+ "source": {
+  "orientation_table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+  "orientation_schema": "fdmgen/orientation-table@0.1",
+  "problem": "spool-rack-g2-ef",
+  "mesh": {
+   "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+   "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e",
+   "frame": "design",
+   "source": "spool-wall-rack"
+  }
+ },
+ "orientation": {
+  "id": "facet-00",
+  "kind": "stable_facet",
+  "build_dir_design": [
+   0.0,
+   0.0,
+   1.0
+  ],
+  "spin_deg": 0.0,
+  "R_design_to_print": [
+   [
+    1.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    1.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    1.0
+   ]
+  ],
+  "t_mm": [
+   24.246979,
+   68.741209,
+   0.0
+  ],
+  "feasible": true,
+  "reasons": [],
+  "pareto": true,
+  "rank": 0,
+  "designer_decision": {
+   "choice": "selected_for_planning",
+   "candidate_id": "facet-00",
+   "table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+   "rank_at_decision": 0,
+   "decided_by_role": "fdmgen massing-seed (machine proposal)",
+   "rationale": "machine proposal for review, seeded from full-solid stress field sha256 5fb155c32f2b (isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification); candidate, not load-path evidence; not an optimum. stress-seeded proposal from the field named in proposal.stress; for the R1 export that is a full-solid envelope solve, not the printed shell and helpers; not an optimum; review before use"
+  },
+  "meta": {
+   "facet_area_mm2": 29445.286596258054,
+   "also": [
+    "axis+z"
+   ]
+  },
+  "columns": {
+   "ovh_fail_mm2": {
+    "value": 368.6626322240361,
+    "unit": "mm2",
+    "rule": "OVH-001",
+    "level": "M",
+    "verdict": "FAIL",
+    "provisional": true,
+    "fidelity": "geometry"
+   },
+   "bridge_candidate_mm2": {
+    "value": 29.074794666430535,
+    "unit": "mm2",
+    "rule": "BRG-001",
+    "level": "M",
+    "verdict": null,
+    "provisional": true,
+    "fidelity": "geometry"
+   },
+   "contact_mm2": {
+    "value": 7855.214313505261,
+    "unit": "mm2",
+    "rule": "BED-002",
+    "level": "M",
+    "verdict": "PASS",
+    "provisional": true,
+    "fidelity": "geometry"
+   },
+   "com_margin_mm": {
+    "value": 56.52965022800147,
+    "unit": "mm",
+    "rule": "BED-002",
+    "level": "M",
+    "verdict": "PASS",
+    "provisional": true,
+    "fidelity": "geometry"
+   },
+   "base_min_width_mm": {
+    "value": 169.19466421520428,
+    "unit": "mm",
+    "rule": "BED-002",
+    "level": "M",
+    "verdict": null,
+    "provisional": true,
+    "fidelity": "geometry"
+   },
+   "height_mm": {
+    "value": 24.00000000000001,
+    "unit": "mm",
+    "rule": "BED-001",
+    "level": "M",
+    "verdict": null,
+    "provisional": true,
+    "fidelity": "geometry"
+   },
+   "fits_bed": {
+    "value": true,
+    "unit": "1",
+    "rule": "BED-001",
+    "level": "M",
+    "verdict": "PASS",
+    "provisional": true,
+    "fidelity": "geometry; exclusion zone not modelled"
+   },
+   "v_unsupported_mm2": {
+    "value": 82.227925,
+    "unit": "mm2",
+    "rule": "OVH-001",
+    "level": "V",
+    "verdict": null,
+    "provisional": true,
+    "fidelity": "geometry"
+   },
+   "brg_worst_span_mm": {
+    "value": 4.024,
+    "unit": "mm",
+    "rule": "BRG-001",
+    "level": "V",
+    "verdict": "PASS",
+    "provisional": true,
+    "fidelity": "D5 grid, straight-line spans"
+   },
+   "F_L_max": {
+    "value": 0.060984414492348565,
+    "unit": "1",
+    "rule": "STR-001",
+    "level": "FE",
+    "verdict": "PASS",
+    "provisional": true,
+    "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+   },
+   "F_L_p99": {
+    "value": 0.019920843626201504,
+    "unit": "1",
+    "rule": "STR-001",
+    "level": "FE",
+    "verdict": null,
+    "provisional": true,
+    "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+   },
+   "F_L_max_at_mm": {
+    "value": [
+     1.91,
+     40.8,
+     16.8
+    ],
+    "unit": "mm",
+    "rule": "STR-001",
+    "level": "FE",
+    "verdict": null,
+    "provisional": true,
+    "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+   },
+   "F_L_max_vendor_corner": {
+    "value": 0.04173620866820105,
+    "unit": "1",
+    "rule": "STR-001",
+    "level": "FE",
+    "verdict": "PASS",
+    "provisional": true,
+    "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+   },
+   "interface_roofs": {
+    "value": [
+     {
+      "id": "rear_seat",
+      "axis_from_layer_plane_deg": 90.0,
+      "needs_roof_variant": false,
+      "roof_variant": "teardrop_auto"
+     },
+     {
+      "id": "front_seat",
+      "axis_from_layer_plane_deg": 90.0,
+      "needs_roof_variant": false,
+      "roof_variant": "teardrop_auto"
+     },
+     {
+      "id": "mount_upper",
+      "axis_from_layer_plane_deg": 0.0,
+      "needs_roof_variant": true,
+      "roof_variant": null
+     },
+     {
+      "id": "mount_lower",
+      "axis_from_layer_plane_deg": 0.0,
+      "needs_roof_variant": true,
+      "roof_variant": null
+     }
+    ],
+    "unit": "1",
+    "rule": "HOLE-001",
+    "level": "M",
+    "verdict": "FAIL",
+    "provisional": true,
+    "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+   },
+   "t_support_segments": {
+    "value": 4344,
+    "unit": "count",
+    "rule": "OVH-001",
+    "level": "T",
+    "verdict": "FAIL",
+    "provisional": false,
+    "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm"
+   },
+   "t_support_volume_mm3": {
+    "value": 1351.8001636981883,
+    "unit": "mm3",
+    "rule": "OVH-001",
+    "level": "T",
+    "verdict": null,
+    "provisional": false,
+    "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm"
+   },
+   "t_credited_mm3": {
+    "value": 69594.87352618028,
+    "unit": "mm3",
+    "rule": "STR-001",
+    "level": "T",
+    "verdict": null,
+    "provisional": false,
+    "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm; thick bridges and support excluded"
+   }
+  }
+ },
+ "massing": {
+  "body": "fixed",
+  "walls": 4,
+  "skin_mm": 1.6,
+  "helper_infill_percent": 100,
+  "sparse_infill_structural_credit": false,
+  "shell_only": false,
+  "helper_regions": [
+   {
+    "id": "seed-01",
+    "name": "Stress-seeded helper 01",
+    "location": "design-frame box [86.7, -45.6, 12.0] mm; nearest restraint mount_lower at 80.6 mm",
+    "purpose": "candidate stiffening of a high-F_L cluster (F_L max 0.0317, 43 cells) in this pose; seeded from full-solid stress field sha256 5fb155c32f2b (isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification); candidate, not load-path evidence; not an optimum",
+    "keep_clear": {
+     "interface_ids": [
+      "front_seat",
+      "mount_lower",
+      "mount_upper",
+      "rear_seat"
+     ],
+     "keep_out_ids": [
+      "crown_moulding",
+      "spool_slide"
+     ],
+     "clearance_mm": 0.5,
+     "note": "machine-set 0.5 mm clearance to every declared interface"
+    },
+    "geometry": {
+     "type": "box",
+     "frame": "design",
+     "center_mm": [
+      86.706,
+      -45.6,
+      12.0
+     ],
+     "size_mm": [
+      4.8,
+      4.8,
+      20.8
+     ]
+    },
+    "geometry_status": "sketch"
+   },
+   {
+    "id": "seed-02",
+    "name": "Stress-seeded helper 02",
+    "location": "design-frame box [22.7, -23.2, 11.2] mm; nearest restraint wall_plane at 13.91 mm",
+    "purpose": "candidate stiffening of a high-F_L cluster (F_L max 0.0217, 58 cells) in this pose; seeded from full-solid stress field sha256 5fb155c32f2b (isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification); candidate, not load-path evidence; not an optimum",
+    "keep_clear": {
+     "interface_ids": [
+      "front_seat",
+      "mount_lower",
+      "mount_upper",
+      "rear_seat"
+     ],
+     "keep_out_ids": [
+      "crown_moulding",
+      "spool_slide"
+     ],
+     "clearance_mm": 0.5,
+     "note": "machine-set 0.5 mm clearance to every declared interface"
+    },
+    "geometry": {
+     "type": "box",
+     "frame": "design",
+     "center_mm": [
+      22.706,
+      -23.2,
+      11.2
+     ],
+     "size_mm": [
+      17.6,
+      1.6,
+      19.2
+     ]
+    },
+    "geometry_status": "sketch"
+   },
+   {
+    "id": "seed-03",
+    "name": "Stress-seeded helper 03",
+    "location": "design-frame box [37.1, -26.4, 12.0] mm; nearest restraint wall_plane at 34.71 mm",
+    "purpose": "candidate stiffening of a high-F_L cluster (F_L max 0.0218, 40 cells) in this pose; seeded from full-solid stress field sha256 5fb155c32f2b (isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification); candidate, not load-path evidence; not an optimum",
+    "keep_clear": {
+     "interface_ids": [
+      "front_seat",
+      "mount_lower",
+      "mount_upper",
+      "rear_seat"
+     ],
+     "keep_out_ids": [
+      "crown_moulding",
+      "spool_slide"
+     ],
+     "clearance_mm": 0.5,
+     "note": "machine-set 0.5 mm clearance to every declared interface"
+    },
+    "geometry": {
+     "type": "box",
+     "frame": "design",
+     "center_mm": [
+      37.106,
+      -26.4,
+      12.0
+     ],
+     "size_mm": [
+      4.8,
+      4.8,
+      17.6
+     ]
+    },
+    "geometry_status": "sketch"
+   },
+   {
+    "id": "seed-04",
+    "name": "Stress-seeded helper 04",
+    "location": "design-frame box [109.1, -12.8, 12.0] mm; nearest restraint mount_lower at 48.6 mm",
+    "purpose": "candidate stiffening of a high-F_L cluster (F_L max 0.0234, 32 cells) in this pose; seeded from full-solid stress field sha256 5fb155c32f2b (isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification); candidate, not load-path evidence; not an optimum",
+    "keep_clear": {
+     "interface_ids": [
+      "front_seat",
+      "mount_lower",
+      "mount_upper",
+      "rear_seat"
+     ],
+     "keep_out_ids": [
+      "crown_moulding",
+      "spool_slide"
+     ],
+     "clearance_mm": 0.5,
+     "note": "machine-set 0.5 mm clearance to every declared interface"
+    },
+    "geometry": {
+     "type": "box",
+     "frame": "design",
+     "center_mm": [
+      109.106,
+      -12.8,
+      12.0
+     ],
+     "size_mm": [
+      4.8,
+      3.2,
+      24.0
+     ]
+    },
+    "geometry_status": "sketch"
+   },
+   {
+    "id": "seed-05",
+    "name": "Stress-seeded helper 05",
+    "location": "design-frame box [140.3, -16.0, 12.0] mm; nearest restraint mount_lower at 51.8 mm",
+    "purpose": "candidate stiffening of a high-F_L cluster (F_L max 0.0226, 31 cells) in this pose; seeded from full-solid stress field sha256 5fb155c32f2b (isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification); candidate, not load-path evidence; not an optimum",
+    "keep_clear": {
+     "interface_ids": [
+      "front_seat",
+      "mount_lower",
+      "mount_upper",
+      "rear_seat"
+     ],
+     "keep_out_ids": [
+      "crown_moulding",
+      "spool_slide"
+     ],
+     "clearance_mm": 0.5,
+     "note": "machine-set 0.5 mm clearance to every declared interface"
+    },
+    "geometry": {
+     "type": "box",
+     "frame": "design",
+     "center_mm": [
+      140.306,
+      -16.0,
+      12.0
+     ],
+     "size_mm": [
+      3.2,
+      3.2,
+      24.0
+     ]
+    },
+    "geometry_status": "sketch"
+   },
+   {
+    "id": "seed-06",
+    "name": "Stress-seeded helper 06",
+    "location": "design-frame box [37.9, -36.8, 12.0] mm; nearest restraint wall_plane at 34.71 mm",
+    "purpose": "candidate stiffening of a high-F_L cluster (F_L max 0.0178, 31 cells) in this pose; seeded from full-solid stress field sha256 5fb155c32f2b (isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification); candidate, not load-path evidence; not an optimum",
+    "keep_clear": {
+     "interface_ids": [
+      "front_seat",
+      "mount_lower",
+      "mount_upper",
+      "rear_seat"
+     ],
+     "keep_out_ids": [
+      "crown_moulding",
+      "spool_slide"
+     ],
+     "clearance_mm": 0.5,
+     "note": "machine-set 0.5 mm clearance to every declared interface"
+    },
+    "geometry": {
+     "type": "box",
+     "frame": "design",
+     "center_mm": [
+      37.906,
+      -36.8,
+      12.0
+     ],
+     "size_mm": [
+      6.4,
+      6.4,
+      24.0
+     ]
+    },
+    "geometry_status": "sketch"
+   }
+  ]
+ },
+ "outstanding_checks": [
+  "Review every seeded helper; the seed is not an optimum",
+  "Export with fdmgen massing and resolve every FAIL / NOT_CHECKED",
+  "Slice and read back with fdmgen massing-evidence",
+  "Shell/helper stress, strength and physical testing remain separate"
+ ],
+ "proposal": {
+  "generator": "fdmgen.massing.seed",
+  "label": "stress-seeded proposal from the field named in proposal.stress; for the R1 export that is a full-solid envelope solve, not the printed shell and helpers; not an optimum; review before use",
+  "status": "helpers_proposed",
+  "stress": {
+   "sha256": "5fb155c32f2b7423f1b2e9505b1bef2721093068c22c0b6fcf33982877552ffb",
+   "frame": "installed",
+   "cells": 42648,
+   "cell_mm": 1.6,
+   "grid": [
+    131,
+    147,
+    15
+   ],
+   "model": "isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification",
+   "receipt": "bracket-stress-r1.json",
+   "receipt_sha256": "12c48165935aeb6b60eb76ad37f2288c9a4c3a9d8e13abd71ca4e0c4f2840d8a",
+   "load_total_N": 117.72,
+   "restraint_model": "mount bores clamped; wall bilateral roller; solver-gate simplification",
+   "material": {
+    "model": "isotropic",
+    "E_MPa": 1000.0,
+    "nu": 0.3,
+    "density": 1.0
+   },
+   "sampling": "cell centre"
+  },
+  "card": {
+   "id": "polymaker-polylite-asa-t0",
+   "corner": "design",
+   "Z_t_mpa": 21.9,
+   "S_il_mpa": 10.95
+  },
+  "pose": {
+   "id": "facet-00",
+   "build_dir_design": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "seed": {
+   "quantile": 0.97,
+   "F_L_threshold": 0.01233,
+   "min_cells": 8,
+   "restraint_ids": [
+    "mount_upper",
+    "mount_lower"
+   ],
+   "wall_plane_x_mm": 0.0,
+   "restraint_margin_mm": 4.8,
+   "interface_refs": "all",
+   "clearance_mm": 0.5
+  },
+  "accepted": [
+   {
+    "id": "seed-01",
+    "cluster": 7,
+    "cells": 43,
+    "F_L_max": 0.0317,
+    "nearest_restraint": [
+     "mount_lower",
+     80.6
+    ]
+   },
+   {
+    "id": "seed-02",
+    "cluster": 26,
+    "cells": 58,
+    "F_L_max": 0.02175,
+    "nearest_restraint": [
+     "wall_plane",
+     13.91
+    ]
+   },
+   {
+    "id": "seed-03",
+    "cluster": 22,
+    "cells": 40,
+    "F_L_max": 0.02182,
+    "nearest_restraint": [
+     "wall_plane",
+     34.71
+    ]
+   },
+   {
+    "id": "seed-04",
+    "cluster": 5,
+    "cells": 32,
+    "F_L_max": 0.02338,
+    "nearest_restraint": [
+     "mount_lower",
+     48.6
+    ]
+   },
+   {
+    "id": "seed-05",
+    "cluster": 3,
+    "cells": 31,
+    "F_L_max": 0.02256,
+    "nearest_restraint": [
+     "mount_lower",
+     51.8
+    ]
+   },
+   {
+    "id": "seed-06",
+    "cluster": 21,
+    "cells": 31,
+    "F_L_max": 0.01784,
+    "nearest_restraint": [
+     "wall_plane",
+     34.71
+    ]
+   }
+  ],
+  "rejected": [
+   {
+    "cluster": 25,
+    "cells": 773,
+    "F_L_max": 0.06098,
+    "center_mm": [
+     15.75,
+     39.2,
+     12.0
+    ],
+    "size_mm": [
+     31.51,
+     30.4,
+     24.0
+    ],
+    "reason": "restraint_adjacent: -2.6 mm from mount_lower (modelled restraint; stress there is partly a modelling artefact)"
+   },
+   {
+    "cluster": 23,
+    "cells": 61,
+    "F_L_max": 0.034,
+    "center_mm": [
+     25.11,
+     -29.6,
+     5.6
+    ],
+    "size_mm": [
+     16.0,
+     8.0,
+     11.2
+    ],
+    "reason": "enters a keep-out: crown_moulding"
+   },
+   {
+    "cluster": 24,
+    "cells": 53,
+    "F_L_max": 0.03267,
+    "center_mm": [
+     25.91,
+     -29.6,
+     19.2
+    ],
+    "size_mm": [
+     14.4,
+     8.0,
+     9.6
+    ],
+    "reason": "enters a keep-out: crown_moulding"
+   },
+   {
+    "cluster": 12,
+    "cells": 23,
+    "F_L_max": 0.0192,
+    "center_mm": [
+     73.91,
+     -55.2,
+     12.0
+    ],
+    "size_mm": [
+     4.8,
+     1.6,
+     17.6
+    ],
+    "reason": "beyond the first 6 helpers"
+   },
+   {
+    "cluster": 9,
+    "cells": 11,
+    "F_L_max": 0.02168,
+    "center_mm": [
+     80.31,
+     -32.8,
+     12.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     17.6
+    ],
+    "reason": "beyond the first 6 helpers"
+   },
+   {
+    "cluster": 30,
+    "cells": 9,
+    "F_L_max": 0.02165,
+    "center_mm": [
+     13.91,
+     19.2,
+     20.0
+    ],
+    "size_mm": [
+     3.2,
+     3.2,
+     8.0
+    ],
+    "reason": "beyond the first 6 helpers"
+   },
+   {
+    "cluster": 31,
+    "cells": 13,
+    "F_L_max": 0.01336,
+    "center_mm": [
+     13.11,
+     -31.2,
+     12.0
+    ],
+    "size_mm": [
+     4.8,
+     1.6,
+     8.0
+    ],
+    "reason": "beyond the first 6 helpers"
+   },
+   {
+    "cluster": 8,
+    "cells": 9,
+    "F_L_max": 0.01683,
+    "center_mm": [
+     85.11,
+     -13.6,
+     12.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     14.4
+    ],
+    "reason": "would not keep rear_seat clear by 0.5 mm"
+   },
+   {
+    "cluster": 27,
+    "cells": 10,
+    "F_L_max": 0.01434,
+    "center_mm": [
+     19.51,
+     -23.2,
+     20.8
+    ],
+    "size_mm": [
+     8.0,
+     1.6,
+     3.2
+    ],
+    "reason": "overlaps or sits within 0.84 mm of an accepted helper (seed-02); MOD-001"
+   },
+   {
+    "cluster": 13,
+    "cells": 8,
+    "F_L_max": 0.01787,
+    "center_mm": [
+     68.31,
+     -46.4,
+     3.2
+    ],
+    "size_mm": [
+     3.2,
+     3.2,
+     6.4
+    ],
+    "reason": "beyond the first 6 helpers"
+   },
+   {
+    "cluster": 2,
+    "cells": 9,
+    "F_L_max": 0.01526,
+    "center_mm": [
+     163.51,
+     -7.2,
+     12.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     14.4
+    ],
+    "reason": "beyond the first 6 helpers"
+   },
+   {
+    "cluster": 1,
+    "cells": 9,
+    "F_L_max": 0.01347,
+    "center_mm": [
+     171.51,
+     -10.4,
+     12.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     14.4
+    ],
+    "reason": "beyond the first 6 helpers"
+   },
+   {
+    "cluster": 20,
+    "cells": 7,
+    "F_L_max": 0.01514,
+    "center_mm": [
+     46.71,
+     -44.0,
+     12.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     11.2
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 4,
+    "cells": 7,
+    "F_L_max": 0.0131,
+    "center_mm": [
+     131.51,
+     -15.2,
+     12.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     11.2
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 6,
+    "cells": 7,
+    "F_L_max": 0.01261,
+    "center_mm": [
+     94.71,
+     -13.6,
+     12.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     11.2
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 14,
+    "cells": 5,
+    "F_L_max": 0.01657,
+    "center_mm": [
+     68.31,
+     -46.4,
+     21.6
+    ],
+    "size_mm": [
+     3.2,
+     3.2,
+     4.8
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 33,
+    "cells": 4,
+    "F_L_max": 0.01941,
+    "center_mm": [
+     11.51,
+     -20.8,
+     2.4
+    ],
+    "size_mm": [
+     1.6,
+     3.2,
+     4.8
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 34,
+    "cells": 4,
+    "F_L_max": 0.01865,
+    "center_mm": [
+     11.51,
+     -20.8,
+     21.6
+    ],
+    "size_mm": [
+     1.6,
+     3.2,
+     4.8
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 15,
+    "cells": 5,
+    "F_L_max": 0.01346,
+    "center_mm": [
+     59.51,
+     -34.4,
+     12.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     8.0
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 11,
+    "cells": 4,
+    "F_L_max": 0.01602,
+    "center_mm": [
+     76.31,
+     -48.0,
+     20.8
+    ],
+    "size_mm": [
+     3.2,
+     3.2,
+     3.2
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 17,
+    "cells": 3,
+    "F_L_max": 0.0197,
+    "center_mm": [
+     56.31,
+     -37.6,
+     21.6
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     4.8
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 16,
+    "cells": 3,
+    "F_L_max": 0.01876,
+    "center_mm": [
+     56.31,
+     -37.6,
+     2.4
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     4.8
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 32,
+    "cells": 2,
+    "F_L_max": 0.01747,
+    "center_mm": [
+     13.11,
+     20.0,
+     1.6
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     3.2
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 10,
+    "cells": 2,
+    "F_L_max": 0.01468,
+    "center_mm": [
+     76.31,
+     -48.0,
+     2.4
+    ],
+    "size_mm": [
+     3.2,
+     3.2,
+     1.6
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 28,
+    "cells": 1,
+    "F_L_max": 0.014,
+    "center_mm": [
+     16.31,
+     39.2,
+     4.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     1.6
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 29,
+    "cells": 1,
+    "F_L_max": 0.01265,
+    "center_mm": [
+     16.31,
+     23.2,
+     2.4
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     1.6
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 19,
+    "cells": 1,
+    "F_L_max": 0.01237,
+    "center_mm": [
+     46.71,
+     -34.4,
+     4.0
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     1.6
+    ],
+    "reason": "fewer than 8 cells"
+   },
+   {
+    "cluster": 18,
+    "cells": 1,
+    "F_L_max": 0.01236,
+    "center_mm": [
+     49.91,
+     -36.0,
+     2.4
+    ],
+    "size_mm": [
+     1.6,
+     1.6,
+     1.6
+    ],
+    "reason": "fewer than 8 cells"
+   }
+  ],
+  "sensitivity": [
+   {
+    "restraint_margin_mm": 0.0,
+    "accepted_clusters": [
+     7,
+     26,
+     22,
+     5,
+     3,
+     21
+    ]
+   },
+   {
+    "restraint_margin_mm": 4.8,
+    "accepted_clusters": [
+     7,
+     26,
+     22,
+     5,
+     3,
+     21
+    ]
+   },
+   {
+    "restraint_margin_mm": 9.6,
+    "accepted_clusters": [
+     7,
+     26,
+     22,
+     5,
+     3,
+     21
+    ]
+   },
+   {
+    "restraint_margin_mm": 16.0,
+    "accepted_clusters": [
+     7,
+     22,
+     5,
+     3,
+     21,
+     12
+    ]
+   }
+  ]
+ }
+}

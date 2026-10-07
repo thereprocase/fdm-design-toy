@@ -1,6 +1,6 @@
 'use strict';
 const el=id=>document.getElementById(id);
-let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0;
+let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0,matchedSlice=null,mechanicsGeneration=0;
 function add(tag,value,parent){const n=document.createElement(tag);n.textContent=value;parent.append(n);return n;}
 el('review-draft').onchange=async e=>{
  const file=e.target.files[0];if(!file)return;const request=++generation;++receiptGeneration;
@@ -30,13 +30,14 @@ function render(r){
  el('review-settings').textContent=JSON.stringify(r.object_settings,null,2);el('review-skin').textContent=r.skin_note||'';el('review-provenance').textContent=JSON.stringify(r,null,2);
 }
 
-function clearSlice(){++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}
+function clearSlice(){clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}
 el('review-slice').onchange=async e=>{
  const file=e.target.files[0];if(!file||!matchedReport)return;const request=++sliceGeneration,report=matchedReport;
  try{const receipt=MassingReview.slice(report,JSON.parse(await file.text()));if(request!==sliceGeneration||report!==matchedReport)return;renderSlice(receipt);el('slice-status').textContent='Slice receipt matches the exported project and saved plan.';}
  catch(error){if(request===sliceGeneration)el('slice-status').textContent=error.message+' Previous matched slice results, if any, remain below.';}
 };
 function renderSlice(r){
+ clearMechanics();matchedSlice=r;el('review-mechanics').disabled=false;
  const baseline=r.baseline!==null,mismatch=MassingReview.contextMismatch(r),number=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
  el('slice-results').hidden=false;
  el('slice-baseline').textContent=baseline?'Compared with a shell-only slice. Differences describe solid infill in each helper box; overlapping boxes may count the same roads.':'No shell-only baseline supplied. Absolute fill includes existing body material; helper contribution is not established.';
@@ -61,4 +62,38 @@ function editButton(helperId,name,parent){
   try{sessionStorage.setItem('fdmgen-review-edit',JSON.stringify({draft:saved,helper_id:helperId}));location.href='index.html#review-edit';}
   catch(error){el('review-status').textContent='This browser cannot transfer the draft between pages. Return to the workspace, load its original table, and reopen the saved draft to edit '+name+'.';}
  };
+}
+
+function clearMechanics(){
+ ++mechanicsGeneration;el('review-mechanics').value='';el('review-mechanics').disabled=true;
+ el('mechanics-results').hidden=true;el('mechanics-status').textContent='Load paired slice evidence before mechanics.';
+}
+el('review-mechanics').onchange=async e=>{
+ const file=e.target.files[0];if(!file||!matchedReport||!matchedSlice)return;
+ const request=++mechanicsGeneration,report=matchedReport,slice=matchedSlice;
+ try{
+  const r=MassingReview.mechanics(report,slice,JSON.parse(await file.text()));
+  if(request!==mechanicsGeneration||report!==matchedReport||slice!==matchedSlice)return;
+  renderMechanics(r);el('mechanics-status').textContent='Mechanics receipt matches this project and both recorded G-code hashes.';
+ }catch(error){if(request===mechanicsGeneration)el('mechanics-status').textContent=error.message+' Previous matched mechanics results, if any, remain below.';}
+};
+function renderMechanics(r){
+ const comparable=MassingReview.mechanicsComparable(r),num=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
+ el('mechanics-results').hidden=false;
+ el('mechanics-policy').textContent=`FE pilot · provisional. Domain policy: ${r.domain_policy}; density threshold ${r.threshold}. ${r.domain_policy==='largest-face-component sensitivity'?'Fragments were explicitly removed. This is not the unmodified raster result.':'Original thresholded domains; inspect connectivity failures below.'}`;
+ el('mechanics-comparison').textContent=comparable?`Project compliance change versus shell-only: ${num(100*(r.solves.project.compliance_N_mm/r.solves.baseline.compliance_N_mm-1))}%. Applies only to this domain and load policy; not a strength rating.`:'No supported compliance comparison: an audit, conservation or convergence check is missing or failed.';
+ el('mechanics-model').textContent=`Load method: ${r.method}. ${r.context_note||''} Material constants are not recorded in this pilot receipt; consult its reproducible benchmark. Linear model outputs do not establish physical movement.`;
+ el('mechanics-rows').replaceChildren();el('mechanics-audits').replaceChildren();
+ for(const [name,label] of [['full_solid','Full-body context'],['baseline','Shell-only'],['project','Seeded project']]){
+  const a=r.audits[name],s=r.solves?.[name],row=add('tr','',el('mechanics-rows'));
+  const valid=a.status==='ready'&&s?.status==='solved'&&s.true_relative_residual<=1e-8;
+  for(const value of [label,`${a.status} / ${s?.status||'not solved'}`,valid?num(s.compliance_N_mm):'Not established',valid?num(s.max_displacement_mm):'Not established'])add('td',value,row);
+  const detail=add('article','',el('mechanics-audits'));add('h3',label,detail);
+  add('p',`${a.cells} cells; ${a.face_components} face-connected components; ${a.missing_loaded_dofs} missing loaded DOFs.`,detail);
+  for(const reason of a.reasons)add('p',String(reason),detail);
+  const f=r.fragment_removal?.[name];if(f)add('p',`Removed ${f.removed_cells} cells (${num(f.removed_volume_mm3)} mm³ of grid-cell volume); ${f.removed_fixed_dofs} fixed DOFs and ${num(f.removed_original_load_l1_N)} N summed absolute original nodal force lost exclusively with removed nodes.`,detail);
+  if(s?.status==='solved')add('p',`True relative residual: ${s.true_relative_residual.toExponential(3)}.`,detail);
+ }
+ el('mechanics-scope').textContent=`${r.establishes||''} Does not establish: ${(r.does_not_establish||[]).join('; ')}.`;
+ el('mechanics-provenance').textContent=JSON.stringify(r,null,2);
 }

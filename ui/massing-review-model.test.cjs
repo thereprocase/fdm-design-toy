@@ -29,3 +29,20 @@ test('revised slice matches its project and baseline context, not the old projec
  assert(Math.abs(sliced.helpers[0].solid_infill_in_box_mm3-sliced.helpers[0].baseline_solid_infill_mm3-sliced.helpers[0].added_solid_mm3)<.002);
  assert.throws(()=>Review.slice(report,sliced));
 });
+
+const seedReport=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-export-report.json'))),seedSlice=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-slice-evidence.json'))),mechanics=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-connected-sensitivity-r1.json')));
+test('mechanics pairs exact project, plan, both Gcodes and grid provenance',()=>{
+ assert.equal(Review.mechanics(seedReport,seedSlice,mechanics),mechanics);assert(Review.mechanicsComparable(mechanics));
+ for(const mutate of [r=>r.inputs.project.provenance.project_3mf_sha256='a'.repeat(64),r=>r.inputs.baseline.provenance.gcode_sha256='a'.repeat(64),r=>r.inputs.project.provenance.plan.draft_sha256='a'.repeat(64),r=>r.inputs.baseline.provenance.grid.shape=[1,2,3],r=>r.solves.project.compliance_N_mm=NaN,r=>delete r.fragment_removal.project,r=>r.does_not_establish='bad scope']){
+  const r=structuredClone(mechanics);mutate(r);assert.throws(()=>Review.mechanics(seedReport,seedSlice,r));
+ }
+ const missing=structuredClone(seedSlice);delete missing.slicer.layer_height;delete missing.baseline_slicer.layer_height;assert.throws(()=>Review.mechanics(seedReport,missing,mechanics),/complete recorded/);
+ const mismatch=structuredClone(seedSlice);mismatch.baseline_slicer.layer_height='0.3';assert.throws(()=>Review.mechanics(seedReport,mismatch,mechanics),/matching-context/);
+});
+test('mechanics does not turn missing convergence, load conservation or audits into benefit',()=>{
+ for(const mutate of [r=>delete r.solves,r=>r.solves.project.true_relative_residual=.1,r=>r.audits.project.status='blocked',r=>r.audits.project.missing_loaded_dofs=1,r=>r.seats.rear_seat.moment_error_N_mm=1]){
+  const r=structuredClone(mechanics);mutate(r);assert.equal(Review.mechanicsComparable(Review.mechanics(seedReport,seedSlice,r)),false);
+ }
+ const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-seat-transfer-r1.json')));
+ assert.equal(Review.mechanicsComparable(Review.mechanics(seedReport,seedSlice,raw)),false);
+});

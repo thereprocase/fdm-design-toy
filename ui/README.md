@@ -298,3 +298,28 @@ A `no_viable_helpers` proposal explicitly warns that an empty helper list does
 not establish shell-only sufficiency. Reopening an ordinary draft or loading a
 new table clears the proposal panel. These proposals are starting points for
 review, not optimised designs or physical qualifications.
+
+## Review a mechanics sensitivity
+
+After loading the exact draft, export receipt and paired slice evidence, the
+review page accepts a `fdmgen/seat-load-transfer-pilot@0.1` mechanics receipt.
+It requires the export's project and plan hashes, both loaded slice G-code
+hashes, matching recorded slicer context, and a common grid receipt. The UI
+verifies recorded pairing, not NPZ or G-code contents.
+
+The view shows domain policy, threshold, fragment removal, load audit failures,
+convergence residuals, compliance and maximum movement. It computes the relative
+compliance change from the recorded solves only when every domain audit,
+convergence check and seat force/moment conservation screen passes. Raw blocked
+receipts show **No supported compliance comparison**. A failed receipt import
+retains the previous matched view with an error; changing the draft, accepted
+export or accepted slice clears downstream mechanics results.
+
+The exact seed example is `fixtures/seed-draft.json`,
+`fixtures/seed-export-report.json` and `fixtures/seed-slice-evidence.json`.
+Compare `../bench/receipts/occupancy-seat-transfer-r1.json` with
+`../bench/receipts/occupancy-connected-sensitivity-r1.json`. The latter has an
+explicit fragment-removal policy; it is not a successful solve of the unchanged
+raster. Material constants absent from a receipt are labelled as unrecorded;
+consult the benchmark's reproduction instructions. Occupancy sampling, grid
+refinement, contact realism and physical qualification remain unresolved.

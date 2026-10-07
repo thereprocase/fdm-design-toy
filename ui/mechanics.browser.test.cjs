@@ -1,0 +1,33 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const page=await browser.newPage({locale:'en-US'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(pathToFileURL(path.join(__dirname,'massing-review.html')).href);
+ const fixture=name=>path.join(__dirname,'fixtures/seed-'+name+'.json'),receipt=path.join(__dirname,'../bench/receipts/occupancy-connected-sensitivity-r1.json');
+ await page.locator('#review-draft').setInputFiles(fixture('draft'));
+ await page.locator('#review-receipt').setInputFiles(fixture('export-report'));
+ await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
+ assert(await page.locator('#review-mechanics').isDisabled());
+ await page.locator('#review-slice').setInputFiles(fixture('slice-evidence'));
+ await page.waitForFunction(()=>document.querySelector('#slice-status').textContent.startsWith('Slice receipt matches'));
+ await page.locator('#review-mechanics').setInputFiles(receipt);
+ await page.waitForFunction(()=>document.querySelector('#mechanics-status').textContent.startsWith('Mechanics receipt matches'));
+ assert.match(await page.locator('#mechanics-policy').innerText(),/Fragments were explicitly removed/);
+ assert.match(await page.locator('#mechanics-comparison').innerText(),/-2.924%/);
+ assert.match(await page.locator('#mechanics-rows').innerText(),/484.839/);
+ assert.match(await page.locator('#mechanics-audits').innerText(),/Removed 52 cells/);
+ const wrong=JSON.parse(fs.readFileSync(receipt));wrong.inputs.baseline.provenance.gcode_sha256='a'.repeat(64);
+ await page.locator('#review-mechanics').setInputFiles({name:'wrong.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(wrong))});
+ await page.waitForFunction(()=>document.querySelector('#mechanics-status').textContent.includes('baseline G-code differs'));
+ assert(await page.locator('#mechanics-results').isVisible());
+ await page.locator('#review-mechanics').setInputFiles(path.join(__dirname,'../bench/receipts/occupancy-seat-transfer-r1.json'));
+ await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('No supported compliance comparison'));
+ assert.match(await page.locator('#mechanics-rows').innerText(),/Not established/);assert.match(await page.locator('#mechanics-audits').innerText(),/face-connected components/);
+ await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.locator('#review-slice').setInputFiles([]);await page.locator('#review-slice').setInputFiles(fixture('slice-evidence'));
+ await page.waitForFunction(()=>document.querySelector('#mechanics-results').hidden);
+ await page.locator('#review-mechanics').setInputFiles(receipt);await page.waitForFunction(()=>!document.querySelector('#mechanics-results').hidden);
+ await page.locator('#review-draft').setInputFiles([]);await page.locator('#review-draft').setInputFiles(fixture('draft')); // A new selection invalidates downstream results.
+ await page.waitForFunction(()=>document.querySelector('#mechanics-results').hidden);
+ assert(await page.locator('#review-mechanics').isDisabled());assert.deepEqual(errors,[]);
+ console.log('PASS real mechanics pairing, domain scope, raw blocked result, wrong baseline rejection, invalidation and mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
