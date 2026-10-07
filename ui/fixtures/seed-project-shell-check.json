@@ -1,0 +1,134 @@
+{
+ "schema": "fdmgen/shell-check@0.1",
+ "gcode_sha256": "0ba93c7d54410b199e5b4c2841967154f16547729320e8d10f6420cca96fb7dc",
+ "pose": "facet-00",
+ "cell_mm": 0.1,
+ "grid_shape": [
+  2096,
+  2355,
+  260
+ ],
+ "clipped_outside_grid_mm3": 0.0,
+ "result": {
+  "rule": "SHELL-001",
+  "level": "T",
+  "verdict": "PASS",
+  "message": "SHELL-001 T PASS: 0.2 % of the sampled surface is thinner than 2 beads (limit 1 %).",
+  "provisional": true,
+  "metrics": {
+   "samples": 20000,
+   "unmeasured": 0,
+   "thin_fraction": 0.0022,
+   "thin_area_mm2_est": 109.9,
+   "bands": [
+    {
+     "slope_deg": [
+      0,
+      10
+     ],
+     "samples": 6039,
+     "thin_fraction": 0.0005,
+     "median_mm": 1.41,
+     "p05_mm": 1.097,
+     "required_mm": 0.4
+    },
+    {
+     "slope_deg": [
+      10,
+      20
+     ],
+     "samples": 18,
+     "thin_fraction": 0.0,
+     "median_mm": 1.458,
+     "p05_mm": 1.173,
+     "required_mm": 0.583
+    },
+    {
+     "slope_deg": [
+      20,
+      30
+     ],
+     "samples": 28,
+     "thin_fraction": 0.0,
+     "median_mm": 1.691,
+     "p05_mm": 1.481,
+     "required_mm": 0.678
+    },
+    {
+     "slope_deg": [
+      30,
+      40
+     ],
+     "samples": 26,
+     "thin_fraction": 0.0,
+     "median_mm": 1.855,
+     "p05_mm": 1.653,
+     "required_mm": 0.768
+    },
+    {
+     "slope_deg": [
+      40,
+      50
+     ],
+     "samples": 476,
+     "thin_fraction": 0.0021,
+     "median_mm": 1.919,
+     "p05_mm": 1.753,
+     "required_mm": 0.834
+    },
+    {
+     "slope_deg": [
+      50,
+      60
+     ],
+     "samples": 123,
+     "thin_fraction": 0.0081,
+     "median_mm": 1.891,
+     "p05_mm": 1.729,
+     "required_mm": 0.847
+    },
+    {
+     "slope_deg": [
+      60,
+      70
+     ],
+     "samples": 66,
+     "thin_fraction": 0.0,
+     "median_mm": 1.798,
+     "p05_mm": 1.694,
+     "required_mm": 0.857
+    },
+    {
+     "slope_deg": [
+      70,
+      80
+     ],
+     "samples": 47,
+     "thin_fraction": 0.0,
+     "median_mm": 1.661,
+     "p05_mm": 1.349,
+     "required_mm": 0.831
+    },
+    {
+     "slope_deg": [
+      80,
+      90
+     ],
+     "samples": 13177,
+     "thin_fraction": 0.0029,
+     "median_mm": 1.427,
+     "p05_mm": 1.351,
+     "required_mm": 0.76
+    }
+   ],
+   "min_beads": 2,
+   "bead_spacing_mm": 0.38,
+   "layer_mm": 0.2,
+   "threshold": 0.5,
+   "entry_mm": 0.36
+  },
+  "fixes": [],
+  "establishes": "At least 2 beads of printed material along the normal almost everywhere.",
+  "does_not_establish": "Bond quality between those beads, or anything finer than the raster cell; the raster is an approximation of the slicer's roads."
+ }
+}

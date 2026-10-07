@@ -1,6 +1,6 @@
 'use strict';
 const el=id=>document.getElementById(id);
-let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0,matchedSlice=null,mechanicsGeneration=0;
+let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0,matchedSlice=null,mechanicsGeneration=0,shellGeneration=0;
 function add(tag,value,parent){const n=document.createElement(tag);n.textContent=value;parent.append(n);return n;}
 el('review-draft').onchange=async e=>{
  const file=e.target.files[0];if(!file)return;const request=++generation;++receiptGeneration;
@@ -30,14 +30,14 @@ function render(r){
  el('review-settings').textContent=JSON.stringify(r.object_settings,null,2);el('review-skin').textContent=r.skin_note||'';el('review-provenance').textContent=JSON.stringify(r,null,2);
 }
 
-function clearSlice(){clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}
+function clearSlice(){clearShell();clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}
 el('review-slice').onchange=async e=>{
  const file=e.target.files[0];if(!file||!matchedReport)return;const request=++sliceGeneration,report=matchedReport;
  try{const receipt=MassingReview.slice(report,JSON.parse(await file.text()));if(request!==sliceGeneration||report!==matchedReport)return;renderSlice(receipt);el('slice-status').textContent='Slice receipt matches the exported project and saved plan.';}
  catch(error){if(request===sliceGeneration)el('slice-status').textContent=error.message+' Previous matched slice results, if any, remain below.';}
 };
 function renderSlice(r){
- clearMechanics();matchedSlice=r;el('review-mechanics').disabled=false;
+ clearShell();clearMechanics();matchedSlice=r;el('review-shell').disabled=false;el('review-mechanics').disabled=false;
  const baseline=r.baseline!==null,mismatch=MassingReview.contextMismatch(r),number=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
  el('slice-results').hidden=false;
  el('slice-baseline').textContent=baseline?'Compared with a shell-only slice. Differences describe solid infill in each helper box; overlapping boxes may count the same roads.':'No shell-only baseline supplied. Absolute fill includes existing body material; helper contribution is not established.';
@@ -104,3 +104,26 @@ function renderMechanics(r){
  el('mechanics-scope').textContent=`${r.establishes||''} Does not establish: ${(r.does_not_establish||[]).join('; ')}.`;
  el('mechanics-provenance').textContent=JSON.stringify(r,null,2);
 }
+
+function clearShell(){
+ ++shellGeneration;el('review-shell').value='';el('review-shell').disabled=true;el('shell-results').hidden=true;
+ el('shell-status').textContent='Load the project slice evidence before its shell check.';
+}
+el('review-shell').onchange=async e=>{
+ const file=e.target.files[0];if(!file||!matchedReport||!matchedSlice)return;
+ const request=++shellGeneration,report=matchedReport,sliced=matchedSlice;
+ try{
+  const r=MassingReview.shell(report,sliced,JSON.parse(await file.text()),saved);
+  if(request!==shellGeneration||report!==matchedReport||sliced!==matchedSlice)return;
+  const m=r.result.metrics,num=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
+  el('shell-results').hidden=false;
+  el('shell-status').textContent='Shell receipt matches the loaded project G-code hash and pose.';
+  el('shell-pairing').textContent=r.table_sha256&&r.mesh_sha256?'Recorded table and mesh hashes also match the export. The browser does not rerun the checker.':'Table and mesh hashes are not both recorded: geometry pairing is not established. Only G-code and pose are matched.';
+  el('shell-summary').textContent=`Recorded T ${r.result.verdict}${r.result.provisional?' · provisional':''}. ${num(100*m.thin_fraction)}% of ${m.samples} measured samples are thin; ${m.unmeasured} unmeasured. Estimated thin area: ${num(m.thin_area_mm2_est)} mm².`;
+  el('shell-message').textContent=r.result.message;
+  el('shell-method').textContent=`Raster cell ${num(r.cell_mm)} mm; ${m.min_beads} beads; spacing ${num(m.bead_spacing_mm)} mm; layer ${num(m.layer_mm)} mm; threshold ${m.threshold}; entry allowance ${num(m.entry_mm)} mm; clipped ${num(r.clipped_outside_grid_mm3)} mm³. ${r.method?'Additional method fields are in the complete receipt.':'Caps model, producer source, sampling seed and thin-fraction limit are not structurally recorded in this legacy receipt.'}`;
+  el('shell-bands').replaceChildren();for(const b of m.bands){const row=add('tr','',el('shell-bands'));for(const value of [b.slope_deg.join('–'),b.samples,num(100*b.thin_fraction),num(b.median_mm),num(b.p05_mm),num(b.required_mm)])add('td',value,row);}
+  el('shell-scope').textContent='Producer limitation: '+r.result.does_not_establish;
+  el('shell-provenance').textContent=JSON.stringify(r._receipt||r,null,2);
+ }catch(error){if(request===shellGeneration)el('shell-status').textContent=error.message+' Previous matched shell results, if any, remain below.';}
+};

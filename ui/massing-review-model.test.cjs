@@ -46,3 +46,27 @@ test('mechanics does not turn missing convergence, load conservation or audits i
  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-seat-transfer-r1.json')));
  assert.equal(Review.mechanicsComparable(Review.mechanics(seedReport,seedSlice,raw)),false);
 });
+
+test('shell receipts pair exact slice and pose and validate sampling evidence',()=>{
+ const r=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-project-shell-check.json')));
+ assert.equal(Review.shell(seedReport,seedSlice,r),r);
+ for(const mutate of [r=>r.pose='wrong',r=>r.cell_mm=0,r=>r.result.metrics.thin_fraction=2,r=>r.result.metrics.samples=0,r=>r.result.level='M',r=>r.mesh_sha256='c'.repeat(64)]){
+  const bad=structuredClone(r);mutate(bad);assert.throws(()=>Review.shell(seedReport,seedSlice,bad));
+ }
+});
+
+test('current shell receipts require geometry, method, source and transform provenance',()=>{
+ const old=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-project-shell-check.json'))),m=old.result.metrics;
+ const draft=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-draft.json')));
+ // Synthetic transport fixture, not a relabelled measurement or published receipt.
+ const modern={schema:'fdmgen/shell-check@0.2',result:old.result,gcode:seedSlice.slicer,
+  pose:{id:old.pose,R_design_to_print:draft.orientation.R_design_to_print,t_mm:draft.orientation.t_mm},
+  table:{sha256:seedReport.plan.table_sha256},mesh:{sha256:seedReport.plan.mesh_sha256},
+  grid:{frame:'print (plate) frame of the pose',origin_mm:[0,0,0],cell_mm:old.cell_mm,shape:old.grid_shape,clipped_outside_grid_mm3:0},
+  method:{deposit:{roads:'credited',caps:true,step_frac:.5},seed:0,surface_samples:m.samples+m.unmeasured,thin_fraction_limit:.01,min_beads:m.min_beads,bead_spacing_mm:m.bead_spacing_mm,layer_mm:m.layer_mm,entry_mm:m.entry_mm},
+  source_sha256:Object.fromEntries(['catalog/checks/shell.py','gcode/occupancy.py','gcode/reader.py'].map(k=>['fdmgen/'+k,'a'.repeat(64)]))};
+ assert.equal(Review.shell(seedReport,seedSlice,modern,draft)._receipt,modern);
+ for(const mutate of [r=>r.pose.t_mm[0]+=1,r=>r.table.sha256='b'.repeat(64),r=>r.method.deposit.step_frac=0,r=>r.method.surface_samples=1,r=>delete r.source_sha256['fdmgen/gcode/reader.py'],r=>r.gcode.layer_height='wrong',r=>delete r.gcode.generator]){
+  const bad=structuredClone(modern);mutate(bad);assert.throws(()=>Review.shell(seedReport,seedSlice,bad,draft));
+ }
+});

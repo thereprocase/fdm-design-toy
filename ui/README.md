@@ -376,3 +376,23 @@ selections and raw box inputs, and becomes the active helper. Edits to it do
 not affect the original. Its box initially occupies the same place, so the
 workspace identifies the coincident boxes; move or resize the copy as appropriate.
 Duplication copies planning intent only and does not inherit verified results.
+
+### Review a sampled shell check
+
+After loading matching draft, export and project-slice receipts in the helper
+review, open the optional `fdmgen/shell-check@0.1` or `@0.2` receipt. It must match the
+project G-code hash and selected pose. The view shows the recorded T verdict,
+measured/unmeasured sample counts, thin fraction, slope bands and method inputs.
+The exact archived project sample is `fixtures/seed-project-shell-check.json`.
+
+Legacy shell receipts do not pin the table, mesh or complete producer method.
+The view explicitly leaves geometry pairing unestablished for them. If table
+or mesh hashes are supplied, mismatches are rejected. The checker is not rerun
+in the browser; a passing sample screen does not establish an unchanged shell
+everywhere, bead bonds or strength. Upstream receipt changes clear the shell
+result, and a rejected shell receipt leaves the last matched result visible.
+
+Current `@0.2` shell receipts additionally require matching table/mesh hashes,
+the saved pose transform and recorded slicer settings, plus method and producer
+source provenance. The original receipt is kept intact in the expanded view.
+Legacy samples are never relabelled as current receipts.

@@ -47,6 +47,38 @@ const MassingReview = (() => {
   if(r.baseline&&r.slicer&&r.baseline_slicer)for(const key of ['generator','version','printer_model','print_settings_id','filament_settings_id','layer_height','wall_loops','sparse_infill_density','filament_shrink','enable_support'])if(r.slicer[key]!==r.baseline_slicer[key])mismatch.add(key);
   return [...mismatch];
  }
+ function shell(report,sliced,r,planningDraft){
+  slice(report,sliced);
+  if(r?.schema==='fdmgen/shell-check@0.2'){
+   const vec=v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite);
+   if(!planningDraft||!vec(r.pose?.t_mm)||!Array.isArray(r.pose?.R_design_to_print)||r.pose.R_design_to_print.length!==3||!r.pose.R_design_to_print.every(vec))throw Error('Shell-check needs the saved pose transform.');
+   for(const key of ['R_design_to_print','t_mm'])if(JSON.stringify(r.pose[key])!==JSON.stringify(planningDraft.orientation[key]))throw Error('Shell-check transform differs from the saved draft.');
+   if(!hash(r.table?.sha256)||!hash(r.mesh?.sha256)||!vec(r.grid?.origin_mm)||r.grid.frame!=='print (plate) frame of the pose')throw Error('Missing shell geometry provenance.');
+   for(const key of ['generator','version','printer_model','print_settings_id','filament_settings_id','layer_height','wall_loops','sparse_infill_density','filament_shrink','enable_support'])if(r.gcode?.[key]===undefined||r.gcode[key]===null||r.gcode[key]===''||r.gcode[key]!==sliced.slicer?.[key])throw Error('Shell-check slicer settings are missing or differ: '+key);
+   const method=r.method;
+   if(!method||method.deposit?.roads!=='credited'||typeof method.deposit.caps!=='boolean'||!Number.isFinite(method.deposit.step_frac)||method.deposit.step_frac<=0||method.deposit.step_frac>1||!Number.isInteger(method.seed)||!Number.isInteger(method.surface_samples)||method.surface_samples!==r.result?.metrics?.samples+r.result?.metrics?.unmeasured||!Number.isFinite(method.thin_fraction_limit)||method.thin_fraction_limit<0||method.thin_fraction_limit>1)throw Error('Invalid shell method provenance.');
+   for(const key of ['min_beads','bead_spacing_mm','layer_mm','entry_mm'])if(method[key]!==r.result?.metrics?.[key])throw Error('Shell method differs from result: '+key);
+   for(const key of ['fdmgen/catalog/checks/shell.py','fdmgen/gcode/occupancy.py','fdmgen/gcode/reader.py'])if(!hash(r.source_sha256?.[key]))throw Error('Missing shell producer source hash.');
+   r={...r,_receipt:r,schema:'fdmgen/shell-check@0.1',gcode_sha256:r.gcode?.gcode_sha256,pose:r.pose.id,
+      table_sha256:r.table.sha256,mesh_sha256:r.mesh.sha256,cell_mm:r.grid.cell_mm,grid_shape:r.grid.shape,clipped_outside_grid_mm3:r.grid.clipped_outside_grid_mm3};
+  }
+  if(r?.schema!=='fdmgen/shell-check@0.1')throw Error('Expected a shell-check receipt.');
+  if(!hash(r.gcode_sha256)||r.gcode_sha256!==sliced.slicer?.gcode_sha256)throw Error('Shell-check G-code differs from the loaded project slice.');
+  if(r.pose!==report.plan.candidate_id)throw Error('Shell-check pose differs from the export.');
+  for(const key of ['table_sha256','mesh_sha256'])if(r[key]!==undefined&&(!hash(r[key])||r[key]!==report.plan[key]))throw Error('Shell-check '+key+' differs from the export.');
+  const c=r.result,m=c?.metrics;
+  if(c?.rule!=='SHELL-001'||c.level!=='T'||!['PASS','FAIL','NOT_CHECKED'].includes(c.verdict)||typeof c.provisional!=='boolean'||typeof c.message!=='string'||typeof c.does_not_establish!=='string')throw Error('Invalid SHELL-001 result or scope.');
+  const positive=v=>Number.isFinite(v)&&v>0,nonnegative=v=>Number.isFinite(v)&&v>=0,fraction=v=>nonnegative(v)&&v<=1,count=v=>Number.isInteger(v)&&v>=0;
+  if(!positive(r.cell_mm)||!Array.isArray(r.grid_shape)||r.grid_shape.length!==3||!r.grid_shape.every(v=>count(v)&&v>0)||!nonnegative(r.clipped_outside_grid_mm3))throw Error('Invalid shell raster geometry.');
+  if(!m||!count(m.samples)||m.samples===0||!count(m.unmeasured)||!fraction(m.thin_fraction)||!nonnegative(m.thin_area_mm2_est)||!Array.isArray(m.bands))throw Error('Invalid shell sample accounting.');
+  for(const key of ['min_beads','bead_spacing_mm','layer_mm','entry_mm'])if(!positive(m[key]))throw Error('Invalid shell method input: '+key);
+  if(!fraction(m.threshold))throw Error('Invalid shell threshold.');
+  for(const b of m.bands){
+   if(!Array.isArray(b.slope_deg)||b.slope_deg.length!==2||!b.slope_deg.every(v=>nonnegative(v)&&v<=90)||b.slope_deg[0]>=b.slope_deg[1]||!count(b.samples)||!fraction(b.thin_fraction)||!['median_mm','p05_mm','required_mm'].every(k=>nonnegative(b[k])))throw Error('Invalid shell slope band.');
+  }
+  if(m.bands.reduce((n,b)=>n+b.samples,0)!==m.samples)throw Error('Shell band counts differ from measured samples.');
+  return r;
+ }
  function mechanics(report, sliced, r){
   slice(report,sliced);
   if(r?.schema!=='fdmgen/seat-load-transfer-pilot@0.1')throw Error('Expected a seat-load-transfer mechanics pilot receipt.');
@@ -86,6 +118,6 @@ const MassingReview = (() => {
    return a.status==='ready'&&a.reasons.length===0&&a.face_components===1&&a.missing_loaded_dofs===0&&a.loaded_fixed_dofs===0&&a.restrained_rigid_modes===6&&s?.status==='solved'&&s.true_relative_residual<=1e-8&&s.compliance_N_mm>0;
   })&&Object.values(r.seats).every(s=>s.force_error_N<=1e-9&&s.moment_error_N_mm<=1e-7);
  }
- return {draft,pair,slice,contextMismatch,mechanics,mechanicsComparable};
+ return {draft,pair,slice,contextMismatch,shell,mechanics,mechanicsComparable};
 })();
 if(typeof module!=='undefined')module.exports=MassingReview;
