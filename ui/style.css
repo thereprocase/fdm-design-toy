@@ -13,3 +13,7 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 #modifier-evidence details { margin: .65rem 0; }
 #modifier-evidence summary { cursor: pointer; overflow-wrap: anywhere; }
 #modifier-evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
+
+#handoff { margin-top: 20px; overflow-wrap: anywhere; }
+#handoff summary { cursor: pointer; font-weight: 600; }
+#handoff pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; background: #edf2e9; padding: 12px; }

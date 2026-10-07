@@ -167,5 +167,8 @@ byId('export').onclick=()=>{
     const blob=new Blob([JSON.stringify(draft,null,2)+'\n'],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download='massing-plan.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     byId('export-status').textContent='Draft exported. It includes the source fingerprint and outstanding verification steps.';
+    const incomplete=draft.massing.helper_regions.filter(h=>!h.geometry);
+    byId('handoff-readiness').textContent=incomplete.length?`Last exported draft: ${incomplete.length} helper(s) without a box: ${incomplete.map(h=>h.name).join(', ')}. Enable their spatial controls and set centre/size, then save again before running the exporter.`:'Last exported draft: geometry inputs needed for export are present. The command still checks source fingerprints and helper geometry.';
+    byId('handoff').open=true;
   }catch(error){byId('export-status').textContent=error.message;}
 };
