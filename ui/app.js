@@ -144,6 +144,17 @@ function addHelper(region={}) {
   toggle.onchange=()=>{spatial.hidden=!toggle.checked;updateRegions();};
   box.addEventListener('input',updateRegions);
   box.addEventListener('focusin',()=>setActiveHelper(box));
+  const duplicate=text('button','Duplicate region',box);duplicate.type='button';duplicate.className='secondary';
+  duplicate.onclick=()=>{
+    const copy=addHelper();
+    const source=[...box.querySelectorAll('input,textarea')],target=[...copy.querySelectorAll('input,textarea')];
+    source.forEach((field,i)=>{target[i].value=field.value;if(field.type==='checkbox')target[i].checked=field.checked;});
+    const name=copy.querySelector('[data-key="name"]');name.value=(name.value.trim()||'Helper')+' copy';
+    copy.querySelector('legend').textContent=name.value;
+    copy.querySelector('.spatial').hidden=!copy.querySelector('[data-spatial]').checked;
+    box.parentNode.insertBefore(copy,box.nextSibling);
+    setActiveHelper(copy);name.focus({preventScroll:true});copy.scrollIntoView({block:'nearest'});
+  };
   const remove=text('button','Remove region',box);remove.type='button';remove.className='secondary';remove.onclick=()=>{
     const name=box.querySelector('[data-key="name"]').value.trim()||'Unnamed helper';
     removedHelpers.push({box,index:[...byId('helper-regions').children].indexOf(box)});
@@ -154,7 +165,7 @@ function addHelper(region={}) {
     byId('remove-status').textContent=`Removed ${name}. Undo remove restores its fields and position. Up to 20 removals are kept until another draft or table is loaded.`;
     updateRegions();byId('undo-remove').focus({preventScroll:true});
   };
-  byId('helper-regions').append(box);updateRegions();
+  byId('helper-regions').append(box);updateRegions();return box;
 }
 function resetPlan(){
   clearRemovalHistory();
@@ -201,6 +212,7 @@ function updateRegions(){
   }catch(e){text('li',`${r.name||'Region'}: ${e.message}`,warnings);}
  }
  for(let i=0;i<valid.length;i++)for(let j=i+1;j<valid.length;j++){
+  if(['center_mm','size_mm'].every(key=>valid[i].geometry[key].every((v,k)=>v===valid[j].geometry[key][k])))text('li',`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: identical planning boxes. Move, resize or remove the redundant copy as needed.`,warnings);
   if(Plan.boxSeparation(valid[i].geometry,valid[j].geometry).needs_review)text('li',`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: overlap or separation is below the nominal 0.84 mm screen. Review sliver modifiers.`,warnings);
  }
  viewer.setRegions(valid);updateDraftState();

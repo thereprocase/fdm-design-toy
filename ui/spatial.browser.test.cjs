@@ -41,6 +41,24 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await region.getByRole('button',{name:'Place centre on part'}).click();assert(await page.evaluate(()=>!!viewer.onPick));
   await second.locator('[data-key="name"]').focus();assert(await page.evaluate(()=>viewer.onPick===null));
   await second.getByRole('button',{name:'Remove region'}).click();assert.equal(await page.locator('#preview-helper').inputValue(),'');
+  await region.getByRole('button',{name:'Duplicate region'}).click();
+  const copy=page.locator('.helper-region').nth(1),copyId=await copy.getAttribute('data-id');
+  assert.notEqual(copyId,firstId);assert.equal(await copy.locator('[data-key="name"]').inputValue(),'Seat backing copy');
+  assert(await copy.locator('[data-key="name"]').evaluate(e=>e===document.activeElement));
+  assert.deepEqual(await copy.locator('[data-geometry]').evaluateAll(fields=>fields.map(f=>f.value)),await region.locator('[data-geometry]').evaluateAll(fields=>fields.map(f=>f.value)));
+  assert(await copy.locator('[data-interface-id="rear_seat"]').isChecked());
+  assert.match(await page.locator('#region-warnings').innerText(),/identical planning boxes/);
+  const copyDownload=page.waitForEvent('download');await page.locator('#export').click();
+  const copied=JSON.parse(await fs.readFile(await(await copyDownload).path(),'utf8'));
+  const [a,b]=copied.massing.helper_regions;assert.notEqual(a.id,b.id);
+  assert.deepEqual({...b,id:a.id,name:a.name},a); // Exact independent planning intent, apart from identity/name.
+  const oldX=await region.locator('[data-geometry="center_mm"][data-axis="0"]').inputValue();
+  await copy.locator('[data-geometry="center_mm"][data-axis="0"]').fill(String(Number(oldX)+20));
+  assert.equal(await region.locator('[data-geometry="center_mm"][data-axis="0"]').inputValue(),oldX);
+  assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
+  await copy.locator('[data-geometry="size_mm"][data-axis="0"]').fill('');
+  await copy.getByRole('button',{name:'Duplicate region'}).click();
+  assert.equal(await page.locator('.helper-region').nth(2).locator('[data-geometry="size_mm"][data-axis="0"]').inputValue(),'');
   if(process.env.FDM_PREVIEW_SCREENSHOT)await page.screenshot({path:process.env.FDM_PREVIEW_SCREENSHOT,fullPage:false});
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
   console.log('PASS spatial click placement, design-frame persistence across poses, size screen, interface refs, sketch export/reopen, mobile, console');

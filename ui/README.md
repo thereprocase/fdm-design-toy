@@ -369,3 +369,10 @@ the source analysis order. Choose **Analysis order** to restore the supplied
 ordering. Sorting preserves your selected pose and draft; it is not a new
 combined ranking or qualification verdict. Check the selected pose's evidence
 level and slicer context before interpreting a difference.
+
+Use **Duplicate region** to start a similar helper beside the original in the
+form. The copy gets a new ID and a “copy” name, retains notes, interface/keep-out
+selections and raw box inputs, and becomes the active helper. Edits to it do
+not affect the original. Its box initially occupies the same place, so the
+workspace identifies the coincident boxes; move or resize the copy as appropriate.
+Duplication copies planning intent only and does not inherit verified results.
