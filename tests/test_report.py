@@ -23,6 +23,17 @@ def test_report_on_a_box():
     assert md.count("Does not establish:") >= 5
 
 
+def test_report_accepts_an_unmerged_mesh():
+    """Raw STL loading (no vertex merging, as the CLI does) must still voxelise."""
+    b = trimesh.creation.box(extents=(30, 20, 10))
+    b.apply_translation((0, 0, 5))
+    tri = b.vertices[b.faces].reshape(-1, 3)                  # every triangle with its own three vertices
+    faces = np.arange(len(tri)).reshape(-1, 3)
+    t = build_table(b.vertices, b.faces)
+    rep = run_report({"id": "box"}, tri, faces, t["candidates"][0], raster_px=0.2)
+    assert all(r.verdict.value == "PASS" for r in rep["results"])
+
+
 def test_layer_checks_parallel_matches_serial():
     occ = np.zeros((200, 120, 12), bool)
     occ[10:190, 10:110, :] = True

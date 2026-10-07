@@ -101,9 +101,10 @@ def run_report(problem: dict, vertices, faces, candidate: dict, *, raster_px=0.1
     V = np.asarray(vertices, float) @ R.T + t
     F = np.asarray(faces)
     results = [ovh.check_mesh(V, F, 50.0)]
-    occ5, g5 = voxelise(trimesh.Trimesh(V, F, process=False), h=(0.503, 0.503, 0.6), multiple=1)
+    solid = trimesh.Trimesh(V, F, process=True)          # merged vertices: the voxeliser needs a watertight mesh
+    occ5, g5 = voxelise(solid, h=(0.503, 0.503, 0.6), multiple=1)
     results.append(ovh.check_voxel(occ5, g5.h, 50.0, origin=g5.origin))
-    occ, g = voxelise(trimesh.Trimesh(V, F, process=False), h=(raster_px, raster_px, 0.2), multiple=1)
+    occ, g = voxelise(solid, h=(raster_px, raster_px, 0.2), multiple=1)
     results += layer_checks(occ, g.h, g.origin, workers=workers)
     results += check_body(vertices, faces, problem.get("keep_outs"), interfaces=problem.get("interfaces"))
     cols = candidate["columns"]
