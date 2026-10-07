@@ -1,0 +1,106 @@
+{
+  "schema": "fdmgen/road-caps-audit@0.1",
+  "geometry": {
+    "length_mm": 10,
+    "width_mm": 0.42,
+    "height_mm": 0.2
+  },
+  "grid": {
+    "origin_mm": [
+      -0.9996858407346411,
+      -0.9996858407346411,
+      -0.09968584073464103
+    ],
+    "h_mm": 0.1,
+    "shape": [
+      125,
+      25,
+      5
+    ],
+    "step_frac": 0.2
+  },
+  "producer": "deposit: default rectangular roads vs optional caps at the pinned implementation",
+  "producer_source_sha256": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
+  "establishes": "synthetic volume accounting and sensitivity to collinear G-code segmentation",
+  "does_not_establish": [
+    "physical bead corner geometry",
+    "preferred cap model",
+    "actual bracket sensitivity",
+    "shell qualification",
+    "mechanical effect"
+  ],
+  "rows": [
+    {
+      "segments": 1,
+      "caps": false,
+      "gcode_sha256": "93782fc899005a9486179dde6e389945fa58037476d23703d8dde4e6376ac73d",
+      "credited_mm3": 0.8400000000000005,
+      "deposited_mm3": 0.8399999999999984,
+      "outside_mm3": 0.0,
+      "density_sha256": "fc5a47d5efa96bfc2f9c5e94f5ebf8468f2ee9fc60e351fe6034637de2cb9b53",
+      "solid_cells_at_half_density": 800,
+      "moved_vs_one_segment_mm3": 0.0,
+      "moved_vs_uncapped_mm3": 0.0
+    },
+    {
+      "segments": 1,
+      "caps": true,
+      "gcode_sha256": "93782fc899005a9486179dde6e389945fa58037476d23703d8dde4e6376ac73d",
+      "credited_mm3": 0.8400000000000005,
+      "deposited_mm3": 0.8399999999999995,
+      "outside_mm3": 0.0,
+      "density_sha256": "5612a657a8c8089bac9cbb9d64269a89ef42187f492f39135270704ca2b01ac3",
+      "solid_cells_at_half_density": 832,
+      "moved_vs_one_segment_mm3": 0.0,
+      "moved_vs_uncapped_mm3": 0.03385796545105507
+    },
+    {
+      "segments": 10,
+      "caps": false,
+      "gcode_sha256": "0deeb99d16c3d5aeab51fd6f2188dd77c02f97395c59fcc221b06ee0eda7d91b",
+      "credited_mm3": 0.8399999999999955,
+      "deposited_mm3": 0.839999999999997,
+      "outside_mm3": 0.0,
+      "density_sha256": "25c4fbc334ae9e249e9e6a5258f658114b96577712a55f6928c4612c3fbbf605",
+      "solid_cells_at_half_density": 800,
+      "moved_vs_one_segment_mm3": 7.26415455565288e-16,
+      "moved_vs_uncapped_mm3": 0.0
+    },
+    {
+      "segments": 10,
+      "caps": true,
+      "gcode_sha256": "0deeb99d16c3d5aeab51fd6f2188dd77c02f97395c59fcc221b06ee0eda7d91b",
+      "credited_mm3": 0.8399999999999955,
+      "deposited_mm3": 0.839999999999997,
+      "outside_mm3": 0.0,
+      "density_sha256": "4431d4986ed751f2e96a4344e490ac763cfde708abe0b5907f71c8e56b24f3d5",
+      "solid_cells_at_half_density": 832,
+      "moved_vs_one_segment_mm3": 0.0015329914099632422,
+      "moved_vs_uncapped_mm3": 0.03517950976998828
+    },
+    {
+      "segments": 100,
+      "caps": false,
+      "gcode_sha256": "62dd898ab21114784d7e146a5594ca6600c228dd5b8ad9707ace23cf96e84837",
+      "credited_mm3": 0.8399999999999959,
+      "deposited_mm3": 0.839999999999997,
+      "outside_mm3": 0.0,
+      "density_sha256": "b8ce5cf64a260be38c1efdc3cef388aff7f9031eb9c337f3d1e96d61aef3ce35",
+      "solid_cells_at_half_density": 800,
+      "moved_vs_one_segment_mm3": 8.051285332877356e-16,
+      "moved_vs_uncapped_mm3": 0.0
+    },
+    {
+      "segments": 100,
+      "caps": true,
+      "gcode_sha256": "62dd898ab21114784d7e146a5594ca6600c228dd5b8ad9707ace23cf96e84837",
+      "credited_mm3": 0.8399999999999959,
+      "deposited_mm3": 0.8399999999999967,
+      "outside_mm3": 0.0,
+      "density_sha256": "305f9c90ca9ec2477e5dbafbabcaa94cb5ee99079c8776057d7ca9c0ceec811f",
+      "solid_cells_at_half_density": 832,
+      "moved_vs_one_segment_mm3": 0.0013099808061434119,
+      "moved_vs_uncapped_mm3": 0.034361804222648604
+    }
+  ]
+}

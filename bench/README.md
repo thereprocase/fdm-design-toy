@@ -341,11 +341,12 @@ clamped block with a fixed load (1×, 2×, 8× for full, half-linear, half-cubic
 
 ### Optional road caps: segmentation sensitivity
 
-The density pilots above use caps-off occupancy. The optional `deposit(caps=True)`
-mode extends each segment **forward** by half its width and redistributes the
-same extruded volume over the extended road. It fills some raster corner gaps,
-but also changes density according to how a path is split into G-code moves.
-Do not treat it as a validated mechanics correction.
+The density pilots above use caps-off occupancy. In the historical producer
+`419dd82`, optional `deposit(caps=True)` extended each segment **forward** by
+half its width and redistributed the same extruded volume over the extended
+road. It filled some raster corner gaps, but also changed density according to
+how a path was split into G-code moves. The audit below motivated the revision
+described next; it does not describe the current producer.
 
 A synthetic straight 10 × 0.42 × 0.2 mm road (0.84 mm³) was represented as
 1, 10 or 100 equal collinear moves, with identical total extrusion. On a fixed
@@ -370,3 +371,29 @@ Reproduce with `PYTHONPATH=src python bench/road_caps_audit.py --out audit.json`
 `receipts/road-caps-audit.json` records grid, input G-code hashes, density hashes
 and volume accounting. The script generates all inputs without external part
 files. No producer defaults or published occupancy fields were changed.
+
+#### Independent check after the caps revision
+
+Producer `22f64d8` adds extensions at path ends and turns, omits them at straight
+continuations, deposits extension material at each road's line density, and
+rescales the field once to preserve total extrusion. The same synthetic inputs
+were rerun from source snapshot `1a863be`; the producer source hash is recorded
+in both new receipts. The historical receipt above remains unchanged.
+
+| Deposition step | Caps-on volume moved, 10 versus 1 move | Caps-on volume moved, 100 versus 1 move |
+|---|---:|---:|
+| 0.02 mm (original audit) | 0.001533 mm³ / 0.1825% | 0.001310 mm³ / 0.1560% |
+| 0.008333 mm (h/12) | 0.001561 mm³ / 0.1858% | 0.001359 mm³ / 0.1617% |
+
+At the original sampling step, the ten-way split effect fell from 13.4% to
+0.1825%. Uncapped fields differ by less than 1e-14 mm³ in these reruns. All
+input volume remains accounted, with no clipping. The remaining differences
+are small but nonzero, and do not decrease monotonically in these two sampling
+trials. This supports approximate segmentation consistency for this synthetic
+case; it is not proof of exact invariance, bead geometry or bracket mechanics.
+Existing caps-off mechanics receipts are unchanged.
+
+Receipts: `receipts/road-caps-revised-step5.json` and
+`receipts/road-caps-revised-step12.json`. The audit now records the imported
+producer file's SHA-256 and accepts `--step-frac`; use the default 0.2 or
+`--step-frac 0.08333333333333333` with distinct output files to reproduce.

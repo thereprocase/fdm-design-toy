@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import inspect
 import math
 from pathlib import Path
 import numpy as np
@@ -24,9 +25,12 @@ def road_code(segments):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--step-frac', type=float, default=.2)
     args = ap.parse_args()
+    if not np.isfinite(args.step_frac) or not 0 < args.step_frac <= 1:
+        ap.error('step-frac must be in (0, 1]')
     origin = np.array([-1., -1., -.1])+1e-4*np.pi
-    h = .1; shape = (125, 25, 5); step_frac = .2
+    h = .1; shape = (125, 25, 5); step_frac = args.step_frac
     fields = {}; rows = []
     for segments in (1, 10, 100):
         code = road_code(segments); tp = read_gcode(code, footer_rel_tol=None)
@@ -47,7 +51,8 @@ def main():
     result = dict(schema='fdmgen/road-caps-audit@0.1',
         geometry=dict(length_mm=10, width_mm=.42, height_mm=.2),
         grid=dict(origin_mm=origin.tolist(), h_mm=h, shape=shape, step_frac=step_frac),
-        producer='deposit: default rectangular roads vs forward extension of half width, same volume per road',
+        producer='deposit: default rectangular roads vs optional caps at the pinned implementation',
+        producer_source_sha256=hashlib.sha256(Path(inspect.getfile(deposit)).read_bytes()).hexdigest(),
         establishes='synthetic volume accounting and sensitivity to collinear G-code segmentation',
         does_not_establish=['physical bead corner geometry', 'preferred cap model', 'actual bracket sensitivity',
                            'shell qualification', 'mechanical effect'], rows=rows)
