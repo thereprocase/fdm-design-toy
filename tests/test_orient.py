@@ -394,3 +394,27 @@ def test_shell_check_0p3_carries_pose_evidence_and_needs_enough_heights():
         add_shell_columns(table, sha, [(few, "b" * 64, "shell-only")])
     old = add_shell_columns(table, sha, [(legacy, "c" * 64, "shell-only")])        # 0.2: accepted, nothing invented
     assert "pose_evidence" not in next(c for c in old["candidates"] if c["id"] == "facet-00")["columns"]["t_shell_thin_fraction"]
+
+
+def test_bridge_columns_carry_the_ceiling_span_when_the_receipt_has_it():
+    import copy
+    import hashlib
+
+    from fdmgen.orient.table import add_bridge_columns
+    raw = KEEP_OUT_TABLE.read_bytes()
+    table, sha = json.loads(raw), hashlib.sha256(raw).hexdigest()
+    legacy = _bridge_receipts()[0][0]
+    rec = copy.deepcopy(legacy)
+    rec["result"]["metrics"].update({"max_ceiling_span_external_mm": 2.0, "max_ceiling_span_internal_mm": 15.68})
+    cols = next(c for c in add_bridge_columns(table, sha, [(rec, "a" * 64, "shell-only")])["candidates"]
+                if c["id"] == "facet-00")["columns"]
+    assert cols["t_bridge_span_internal_mm"]["ceiling_span_mm"] == 15.68
+    assert cols["t_bridge_span_internal_mm"]["verdict"] == "FAIL"           # the verdict stays on the strand span
+    old = next(c for c in add_bridge_columns(table, sha, [(legacy, "b" * 64, "shell-only")])["candidates"]
+               if c["id"] == "facet-00")["columns"]
+    assert "ceiling_span_mm" not in old["t_bridge_span_internal_mm"]          # nothing invented for old receipts
+    for bad in (float("nan"), -1.0, "15"):
+        broken = copy.deepcopy(rec)
+        broken["result"]["metrics"]["max_ceiling_span_internal_mm"] = bad
+        with pytest.raises(ValueError, match="non-negative"):
+            add_bridge_columns(table, sha, [(broken, "c" * 64, "shell-only")])

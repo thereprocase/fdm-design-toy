@@ -280,7 +280,8 @@ def add_bridge_columns(table: dict, table_sha256: str, receipts: list[tuple[dict
     """A new table with T-level BRG-001 columns (longest external and internal bridge span) from bridge-check@0.2
     receipts bound to a pose; same pairing rules as add_shell_columns, and the receipt's slice must have been
     checked against the pose at MIN_POSE_BANDS heights or more. Each column has its own verdict against its own
-    limit; the receipt's overall verdict is kept in the receipt block."""
+    limit (strand model); the receipt's overall verdict is kept in the receipt block. Receipts that report the
+    ceiling model also give ceiling_span_mm (reported, not judged)."""
     import copy
     import math
 
@@ -305,11 +306,17 @@ def add_bridge_columns(table: dict, table_sha256: str, receipts: list[tuple[dict
         cover["cell_mm"] = m["cell_mm"]
         for name, key, lim in ((names[0], "max_span_external_mm", m["max_span_external_mm"]),
                                (names[1], "max_span_internal_mm", m["max_span_internal_mm"])):
+            ceiling_key = key.replace("max_span_", "max_ceiling_span_")
             v = mt[key]
             if not (isinstance(v, (int, float)) and math.isfinite(v) and v >= 0):
                 raise ValueError(f"receipt {rec_sha[:12]}: {key} {v!r} is not a non-negative length")
             col = _col(v, "mm", "BRG-001", "T", "FAIL" if v > lim else "PASS", res["provisional"], fid)
             col["limit_mm"] = lim
+            if ceiling_key in mt:                 # receipts from c448b4a on; older ones never had it, so no key
+                cv = mt[ceiling_key]
+                if not (isinstance(cv, (int, float)) and math.isfinite(cv) and cv >= 0):
+                    raise ValueError(f"receipt {rec_sha[:12]}: {ceiling_key} {cv!r} is not a non-negative length")
+                col["ceiling_span_mm"] = cv
             col["receipt"] = {"sha256": rec_sha, "slice_kind": kind, "gcode_sha256": g["gcode_sha256"],
                               "overall_verdict": res["verdict"], "source_sha256": rec["source_sha256"]}
             col["coverage"] = cover
