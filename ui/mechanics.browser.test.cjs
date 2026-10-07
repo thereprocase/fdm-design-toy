@@ -21,6 +21,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('-2.988%'));
  assert.match(await page.locator('#mechanics-sampling').innerText(),/Shell-only bead sampling step: 0.1 mm. Project bead sampling step: 0.1 mm/);
  assert.match(await page.locator('#mechanics-resolution').innerText(),/1.6 × 1.6 × 1.6 mm/);
+ assert.match(await page.locator('#mechanics-sampling').innerText(),/Shell-only road-end\/turn caps: not recorded/);
+ await page.locator('#review-mechanics').setInputFiles(path.join(__dirname,'../bench/receipts/occupancy-caps-sf16-connected-r1.json'));
+ await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('-2.288%'));
+ assert.match(await page.locator('#mechanics-sampling').innerText(),/Shell-only road-end\/turn caps: enabled. Project road-end\/turn caps: enabled/);
+ assert.match(await page.locator('#mechanics-rows').innerText(),/485.325/);
+ const disabled=JSON.parse(fs.readFileSync(receipt));for(const v of Object.values(disabled.inputs))v.provenance.sampling={caps:false};
+ await page.locator('#review-mechanics').setInputFiles({name:'synthetic-caps-off.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(disabled))});
+ await page.waitForFunction(()=>document.querySelector('#mechanics-sampling').textContent.includes('Project road-end/turn caps: disabled'));
  const wrong=JSON.parse(fs.readFileSync(receipt));wrong.inputs.baseline.provenance.gcode_sha256='a'.repeat(64);
  await page.locator('#review-mechanics').setInputFiles({name:'wrong.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(wrong))});
  await page.waitForFunction(()=>document.querySelector('#mechanics-status').textContent.includes('baseline G-code differs'));

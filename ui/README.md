@@ -436,3 +436,8 @@ binding; enrichment does not relabel the underlying measurements.
 If filters hide your selected pose, **Show selected pose** clears only the
 filters excluding it and returns keyboard focus to its row. Your ordering,
 selection, rationale and helper draft stay intact.
+
+Mechanics review separately displays each input's recorded road-end/turn cap
+setting. An absent setting says **not recorded**, rather than assuming caps are
+disabled. The capped R1 receipt is exercised directly in the browser test. Equal
+bead-sampling steps do not imply equal raster domains or transferred load arrays.

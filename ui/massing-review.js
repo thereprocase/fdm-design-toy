@@ -90,6 +90,10 @@ function renderMechanics(r){
   const step=sampling?.step_mm;
   return `${label} bead sampling step: ${typeof step==='number'&&Number.isFinite(step)&&step>0?num(step)+' mm':'not recorded'}.`;
  }).join(' ');
+ el('mechanics-sampling').textContent+=' '+[['baseline','Shell-only'],['project','Project']].map(([key,label])=>{
+  const caps=r.inputs[key].provenance.sampling?.caps;
+  return `${label} road-end/turn caps: ${caps===true?'enabled':caps===false?'disabled':'not recorded'}.`;
+ }).join(' ')+' Raster-model changes can alter thresholded domains and transferred loads; equal sampling steps do not establish equivalent mechanics.';
  el('mechanics-rows').replaceChildren();el('mechanics-audits').replaceChildren();
  for(const [name,label] of [['full_solid','Full-body context'],['baseline','Shell-only'],['project','Seeded project']]){
   const a=r.audits[name],s=r.solves?.[name],row=add('tr','',el('mechanics-rows'));
