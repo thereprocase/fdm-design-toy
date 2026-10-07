@@ -1,0 +1,21 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(pathToFileURL(path.join(__dirname,'massing-review.html')).href);
+ const draftPath=path.join(__dirname,'../tests/fixtures/massing/sample-draft.json'),receiptPath=path.join(__dirname,'fixtures/massing-export.json');
+ await page.locator('#review-draft').setInputFiles(draftPath);await page.locator('#review-receipt').setInputFiles(receiptPath);
+ await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
+ assert.match(await page.locator('#review-checks').innerText(),/Deliberately tiny box/);assert.match(await page.locator('#review-count').innerText(),/1 failed/);assert.match(await page.locator('#review-helpers').innerText(),/Rear seat backing/);assert.match(await page.locator('#review-setting-evidence').innerText(),/sparse_infill_density/);
+ const changed=JSON.parse(fs.readFileSync(receiptPath));changed.capability_context_matches_template=false;
+ await page.locator('#review-receipt').setInputFiles({name:'different-context.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});
+ await page.waitForFunction(()=>document.querySelector('#review-context').textContent.includes('Template differs'));
+ changed.plan.draft_sha256='0'.repeat(64);
+ await page.locator('#review-receipt').setInputFiles({name:'wrong.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});
+ await page.waitForFunction(()=>document.querySelector('#review-status').textContent.includes('does not match'));
+ assert(await page.locator('#review-workspace').isVisible());
+ await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.locator('#review-draft').setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{}')});
+ await page.waitForFunction(()=>document.querySelector('#review-status').textContent.includes('current planning draft'));
+ assert(await page.locator('#review-workspace').isHidden());assert(await page.locator('#review-receipt').isDisabled());assert.deepEqual(errors,[]);
+ console.log('PASS real exporter receipt/draft pairing, named tiny helper failure, context mismatch, wrong receipt retention, new draft invalidation, mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

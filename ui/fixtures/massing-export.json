@@ -1,0 +1,127 @@
+{
+  "schema": "fdmgen/massing-export@0.1",
+  "plan": {
+    "draft_sha256": "3e14c3b9c56ec31866032ae4cf8bd88c8245fdc3b12ddeda84c2e1d5a29e719f",
+    "table_sha256": "1e051040642fecfa32548b37f54d4e13493d8847ae2eb24cc139bd6f10b1bfbe",
+    "mesh_sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e",
+    "problem": "spool-rack-g2-ef",
+    "candidate_id": "facet-00"
+  },
+  "template_3mf_sha256": "1845af11047b2307d2af8c21108b9a88e96b5318993dd735fdd7929ab8737e42",
+  "project_3mf_sha256": "e4abf6df6ae0de55a3d3e08b669b2a9a9aa6a78239f28ec1b87d8ab019592214",
+  "capability_context_matches_template": true,
+  "settings_evidence": {
+    "sparse_infill_density": {
+      "value": "100%",
+      "evidence": "measured",
+      "receipt": "27be8e6ad33a9912315016ecf717bb510ca1baef4e1c6f690a10497c0fcf722a"
+    }
+  },
+  "object_settings": {
+    "wall_loops": 4,
+    "top_shell_layers": 8,
+    "bottom_shell_layers": 8,
+    "top_shell_thickness": 0,
+    "bottom_shell_thickness": 0,
+    "sparse_infill_density": "0%"
+  },
+  "skin_note": "1.6 mm skin -> 8 layers of 0.2 mm",
+  "helpers": [
+    {
+      "id": "34d4f9dc-e1d8-470f-938d-591a419ecb37",
+      "settings": {
+        "sparse_infill_density": "100%"
+      },
+      "print_bbox_mm": [
+        [
+          106.247,
+          45.741,
+          2.0
+        ],
+        [
+          122.247,
+          55.741,
+          22.0
+        ]
+      ]
+    },
+    {
+      "id": "64440f04-4cdc-4e5a-af33-565e7fe9a19d",
+      "settings": {
+        "sparse_infill_density": "100%"
+      },
+      "print_bbox_mm": [
+        [
+          133.997,
+          50.491,
+          11.75
+        ],
+        [
+          134.497,
+          50.991,
+          12.25
+        ]
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "rule": "MOD-001",
+      "level": "M",
+      "verdict": "FAIL",
+      "message": "MOD-001 FAIL: helper(s) 64440f04-4cdc-4e5a-af33-565e7fe9a19d (smallest edge 0.50 mm) are thinner than 0.84 mm; the slicer may drop them or print slivers.",
+      "provisional": true,
+      "metrics": {
+        "too_small": [
+          [
+            "64440f04-4cdc-4e5a-af33-565e7fe9a19d",
+            0.5
+          ]
+        ]
+      },
+      "fixes": [
+        "make every helper edge at least 0.84 mm"
+      ],
+      "establishes": "",
+      "does_not_establish": ""
+    },
+    {
+      "rule": "MOD-001",
+      "level": "M",
+      "verdict": "PASS",
+      "message": "MOD-001 bonding (sampled): 48 of 512 sample points of helper 34d4f9dc-e1d8-470f-938d-591a419ecb37 lie in the printed shell band (<= 1.68 mm under the body surface).",
+      "provisional": true,
+      "metrics": {
+        "helper": "34d4f9dc-e1d8-470f-938d-591a419ecb37",
+        "samples": 512,
+        "in_shell_band": 48,
+        "straddles_surface": false,
+        "shell_band_mm": 1.68
+      },
+      "fixes": [],
+      "establishes": "Sampled points of the helper meet the shell band.",
+      "does_not_establish": "A continuous bond in the slice; read the sliced roads back to confirm it."
+    },
+    {
+      "rule": "MOD-001",
+      "level": "M",
+      "verdict": "NOT_CHECKED",
+      "message": "MOD-001 bonding NOT_CHECKED: no sample point of helper 64440f04-4cdc-4e5a-af33-565e7fe9a19d lies in the printed shell band (<= 1.68 mm under the body surface). It may float in the 0 % interior, but sampling cannot rule out contact between samples; move it against a wall or skin, or confirm in the slice.",
+      "provisional": true,
+      "metrics": {
+        "helper": "64440f04-4cdc-4e5a-af33-565e7fe9a19d",
+        "samples": 512,
+        "in_shell_band": 0,
+        "straddles_surface": false,
+        "shell_band_mm": 1.68
+      },
+      "fixes": [
+        "place the helper so it touches a wall or skin"
+      ],
+      "establishes": "",
+      "does_not_establish": ""
+    }
+  ],
+  "establishes": "A sliceable project carrying the plan's pose, shell and helper intent, with MOD-001 geometry checks.",
+  "does_not_establish": "That the slice credits the helpers as intended (slice it and read it back), or any strength."
+}
