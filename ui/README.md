@@ -82,3 +82,10 @@ string notes are migrated. Decision metadata includes candidate ID, source hash,
 rank at decision and designer role. v0.1/v0.2 drafts remain readable.
 Run `node ui/spatial.browser.test.cjs` with the same Playwright/mesh environment
 as the viewer test for real-part picking and spatial save/reopen checks.
+
+On desktop, the part preview stays beside the controls while scrolling through
+orientation evidence or helper edits. **Plan this pose** and **Review orientation
+choices** connect the two steps. Mesh upload/help collapses after a matching mesh
+loads. After surface placement, **Return to helper controls** restores focus to
+the region centre. Mobile uses a single column with these explicit navigation
+controls, avoiding a fixed preview that would cover the form.

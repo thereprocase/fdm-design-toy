@@ -10,15 +10,19 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await page.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);
   await page.waitForFunction(()=>document.querySelector('#mesh-status').textContent.startsWith('Mesh fingerprint matched'));
   await page.locator('#rationale').fill('Preserve loaded interfaces.');
+  await page.locator('#plan-pose').click();assert(await page.locator('#walls').evaluate(e=>e===document.activeElement));
   const region=page.locator('.helper-region').first();
   for(const [key,value] of Object.entries({name:'Seat backing',location:'Rear seat',purpose:'Seat load transfer',keep_clear:'Preserve rod bore'}))await region.locator(`[data-key="${key}"]`).fill(value);
   await region.locator('[data-interface-id="rear_seat"]').check();await region.locator('[data-spatial]').check();
   await page.locator('#zoom-in').click();assert(await page.evaluate(()=>viewer.zoom>1));await page.locator('#zoom-out').click();
   await page.locator('#view-top').click();await region.getByRole('button',{name:'Place centre on part'}).click();
   const hit=await page.evaluate(()=>{
-    const v=viewer.vertices,p=viewer.project((v[0]+v[3]+v[6])/3,(v[1]+v[4]+v[7])/3,(v[2]+v[5]+v[8])/3),r=viewer.canvas.getBoundingClientRect();return [p[0]+r.left,p[1]+r.top];
+    const v=viewer.vertices;let best=null,area=-1;for(let i=0;i<v.length;i+=9){const p=[0,3,6].map(j=>viewer.project(v[i+j],v[i+j+1],v[i+j+2]));const a=Math.abs((p[1][0]-p[0][0])*(p[2][1]-p[0][1])-(p[2][0]-p[0][0])*(p[1][1]-p[0][1]));if(a>area){area=a;best=[p.reduce((s,q)=>s+q[0],0)/3,p.reduce((s,q)=>s+q[1],0)/3];}}const r=viewer.canvas.getBoundingClientRect();return [best[0]+r.left,best[1]+r.top];
   });await page.mouse.click(...hit);await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('Region centre placed'));
   assert.equal(await page.evaluate(()=>viewer.regions.length),1);
+  await page.locator('#return-helper').click();
+  assert(await region.locator('[data-geometry="center_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));
+  assert(await page.evaluate(()=>{const v=document.querySelector('#part-view').getBoundingClientRect(),p=document.querySelector('.preview').getBoundingClientRect(),e=document.querySelector('.editor').getBoundingClientRect();return v.top>=0&&v.bottom<=innerHeight&&p.right<=e.left;}));
   const centers=await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value));
   await page.getByRole('button',{name:'facet-01',exact:true}).click();await page.locator('#rationale').fill('Alternative pose for the same reinforcement.');
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),centers);
@@ -28,7 +32,7 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.equal(draft.massing.helper_regions[0].geometry.frame,'design');assert.equal(draft.massing.helper_regions[0].geometry_status,'sketch');assert.deepEqual(draft.massing.helper_regions[0].keep_clear.interface_ids,['rear_seat']);
   await page.locator('#draft-file').setInputFiles({name:'draft.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(draft))});await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>Number(f.value))),draft.massing.helper_regions[0].geometry.center_mm);
-  if(process.env.FDM_PREVIEW_SCREENSHOT)await page.screenshot({path:process.env.FDM_PREVIEW_SCREENSHOT,fullPage:true});
+  if(process.env.FDM_PREVIEW_SCREENSHOT)await page.screenshot({path:process.env.FDM_PREVIEW_SCREENSHOT,fullPage:false});
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
   console.log('PASS spatial click placement, design-frame persistence across poses, size screen, interface refs, sketch export/reopen, mobile, console');
  }finally{await browser.close();}
