@@ -6,10 +6,10 @@ id: p1s-0.4-polylite-asa-cal-2026-10
 binds:
   printer: {model: Bambu Lab P1S, nozzle_mm: 0.4, plate: Textured PEI}
   orca_version: 2.4.2
-  profile_sha256:            # pinned when the profiles are exported into the repo (issue #9 follow-up)
-    machine: null
-    process: null
-    filament: null
+  profile_sha256:            # sha256 of the Orca user profile files on the second workstation (2026-10-07)
+    machine: 1f8a891eb79cc89d738165d8c2bafb9cec2e82f9294877da0d76486c29e44fe3     # "Repro P1S - 0.4 nozzle"
+    process: null            # the production process profile is not identified yet, so the binding stays UNBOUND
+    filament: a8a4956cd6e0c6ee8e1bef3c5d4c9d9eb6199f9ad8c578f29eded695080c5d6c    # "Repro - ASA - Polymaker PolyLite - Calibrated"
 compensation:                # consumed by HOLE/EF rules and by the G-code -> design mapper (PLAN D3)
   filament_shrink_xy: {value: 0.9946, unit: '1', tag: S, owner: slicer}
   filament_shrinkage_compensation_z: {value: 1.0, unit: '1', tag: S, owner: slicer}

@@ -220,7 +220,10 @@ def _cmd_massing_evidence(a) -> int:
                         a.baseline.read_text(encoding="utf-8") if a.baseline else None)
     out = a.out or a.report.with_name(a.report.stem + "-slice-evidence.json")
     out.write_text(json.dumps(ev, indent=1), encoding="utf-8")
-    print(f"wrote {out}; placement shift {ev['placement_shift_xy_mm']} mm, credited {ev['credited_mm3']} mm3")
+    print(f"wrote {out}; {ev['slicer']['generator']} {ev['slicer']['version']}, placement shift "
+          f"{ev['placement_shift_xy_mm']} mm, credited {ev['credited_mm3']} mm3")
+    if ev["baseline_context_mismatch"]:
+        print(f"  WARNING the baseline was sliced differently: {', '.join(ev['baseline_context_mismatch'])}")
     for h in ev["helpers"]:
         print(f"  {h['verdict']:5} {h['message']}")
     return 2 if any(h["verdict"] == "FAIL" for h in ev["helpers"]) else 0

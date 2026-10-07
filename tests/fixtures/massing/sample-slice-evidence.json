@@ -11,6 +11,33 @@
   "candidate_id": "facet-00"
  },
  "baseline": "shell-only slice",
+ "slicer": {
+  "gcode_sha256": "51f7ba2d4495499a9f58e498602259501242f77abb68512c2984476b05dd97a2",
+  "generator": "OrcaSlicer",
+  "version": "2.4.2",
+  "printer_model": "Bambu Lab P1S",
+  "print_settings_id": "Part P1S ASA 4w 8-skin screen",
+  "filament_settings_id": "\"ASA print-control screen\"",
+  "layer_height": "0.2",
+  "wall_loops": "4",
+  "sparse_infill_density": "0%",
+  "filament_shrink": "100%",
+  "enable_support": "0"
+ },
+ "baseline_slicer": {
+  "gcode_sha256": "c3d058308dad8626d52ec9454e75a878689ed7f083a8af6734c70d27d3b3e11a",
+  "generator": "OrcaSlicer",
+  "version": "2.4.2",
+  "printer_model": "Bambu Lab P1S",
+  "print_settings_id": "Part P1S ASA 4w 8-skin screen",
+  "filament_settings_id": "\"ASA print-control screen\"",
+  "layer_height": "0.2",
+  "wall_loops": "4",
+  "sparse_infill_density": "0%",
+  "filament_shrink": "100%",
+  "enable_support": "0"
+ },
+ "baseline_context_mismatch": [],
  "placement_shift_xy_mm": [
   -0.0005,
   0.004

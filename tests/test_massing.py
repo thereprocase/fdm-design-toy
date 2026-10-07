@@ -151,6 +151,8 @@ def test_massing_slice_evidence_is_differential():
     assert v["dropped"]["solid_infill_in_box_mm3"] > 0 and v["dropped"]["added_solid_mm3"] == pytest.approx(0)
     assert v["dropped"]["verdict"] == "FAIL" and "dropped it" in v["dropped"]["message"]
     assert ev["placement_shift_xy_mm"] == pytest.approx([0, 0], abs=1e-6) and ev["baseline"] == "shell-only slice"
+    assert len(ev["slicer"]["gcode_sha256"]) == 64 and len(ev["baseline_slicer"]["gcode_sha256"]) == 64
+    assert ev["slicer"]["gcode_sha256"] != ev["baseline_slicer"]["gcode_sha256"] and ev["baseline_context_mismatch"] == []
     single = {h["id"]: h for h in slice_evidence(report, with_helpers)["helpers"]}
     assert single["dropped"]["verdict"] == "NOT_CHECKED" and single["kept"]["verdict"] == "PASS"
 
@@ -168,3 +170,4 @@ def test_sample_slice_evidence_contract():
         assert {"id", "verdict", "message", "added_solid_mm3", "added_fill_fraction", "box_volume_mm3",
                 "baseline_solid_infill_mm3", "solid_infill_in_box_mm3"} <= set(h)
     assert sorted(h["verdict"] for h in ev["helpers"]) == ["FAIL", "PASS"]
+    assert ev["slicer"]["version"] == "2.4.2" and ev["baseline_context_mismatch"] == []

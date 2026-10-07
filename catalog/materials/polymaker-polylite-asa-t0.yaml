@@ -42,7 +42,15 @@ known_inconsistencies:
 
 process_binding:                         # the card is valid only on this process (weld physics is process-locked)
   calibration: p1s-0.4-polylite-asa-cal-2026-10
-  profile_sha256: {machine: null, process: null, filament: null}
+  profile_sha256:
+    machine: 1f8a891eb79cc89d738165d8c2bafb9cec2e82f9294877da0d76486c29e44fe3
+    process: null
+    filament: a8a4956cd6e0c6ee8e1bef3c5d4c9d9eb6199f9ad8c578f29eded695080c5d6c
+  verified_against_profile: >-
+    2026-10-07, tier S: the calibrated filament profile sets filament_flow_ratio 0.93 and filament_shrink 99.46 %;
+    nozzle_temperature 260, filament_type ASA and slow_down_layer_time 3 come from its Orca 2.4.2 parent chain
+    (PolyLite ASA @BBL X1C -> PolyLite ASA @base -> fdm_filament_asa). layer_height belongs to the process profile,
+    which is not identified yet.
   settings:                              # PROC-001 checks these against every slice that uses the card
     filament_type: ASA
     nozzle_temperature: 260
