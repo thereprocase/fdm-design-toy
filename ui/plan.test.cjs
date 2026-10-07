@@ -23,3 +23,27 @@ test('legacy notes are retained for explicit completion',()=>{
  const draft=Plan.create(analysis,hash,candidate,input);draft.schema='fdmgen.massing-plan.v0.1';draft.massing.helper_intent='Existing rib notes';
  const result=Plan.restore(draft,analysis,hash);assert.equal(result.migrated,true);assert.equal(result.input.helper_regions[0].purpose,'Existing rib notes');assert.equal(result.input.helper_regions[0].location,'');
 });
+test('spatial box intent preserves the design frame across draft round-trip',()=>{
+ const geometry={type:'box',frame:'design',center_mm:[90,12,3],size_mm:[10,8,6]};
+ const draft=Plan.create(analysis,hash,candidate,{...input,helper_regions:[{...input.helper_regions[0],geometry}]});
+ const restored=Plan.restore(draft,analysis,hash);
+ assert.deepEqual(restored.input.helper_regions[0].geometry,geometry);
+ assert.equal(restored.input.helper_regions[0].geometry_status,'sketch');
+ assert.throws(()=>Plan.geometry({...geometry,size_mm:[0,8,6]}),/positive/);
+ assert.throws(()=>Plan.geometry({...geometry,frame:'print'}),/design frame/);
+});
+test('keep-clear interface references are validated by the current table',()=>{
+ const withInterfaces={...analysis,interfaces:[{id:'seat'}]};
+ const helper={...input.helper_regions[0],keep_clear:{interface_ids:['seat'],clearance_mm:.5,note:'Maintain assembly clearance'}};
+ const draft=Plan.create(withInterfaces,hash,candidate,{...input,helper_regions:[helper]});
+ assert.deepEqual(draft.massing.helper_regions[0].keep_clear.interface_ids,['seat']);
+ assert.throws(()=>Plan.restore(draft,analysis,hash),/Unknown interface: seat/);
+});
+test('nominal overlap-or-gap screen flags touching/sliver boxes only',()=>{
+ const box=x=>({type:'box',frame:'design',center_mm:[x,0,0],size_mm:[2,2,2]});
+ assert.equal(Plan.boxSeparation(box(0),box(3)).needs_review,false); // 1 mm gap
+ assert.equal(Plan.boxSeparation(box(0),box(2.5)).needs_review,true); // .5 mm gap
+ assert.equal(Plan.boxSeparation(box(0),box(2)).needs_review,true); // only touching
+ assert.equal(Plan.boxSeparation(box(0),box(1.5)).needs_review,true); // .5 mm overlap
+ assert.equal(Plan.boxSeparation(box(0),box(1)).needs_review,false); // 1 mm overlap
+});

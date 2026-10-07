@@ -3,18 +3,19 @@ const byId = id => document.getElementById(id);
 let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draftRequest = 0;
 const decisions = new Map();
 const viewer = new PartViewer(byId('part-view'));
-let mesh=null,meshHash=null,meshRequest=0;
+let mesh=null,meshHash=null,meshRequest=0,meshBounds=null;
 function updatePreview(){
  if(!analysis || !selected || !mesh || meshHash!==analysis.mesh?.sha256){viewer.clear();return;}
- try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';}
+ try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();}
  catch(e){viewer.clear();byId('mesh-status').textContent=e.message;}
 }
+byId('zoom-in').onclick=()=>viewer.zoomBy(1.4);byId('zoom-out').onclick=()=>viewer.zoomBy(1/1.4);
 byId('view-iso').onclick=()=>viewer.view('iso');byId('view-top').onclick=()=>viewer.view('top');
 byId('mesh-file').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;const request=++meshRequest;
  try{if(file.size>100*1024*1024)throw Error('Preview supports STL files up to 100 MB.');const raw=await file.arrayBuffer(), hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',raw)),b=>b.toString(16).padStart(2,'0')).join('');
  if(request!==meshRequest)return;if(hash!==analysis?.mesh?.sha256)throw Error('STL fingerprint does not match this analysis. Load the referenced mesh.');
- mesh=parseSTL(raw);meshHash=hash;byId('mesh-status').textContent='Mesh matched. Choose a pose to preview it.';updatePreview();
+ mesh=parseSTL(raw);meshBounds={min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};for(let i=0;i<mesh.length;i++){meshBounds.min[i%3]=Math.min(meshBounds.min[i%3],mesh[i]);meshBounds.max[i%3]=Math.max(meshBounds.max[i%3],mesh[i]);}meshHash=hash;byId('mesh-status').textContent='Mesh matched. Choose a pose to preview it.';updatePreview();
  }catch(e){if(request!==meshRequest)return;mesh=null;meshHash=null;viewer.clear();byId('mesh-status').textContent=e.message;}
 };
 const metricNames = {F_L_max:'Layer failure index · conservative corner',F_L_max_vendor_corner:'Layer failure index · vendor-ratio corner',F_L_max_at_mm:'Peak sample location (design frame)',F_L_p99:'99th percentile layer failure index',ovh_fail_mm2:'Overhang area',bridge_candidate_mm2:'Potential bridge area',v_unsupported_mm2:'Voxel unsupported area',brg_worst_span_mm:'Longest bridge span',contact_mm2:'Bed contact',com_margin_mm:'Centre-of-mass margin',base_min_width_mm:'Minimum base width',height_mm:'Height'};
@@ -43,7 +44,7 @@ function choose(candidate) {
     text('dd',formatted(column)+(column?.level?` · ${column.level}`:''),byId('metrics'));
   }
   byId('rationale').value=decisions.get(candidate.id)||'';
-  byId('export').disabled=false;renderRows();updatePreview();
+  byId('export').disabled=false;renderRows();updatePreview();updateRegions();
 }
 function renderRows() {
   byId('rows').replaceChildren();
@@ -78,21 +79,61 @@ function addHelper(region={}) {
   text('legend',region.name||'Helper region',box);
   for(const [key,label,placeholder] of [['name','Name','e.g. Rear seat rib'],['location','Location on the part','e.g. Between the rear seat and wall plate'],['purpose','Load-carrying purpose','What load should this reinforcement carry?'],['keep_clear','Interfaces and clearances to preserve','e.g. Rod bore, washer seats, assembly access']]) {
     const wrapper=text('label',label,box),field=document.createElement(key==='name'?'input':'textarea');
-    field.dataset.key=key;field.value=region[key]||'';field.placeholder=placeholder;
+    field.dataset.key=key;field.value=(key==='keep_clear'&&typeof region[key]==='object'?region[key]?.note:region[key])||'';field.placeholder=placeholder;
     if(key==='name'){field.type='text';field.oninput=()=>box.querySelector('legend').textContent=field.value.trim()||'Helper region';}else field.rows=2;
     wrapper.append(field);
   }
-  const remove=text('button','Remove region',box);remove.type='button';remove.className='secondary';remove.onclick=()=>box.remove();
-  byId('helper-regions').append(box);
+  const refs=text('div','',box);refs.className='interface-refs';text('p','Keep these interfaces clear:',refs);
+  for(const item of analysis?.interfaces||[]){const label=text('label','',refs),check=document.createElement('input');check.type='checkbox';check.dataset.interfaceId=item.id;check.checked=region.keep_clear?.interface_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));}
+  const clearanceLabel=text('label','Required clearance, mm (leave blank until known)',box),clearance=document.createElement('input');clearance.type='number';clearance.min='0';clearance.step='0.1';clearance.dataset.clearance='';clearance.value=region.keep_clear?.clearance_mm??'';clearanceLabel.append(clearance);
+  const toggleLabel=text('label','',box),toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.spatial='';toggle.checked=!!region.geometry;toggleLabel.append(toggle,document.createTextNode(' Place a box-shaped planning region'));
+  const spatial=text('div','',box);spatial.className='spatial';spatial.hidden=!toggle.checked;
+  text('p','Design-frame millimetres. Centre and size stay attached to the part across print poses.',spatial);
+  const fields=text('div','',spatial);fields.className='geometry-grid';
+  for(const key of ['center_mm','size_mm'])for(let axis=0;axis<3;axis++){
+    const label=text('label',`${key==='center_mm'?'Centre':'Size'} ${'XYZ'[axis]}, mm`,fields),field=document.createElement('input');
+    field.type='number';field.step='0.1';field.dataset.geometry=key;field.dataset.axis=axis;field.value=region.geometry?.[key]?.[axis]??(key==='center_mm'?0:10);label.append(field);
+  }
+  const place=text('button','Place centre on part',spatial);place.type='button';place.className='secondary';
+  place.onclick=()=>{
+    if(!mesh||!selected){byId('placement-status').textContent='Load a matching mesh and choose a pose first.';byId('part-view').scrollIntoView({block:'center'});return;}
+    byId('placement-status').textContent='Click a surface to place the region centre. Orbit first if needed.';byId('part-view').style.cursor='crosshair';byId('part-view').scrollIntoView({block:'center'});
+    viewer.onPick=point=>{if(!point){byId('placement-status').textContent='No surface at that point. Click the part.';return;}for(let a=0;a<3;a++)box.querySelector(`[data-geometry="center_mm"][data-axis="${a}"]`).value=point[a].toFixed(3);viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='Region centre placed on the surface; edit its size or move the centre inward as needed.';updateRegions();};
+  };
+  const z=text('p','',spatial);z.className='hint';z.dataset.printZ='';
+  toggle.onchange=()=>{spatial.hidden=!toggle.checked;updateRegions();};
+  box.addEventListener('input',updateRegions);
+  const remove=text('button','Remove region',box);remove.type='button';remove.className='secondary';remove.onclick=()=>{box.remove();viewer.onPick=null;byId('part-view').style.cursor='';updateRegions();};
+  byId('helper-regions').append(box);updateRegions();
 }
 function resetPlan(){
   byId('walls').value=4;byId('skin').value=1.6;byId('shell-only').checked=false;byId('helper-panel').hidden=false;
   byId('helper-regions').replaceChildren();byId('draft-status').textContent='';addHelper();
 }
+function regionInput(box){
+ const r={id:box.dataset.id,...Object.fromEntries(Array.from(box.querySelectorAll('[data-key]'),field=>[field.dataset.key,field.value]))};
+ r.keep_clear={note:r.keep_clear,interface_ids:Array.from(box.querySelectorAll('[data-interface-id]:checked'),f=>f.dataset.interfaceId),keep_out_ids:[],clearance_mm:box.querySelector('[data-clearance]').value===''?null:Number(box.querySelector('[data-clearance]').value)};
+ r.geometry=box.querySelector('[data-spatial]').checked?{type:'box',frame:'design',...Object.fromEntries(['center_mm','size_mm'].map(key=>[key,Array.from(box.querySelectorAll(`[data-geometry="${key}"]`),field=>field.value===''?NaN:Number(field.value))]))}:null;
+ return r;
+}
 function planInput(){return {walls:Number(byId('walls').value),skin_mm:Number(byId('skin').value),rationale:byId('rationale').value,shell_only:byId('shell-only').checked,
-  helper_regions:Array.from(byId('helper-regions').children,box=>({id:box.dataset.id,...Object.fromEntries(Array.from(box.querySelectorAll('[data-key]'),field=>[field.dataset.key,field.value]))}))};}
+ helper_regions:Array.from(byId('helper-regions').children,regionInput)};}
+function updateRegions(){
+ const valid=[],warnings=byId('region-warnings');warnings.replaceChildren();
+ if(!byId('shell-only').checked)for(const box of byId('helper-regions').children){const r=regionInput(box),z=box.querySelector('[data-print-z]');z.textContent='';if(!r.geometry)continue;
+  try{Plan.geometry(r.geometry);valid.push(r);
+    if(mesh&&meshBounds&&[0,1,2].some(k=>r.geometry.center_mm[k]+r.geometry.size_mm[k]/2<meshBounds.min[k]||r.geometry.center_mm[k]-r.geometry.size_mm[k]/2>meshBounds.max[k]))text('li',`${r.name||'Region'}: box lies outside the part bounds and cannot bond to the body.`,warnings);
+    if(r.geometry.size_mm.some(x=>x<.84))text('li',`${r.name||'Region'}: an edge is below the 0.84 mm planning screen (2 × assumed 0.42 mm line width).`,warnings);
+    if(selected){const corners=transformMesh(boxCorners(r.geometry),selected.R_design_to_print,selected.t_mm),zs=Array.from(corners).filter((_,i)=>i%3===2);z.textContent=`Print Z extent: ${Math.min(...zs).toFixed(3)}–${Math.max(...zs).toFixed(3)} mm. Layer snapping and body bonding remain unchecked.`;}
+  }catch(e){text('li',`${r.name||'Region'}: ${e.message}`,warnings);}
+ }
+ for(let i=0;i<valid.length;i++)for(let j=i+1;j<valid.length;j++){
+  if(Plan.boxSeparation(valid[i].geometry,valid[j].geometry).needs_review)text('li',`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: overlap or separation is below the nominal 0.84 mm screen. Review sliver modifiers.`,warnings);
+ }
+ viewer.setRegions(valid);
+}
 byId('add-helper').onclick=()=>addHelper();
-byId('shell-only').onchange=()=>byId('helper-panel').hidden=byId('shell-only').checked;
+byId('shell-only').onchange=()=>{byId('helper-panel').hidden=byId('shell-only').checked;updateRegions();};
 byId('draft-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=tableRequest,openRequest=++draftRequest;
   try{
@@ -102,7 +143,7 @@ byId('draft-file').onchange=async event=>{
     byId('walls').value=input.walls;byId('skin').value=input.skin_mm;byId('shell-only').checked=input.shell_only;byId('helper-panel').hidden=input.shell_only;
     byId('helper-regions').replaceChildren();input.helper_regions.forEach(addHelper);
     byId('draft-status').textContent=restored.migrated?'Legacy notes restored. Complete each helper location and interface constraint before exporting.':'Draft restored against its original analysis. You can revise it and export again.';
-    byId('export-status').textContent='';
+    byId('export-status').textContent='';updateRegions();
   }catch(error){if(openRequest!==draftRequest)return;byId('draft-status').textContent='Could not reopen draft: '+error.message;}
 };
 byId('export').onclick=()=>{

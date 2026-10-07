@@ -18,3 +18,16 @@ test('incomplete and nonfinite triangles are rejected',()=>{
  const bad=new ArrayBuffer(134),view=new DataView(bad);view.setUint32(80,1,true);view.setFloat32(96,NaN,true);
  assert.throws(()=>parseSTL(bad));
 });
+test('orthographic surface picking finds the front triangle, not the one behind',()=>{
+ const {pickSurface}=require('./viewer.js');
+ const v=new Float64Array([0,0,0,2,0,0,0,2,0,0,0,3,2,0,3,0,2,3]);
+ assert.deepEqual(pickSurface(v,(x,y,z)=>[x,y,z],.5,.5),[.5,.5,3]);
+ assert.equal(pickSurface(v,(x,y,z)=>[x,y,z],4,4),null);
+});
+test('box corners rotate with the part and preserve edge lengths',()=>{
+ const {boxCorners}=require('./viewer.js');const c=boxCorners({center_mm:[10,20,30],size_mm:[2,4,6]});
+ assert.deepEqual(Array.from(c.slice(0,3)),[9,18,27]);
+ assert.deepEqual(Array.from(c.slice(21,24)),[11,22,33]);
+ const rotated=transformMesh(c,[[0,-1,0],[1,0,0],[0,0,1]],[0,0,0]);
+ assert.deepEqual(Array.from(rotated.slice(0,3)),[-18,9,27]);
+});

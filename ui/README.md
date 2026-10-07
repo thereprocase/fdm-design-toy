@@ -61,3 +61,24 @@ Run `node --test ui/plan.test.cjs` for round-trip and provenance checks. With
 Playwright exposed through `NODE_PATH`, `node ui/planning.browser.test.cjs`
 checks real-table selection, multiple helpers, exact draft round-trip, wrong
 source rejection, shell-only export and mobile layout.
+
+Spatial drafts use `fdmgen.massing-plan.v0.3`. A helper may carry a design-frame
+box (`geometry.type=box`, `center_mm`, `size_mm`) with `geometry_status=sketch`.
+Enable its spatial controls, load a matching mesh, and use **Place centre on part**
+to pick a surface. Edit centre/size to position the region through the body.
+Boxes remain in the design frame when print poses change; preview outlines are
+transformed through the selected pose. Zoom controls help inspect small regions.
+
+The nominal planning screen warns for edges below 0.84 mm, helper pairs with
+insufficient overlap/separation, and boxes wholly outside the part bounding box.
+The threshold assumes a 0.42 mm line width. A box overlapping the bounding box
+is not proof of body intersection or bonding; exact clipping remains downstream.
+Print-Z extents are displayed, but layer snapping is not applied. These boxes
+are intent, not modifier meshes, credited volume or a new strength result.
+
+`keep_clear` now stores validated `interface_ids`, empty `keep_out_ids`, optional
+`clearance_mm`, and a human `note`. Unknown interface IDs are rejected. Older
+string notes are migrated. Decision metadata includes candidate ID, source hash,
+rank at decision and designer role. v0.1/v0.2 drafts remain readable.
+Run `node ui/spatial.browser.test.cjs` with the same Playwright/mesh environment
+as the viewer test for real-part picking and spatial save/reopen checks.
