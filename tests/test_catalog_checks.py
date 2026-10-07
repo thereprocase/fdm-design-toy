@@ -98,6 +98,30 @@ def test_mesh_bed_faces_winding_and_exclusion():
     assert ovh.check_mesh(v, f, exclude_faces=under).verdict is Verdict.PASS   # support_allowed region
 
 
+def _box(x0, x1, z0, z1, depth=10.0):
+    return extrude_xz([(x0, z0), (x1, z0), (x1, z1), (x0, z1)], depth)
+
+
+def test_mesh_horizontal_ceiling_is_handed_to_brg001():
+    pv, pf = _box(0, 4, 0, 5)                       # pillar on the bed
+    sv, sf = _box(-6, 10, 5, 7)                     # slab on top: 12 mm of flat underside overhangs the pillar
+    v, f = np.vstack([pv, sv]), np.vstack([pf, sf + len(pv)])
+    r = ovh.check_mesh(v, f, 50.0)
+    assert r.verdict is Verdict.PASS, r.message
+    assert r.metrics["bridge_candidate_area_mm2"] == pytest.approx(16 * 10)   # slab bottom incl. the part over the pillar
+    assert "checked by BRG-001" in r.message
+    r = ovh.check_mesh(v, f, 50.0, bridge_alpha_max_deg=-1)                  # hand-off disabled: flat underside fails
+    assert r.verdict is Verdict.FAIL
+
+
+def test_mesh_tolerance_absorbs_tessellation_but_not_real_shortfalls():
+    v, f = wedge(49.97)
+    assert ovh.check_mesh(v, f, 50.0).verdict is Verdict.PASS                # default tol 0.05 deg
+    assert ovh.check_mesh(v, f, 50.0, tol_deg=1e-6).verdict is Verdict.FAIL
+    v, f = wedge(49.9)
+    assert ovh.check_mesh(v, f, 50.0).verdict is Verdict.FAIL
+
+
 # ---------- WALL-001 / GAP-001 / BRG-001 ----------
 
 layers = pytest.importorskip("fdmgen.catalog.checks.layers")

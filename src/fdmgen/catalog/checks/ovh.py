@@ -111,12 +111,15 @@ def _islands(faces: np.ndarray, mask: np.ndarray) -> list[np.ndarray]:
 
 def check_mesh(vertices, faces, alpha_min_deg: float = 50.0, *, bed_tol_mm: float = 1e-3,
                min_island_area_mm2: float = 0.3, exclude_faces=None, provisional: bool = True,
-               tol_deg: float = 1e-6) -> CheckResult:
+               tol_deg: float = 0.05, bridge_alpha_max_deg: float = 0.5) -> CheckResult:
     """M level: area of downward triangles flatter than alpha_min, per triangle, grouped into islands.
 
     The mesh is in the print frame (z up, bed at the minimum z) with outward-oriented triangles.
     Faces lying on the bed and faces listed in exclude_faces (support_allowed regions) are skipped.
     Islands smaller than min_island_area_mm2 are reported but do not fail the check.
+    tol_deg absorbs mesh precision: on a real bracket STL, faces designed at 50 deg measured
+    49.96..49.9999 deg. Horizontal ceilings (alpha <= bridge_alpha_max_deg, off the bed) are printed as
+    bridges, so they are reported as bridge candidates and left to BRG-001 (span and anchoring).
     """
     v = np.asarray(vertices, float)
     f = np.asarray(faces, np.int64)
@@ -137,6 +140,9 @@ def check_mesh(vertices, faces, alpha_min_deg: float = 50.0, *, bed_tol_mm: floa
     bad = down & ~on_bed & (alpha < alpha_min_deg - tol_deg) & ok
     if exclude_faces is not None:
         bad[np.asarray(exclude_faces)] = False
+    flat = bad & (alpha <= bridge_alpha_max_deg)
+    bad &= ~flat
+    bridges = sorted(_islands(f, flat), key=lambda s: -area[s].sum())
     islands = sorted(_islands(f, bad), key=lambda s: -area[s].sum())
     rep = []
     for s in islands:
@@ -145,9 +151,16 @@ def check_mesh(vertices, faces, alpha_min_deg: float = 50.0, *, bed_tol_mm: floa
                     "bbox_print_mm": [pts.min(axis=0).round(3).tolist(), pts.max(axis=0).round(3).tolist()]})
     failing = [r for r in rep if r["area_mm2"] >= min_island_area_mm2]
     total = float(sum(r["area_mm2"] for r in failing))
+    bridge_rep = [{"area_mm2": float(area[s].sum()), "bbox_print_mm": [tri[s].reshape(-1, 3).min(axis=0).round(3).tolist(),
+                                                                      tri[s].reshape(-1, 3).max(axis=0).round(3).tolist()]}
+                  for s in bridges]
+    bridge_area = float(sum(b["area_mm2"] for b in bridge_rep))
     metrics = {"alpha_min_deg": alpha_min_deg, "failing_area_mm2": total, "islands": rep,
                "min_island_area_mm2": min_island_area_mm2, "winding_flipped": bool(flipped),
-               "downward_area_mm2": float(area[down & ~on_bed].sum())}
+               "downward_area_mm2": float(area[down & ~on_bed].sum()), "tol_deg": tol_deg,
+               "bridge_candidates": bridge_rep, "bridge_candidate_area_mm2": bridge_area}
+    handed = (f" {bridge_area:.1f} mm2 of horizontal ceilings in {len(bridge_rep)} region(s) are bridge candidates "
+              "and are checked by BRG-001, not here.") if bridge_rep else ""
     does_not = "Whether Orca generates support (T level) or how the overhang prints on a real printer (P level)."
     if failing:
         big = failing[0]
@@ -155,14 +168,15 @@ def check_mesh(vertices, faces, alpha_min_deg: float = 50.0, *, bed_tol_mm: floa
         msg = (f"OVH-001 M FAIL: {total:.1f} mm2 of downward faces are flatter than {alpha_min_deg:.0f} deg from "
                f"horizontal ({90 - alpha_min_deg:.0f} deg from vertical) in {len(failing)} island(s). Largest "
                f"island {big['area_mm2']:.1f} mm2, slope down to {big['min_alpha_deg']:.1f} deg, at print-frame "
-               f"X {x0:.1f}..{x1:.1f}, Y {y0:.1f}..{y1:.1f}, Z {z0:.2f}..{z1:.2f} mm. Orca is likely to add support here.")
+               f"X {x0:.1f}..{x1:.1f}, Y {y0:.1f}..{y1:.1f}, Z {z0:.2f}..{z1:.2f} mm. Orca is likely to add support here."
+               + handed)
         return CheckResult("OVH-001", "M", Verdict.FAIL, msg, provisional, metrics,
                            [f"steepen the underside to >= {alpha_min_deg:.0f} deg", "add a gusset or chamfer",
                             "use a teardrop for horizontal bores",
                             "mark the region support_allowed in problem.yaml with a reason"],
                            "", does_not)
     msg = (f"OVH-001 M PASS: no downward face island of >= {min_island_area_mm2} mm2 is flatter than "
-           f"{alpha_min_deg:.0f} deg from horizontal (bed faces excluded).")
+           f"{alpha_min_deg:.0f} deg from horizontal (bed faces excluded)." + handed)
     return CheckResult("OVH-001", "M", Verdict.PASS, msg, provisional, metrics, [],
                        f"Every triangle off the bed slopes at >= {alpha_min_deg:.0f} deg or sits in a tiny island.",
                        does_not)
