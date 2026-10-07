@@ -70,6 +70,7 @@ def main():
     ap.add_argument('--root', type=Path, required=True)
     ap.add_argument('--h', type=float, default=1.6)
     ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--skip-direct', action='store_true', help='defer the expensive direct reference; report true residuals only')
     ap.add_argument('--maxiter', type=int, default=300)
     ap.add_argument('--emin', type=float, default=1e-6)
     ap.add_argument('--density', type=float, default=0.5)
@@ -85,7 +86,7 @@ def main():
     receipt = dict(evidence='measured CPU assembled-operator experiment', machine_role='compute box',
                    establishes='accuracy and iteration counts for this masked uniform-density design problem',
                    does_not_establish='GPU speed, production interpolation, full gate sweeps or physical qualification',
-                   h_mm=args.h, emin=args.emin, density=args.density, rows=[],
+                   h_mm=args.h, emin=args.emin, density=args.density, direct_reference_requested=not args.skip_direct, rows=[],
                    versions=dict(python=platform.python_version(), numpy=np.__version__, scipy=scipy.__version__, pyamg=pyamg.__version__),
                    mesh_sha256=hashlib.sha256((args.root/HANDOFF/'body-only.stl').read_bytes()).hexdigest())
     def save():
@@ -103,18 +104,20 @@ def main():
                    assembly_s=time.perf_counter()-t0, bc=bc,
                    rhs_sha256=hashlib.sha256(rhs.tobytes()).hexdigest())
     save(); print('assembled', receipt['dofs'], 'DOFs', receipt['nnz'], 'nonzeros', flush=True)
-    t0 = time.perf_counter()
-    lu = splu(A.tocsc(), permc_spec='MMD_AT_PLUS_A')
-    factor_s = time.perf_counter()-t0
-    t0 = time.perf_counter(); ref = lu.solve(rhs); direct_s = time.perf_counter()-t0
-    ref_res = float(np.linalg.norm(rhs-A@ref)/np.linalg.norm(rhs))
-    ref_compliance = float(rhs@ref)
-    receipt['direct'] = dict(factor_s=factor_s, solve_s=direct_s, true_rel_res=ref_res,
-                             compliance=ref_compliance, factor_nnz=int(lu.L.nnz+lu.U.nnz))
-    save(); del lu
-    if not np.isfinite(ref_res) or ref_res > 1e-8 or ref_compliance <= 0:
-        raise RuntimeError('direct reference is not sufficiently accurate/positive')
-    print('direct reference', receipt['direct'], flush=True)
+    ref = None
+    if not args.skip_direct:
+        t0 = time.perf_counter()
+        lu = splu(A.tocsc(), permc_spec='MMD_AT_PLUS_A')
+        factor_s = time.perf_counter()-t0
+        t0 = time.perf_counter(); ref = lu.solve(rhs); direct_s = time.perf_counter()-t0
+        ref_res = float(np.linalg.norm(rhs-A@ref)/np.linalg.norm(rhs))
+        ref_compliance = float(rhs@ref)
+        receipt['direct'] = dict(factor_s=factor_s, solve_s=direct_s, true_rel_res=ref_res,
+                                 compliance=ref_compliance, factor_nnz=int(lu.L.nnz+lu.U.nnz))
+        save(); del lu
+        if not np.isfinite(ref_res) or ref_res > 1e-8 or ref_compliance <= 0:
+            raise RuntimeError('direct reference is not sufficiently accurate/positive')
+        print('direct reference', receipt['direct'], flush=True)
     for name, candidates, smooth in [('translations', B[:, :3], 'jacobi'),
                                       ('rigid6', B, 'jacobi'),
                                       ('rigid6_energy', B, 'energy')]:
@@ -133,8 +136,8 @@ def main():
         solve_s = time.perf_counter()-t0
         row = dict(variant=name, iterations=len(history), status=int(status), setup_s=setup_s,
                    solve_s=solve_s, true_rel_res=float(np.linalg.norm(rhs-A@u)/np.linalg.norm(rhs)),
-                   compliance=float(rhs@u), compliance_rel_diff=float(abs(rhs@u-ref_compliance)/abs(ref_compliance)),
-                   displacement_rel_l2=float(np.linalg.norm(u-ref)/np.linalg.norm(ref)),
+                   compliance=float(rhs@u), compliance_rel_diff=None if ref is None else float(abs(rhs@u-ref_compliance)/abs(ref_compliance)),
+                   displacement_rel_l2=None if ref is None else float(np.linalg.norm(u-ref)/np.linalg.norm(ref)),
                    operator_complexity=float(ml.operator_complexity()),
                    levels=[int(l.A.shape[0]) for l in ml.levels], history=history,
                    timing_note='includes one explicit residual matvec per iteration for diagnostics')

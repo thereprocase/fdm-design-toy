@@ -83,3 +83,19 @@ This experiment tests interpolation on one uniform-density R1 design field;
 it is not the mixed-precision GPU gate or an optimisation sweep. Candidate
 construction follows the elasticity example in the
 [PyAMG examples](https://github.com/pyamg/pyamg-examples/tree/main/linear_elasticity).
+Use `--skip-direct` to run the iterative trials independently when sparse
+factorisation is slow. Such receipts report true residuals but leave direct
+reference error fields null; they must not be described as direct-validated.
+
+Measured R1 CPU pilot (`receipts/bracket-r1-amg-cpu.json`, PyAMG 5.3.0,
+isotropic, density 0.5, E_min=1e-6): translation-only candidates required
+162 CG iterations, six rigid-body candidates 42, and six with energy-smoothed
+interpolation 26. True residuals were respectively 8.39e-7, 9.49e-7 and 4.48e-7.
+The active matrix has 164,364 DOFs and 9,724,592 nonzeros. Compliance agrees
+across variants to about 8e-13 relative; this is internal agreement, not an
+independent direct-reference validation. The iterative receipt used one BLAS
+thread while other bounded jobs ran. Setup/solve seconds were 2.15/37.52,
+3.65/10.51 and 11.06/8.61: fewer iterations did not give the fastest first solve
+once setup is included. This supports testing elasticity-aware interpolation
+in the production solver; it does not establish GPU runtime, mixed-precision
+accuracy, a material/resolution sweep, or the full <=40-iteration solver gate.
