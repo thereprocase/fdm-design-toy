@@ -507,3 +507,29 @@ rows do not bury the slice evidence. **Show export checks** reveals all checks o
 one verdict, with the visible and total counts stated. Opening another matched
 export resets this view to items needing attention. An empty view is explicitly
 not a qualified result; complete receipts and helper editing remain available.
+
+### Import an evidence bundle
+
+After loading the saved draft and its export report, select `evidence-bundle.json`
+and all five receipt JSON files together in **Evidence bundle**. Generate them in
+a named detached job on the compute worker:
+
+```bash
+fdmgen evidence REPORT.json project.gcode shell-only.gcode --table TABLE.json --pose POSE_ID --out out/evidence
+```
+
+Keep the original filenames in one directory. The browser verifies each receipt's
+bytes against the manifest, the exact loaded export report, and the recorded
+table, pose and G-code identities before displaying the set. It loads helper and
+shell evidence into the existing review panels and shows both bridge receipts.
+
+A rejected bundle leaves the previous review intact. Loading an individual
+slice or shell receipt clears the bundle summary, so the page does not represent
+a mixed selection as the original bundle. The manifest's paired values remain
+available as raw producer evidence; the shell comparison uses the page's own
+pairing checks. File fingerprints establish consistency between supplied files,
+not independent verification of G-code contents or physical performance.
+
+The bundle contract/browser fixture is synthetic and explicitly labelled as
+such. It uses existing receipts to exercise hash and identity gates; it is not a
+receipt of a real `fdmgen evidence` run.

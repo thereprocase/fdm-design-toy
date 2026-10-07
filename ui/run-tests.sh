@@ -13,8 +13,8 @@ if [[ ! -x "$CHROMIUM_PATH" ]]; then
   echo 'Install the Playwright Chromium browser or set CHROMIUM_PATH' >&2
   exit 2
 fi
-node --test ui/plan.test.cjs ui/viewer.test.cjs ui/coupon-evidence.test.cjs ui/massing-review-model.test.cjs
-for check in planning toolpath coupons spatial capabilities massing-review review-edit keep-outs proposal mechanics shell-review; do
+node --test ui/plan.test.cjs ui/viewer.test.cjs ui/coupon-evidence.test.cjs ui/massing-review-model.test.cjs ui/evidence-bundle.test.cjs
+for check in planning toolpath coupons spatial capabilities massing-review review-edit keep-outs proposal mechanics shell-review bundle; do
   node "ui/$check.browser.test.cjs"
 done
 node ui/browser.test.cjs

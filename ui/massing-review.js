@@ -1,19 +1,20 @@
 'use strict';
 const el=id=>document.getElementById(id);
+let bundleGeneration=0,matchedReportHash=null;
 let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0,matchedSlice=null,mechanicsGeneration=0,shellGeneration=0,shellBaselineGeneration=0,matchedShell=null,matchedShellBaseline=null;
 function add(tag,value,parent){const n=document.createElement(tag);n.textContent=value;parent.append(n);return n;}
 el('review-draft').onchange=async e=>{
  const file=e.target.files[0];if(!file)return;const request=++generation;++receiptGeneration;
  // Clear old results immediately, so they cannot be mistaken for this revision.
- clearSlice();matchedReport=null;saved=null;digest=null;el('review-workspace').hidden=true;el('review-receipt').disabled=true;el('review-receipt').value='';
+ clearSlice();matchedReportHash=null;el('review-bundle').disabled=true;matchedReport=null;saved=null;digest=null;el('review-workspace').hidden=true;el('review-receipt').disabled=true;el('review-receipt').value='';
  try{const raw=await file.arrayBuffer(),d=MassingReview.draft(JSON.parse(new TextDecoder().decode(raw))),h=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',raw)),b=>b.toString(16).padStart(2,'0')).join('');if(request!==generation)return;saved=d;digest=h;el('review-receipt').disabled=false;el('review-status').textContent='Draft loaded. Open its matching export receipt.';}catch(err){if(request===generation)el('review-status').textContent=err.message;}
 };
 el('review-receipt').onchange=async e=>{
  const file=e.target.files[0];if(!file||!saved)return;const request=++receiptGeneration,current=generation;
- try{const r=MassingReview.pair(saved,digest,JSON.parse(await file.text()));if(current!==generation||request!==receiptGeneration)return;render(r);el('review-status').textContent='Receipt fingerprint matched this saved draft.';}catch(err){if(current===generation&&request===receiptGeneration)el('review-status').textContent=err.message+' Previous matched results, if any, remain below.';}
+ try{const raw=await file.arrayBuffer(),reportHash=await EvidenceBundle.digest(raw),r=MassingReview.pair(saved,digest,JSON.parse(new TextDecoder().decode(raw)));if(current!==generation||request!==receiptGeneration)return;render(r);matchedReportHash=reportHash;el('review-status').textContent='Receipt fingerprint matched this saved draft.';}catch(err){if(current===generation&&request===receiptGeneration)el('review-status').textContent=err.message+' Previous matched results, if any, remain below.';}
 };
 function render(r){
- clearSlice();matchedReport=r;el('review-slice').disabled=false;
+ clearSlice();matchedReport=r;el('review-bundle').disabled=false;el('review-slice').disabled=false;
  el('review-workspace').hidden=false;el('review-title').textContent=`${r.plan.problem} · ${r.plan.candidate_id}`;
  el('review-context').textContent=r.capability_context_matches_template?'Template fingerprint matches the capability context. This does not validate every changed value or combination.':'Template differs from the measured capability context. Helper settings are unverified for this profile.';
  if(r.warning)el('review-context').textContent+=' '+r.warning;
@@ -40,14 +41,14 @@ function renderChecks(){
  for(const c of visible){const row=add('article','',el('review-checks'));add('h3',`${c.rule} · ${c.level} · ${c.verdict}${c.provisional?' · provisional':''}`,row);let message=c.message;for(const [id,name]of names)message=message.split(id).join(`${name} [${id}]`);add('p',message,row);if(names.has(c.metrics?.helper_id))editButton(c.metrics.helper_id,names.get(c.metrics.helper_id),row);const fixes=add('ul','',row);for(const fix of c.fixes)add('li',fix,fixes);if(c.establishes)add('p',c.establishes,row);if(c.does_not_establish)add('p','Does not establish: '+c.does_not_establish,row);const details=add('details','',row);add('summary','Measurements',details);add('pre',JSON.stringify(c.metrics||{},null,2),details);}
 }
 
-function clearSlice(){clearShell();clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}
+function clearSlice(){clearBundle();clearShell();clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}
 el('review-slice').onchange=async e=>{
  const file=e.target.files[0];if(!file||!matchedReport)return;const request=++sliceGeneration,report=matchedReport;
  try{const receipt=MassingReview.slice(report,JSON.parse(await file.text()));if(request!==sliceGeneration||report!==matchedReport)return;renderSlice(receipt);el('slice-status').textContent='Slice receipt matches the exported project and saved plan.';}
  catch(error){if(request===sliceGeneration)el('slice-status').textContent=error.message+' Previous matched slice results, if any, remain below.';}
 };
 function renderSlice(r){
- clearShell();clearMechanics();matchedSlice=r;el('review-shell').disabled=false;el('review-shell-baseline').disabled=r.baseline!=='shell-only slice';el('review-mechanics').disabled=false;
+ clearBundle();clearShell();clearMechanics();matchedSlice=r;el('review-shell').disabled=false;el('review-shell-baseline').disabled=r.baseline!=='shell-only slice';el('review-mechanics').disabled=false;
  const baseline=r.baseline!==null,mismatch=MassingReview.contextMismatch(r),number=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
  el('slice-results').hidden=false;
  el('slice-baseline').textContent=baseline?'Compared with a shell-only slice. Differences describe solid infill in each helper box; overlapping boxes may count the same roads.':'No shell-only baseline supplied. Absolute fill includes existing body material; helper contribution is not established.';
@@ -130,6 +131,11 @@ el('review-shell').onchange=async e=>{
  try{
   const r=MassingReview.shell(report,sliced,JSON.parse(await file.text()),saved);
   if(request!==shellGeneration||report!==matchedReport||sliced!==matchedSlice)return;
+  clearBundle();renderShell(r);
+ }catch(error){if(request===shellGeneration)el('shell-status').textContent=error.message+' Previous matched shell results, if any, remain below.';}
+};
+
+function renderShell(r){
   const m=r.result.metrics,num=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
   el('shell-results').hidden=false;
   el('shell-status').textContent='Shell receipt matches the loaded project G-code hash and pose.';
@@ -142,8 +148,7 @@ el('review-shell').onchange=async e=>{
   el('shell-bands').replaceChildren();for(const b of m.bands){const row=add('tr','',el('shell-bands'));for(const value of [b.slope_deg.join('–'),b.samples,num(100*b.thin_fraction),num(b.median_mm),num(b.p05_mm),num(b.required_mm)])add('td',value,row);}
   el('shell-scope').textContent='Producer limitation: '+r.result.does_not_establish;
   el('shell-provenance').textContent=JSON.stringify(r._receipt||r,null,2);matchedShell=r;renderShellComparison();
- }catch(error){if(request===shellGeneration)el('shell-status').textContent=error.message+' Previous matched shell results, if any, remain below.';}
-};
+}
 
 function renderShellComparison(){
  el('shell-comparison').hidden=!matchedShellBaseline;
@@ -160,6 +165,36 @@ el('review-shell-baseline').onchange=async e=>{
  try{
   const r=MassingReview.shell(report,sliced,JSON.parse(await file.text()),saved,'baseline');
   if(request!==shellBaselineGeneration||report!==matchedReport||sliced!==matchedSlice)return;
-  matchedShellBaseline=r;el('shell-baseline-status').textContent='Baseline shell check matches the recorded shell-only G-code and pose.';renderShellComparison();
+  clearBundle();matchedShellBaseline=r;el('shell-baseline-status').textContent='Baseline shell check matches the recorded shell-only G-code and pose.';renderShellComparison();
  }catch(error){if(request===shellBaselineGeneration)el('shell-baseline-status').textContent=error.message+' Previous matched baseline, if any, remains below.';}
+};
+
+function clearBundle(){
+ ++bundleGeneration;el('review-bundle').value='';el('bundle-results').hidden=true;
+ el('bundle-status').textContent='No evidence bundle loaded. Select its manifest and all five receipt files together.';
+}
+el('review-bundle').onchange=async e=>{
+ const files=[...e.target.files];if(!files.length||!matchedReport)return;
+ const request=++bundleGeneration,report=matchedReport,draft=saved;
+ try{
+  const bundle=await EvidenceBundle.load(files,{report,draft,reportHash:matchedReportHash});
+  if(request!==bundleGeneration||report!==matchedReport||draft!==saved)return;
+  // Validate the whole set first; a rejected selection never partly replaces the review.
+  renderSlice(bundle.slice);renderShell(bundle.project);matchedShellBaseline=bundle.baseline;renderShellComparison();
+  el('slice-status').textContent='Bundle slice receipt matches the exported project and saved plan.';
+  el('shell-baseline-status').textContent='Bundle baseline shell check matches the shell-only G-code and pose.';
+  el('bundle-results').hidden=false;el('bundle-status').textContent='All five receipt fingerprints verified; bundle matched this export.';
+  el('bundle-summary').textContent='Loaded helper evidence, project shell check and baseline shell check together. Both bridge receipts are shown below.';
+  el('bundle-bridges').replaceChildren();
+  for(const [kind,r]of Object.entries(bundle.bridges)){
+   const row=add('article','',el('bundle-bridges')),m=r.result.metrics,num=v=>v.toLocaleString(undefined,{maximumFractionDigits:3});
+   add('h3',`${kind==='project'?'Project':'Shell-only baseline'} bridges · T ${r.result.verdict}${r.result.provisional?' · provisional':''}`,row);
+   add('p',`External: ${num(m.max_span_external_mm)} mm (limit ${num(r.method.max_span_external_mm)} mm); internal: ${num(m.max_span_internal_mm)} mm (limit ${num(r.method.max_span_internal_mm)} mm). ${m.external_roads} external and ${m.internal_roads} internal roads evaluated.`,row);
+   add('p',`Raster cell ${num(r.method.cell_mm)} mm; maximum cantilever ${num(m.max_cantilever_mm)} mm, reported without a cantilever verdict.`,row);
+   if(m.bridge_roads===0)add('p','No bridge roads evaluated; zero span is not a measured bridge success.',row);
+   add('p',r.result.does_not_establish,row);
+   const details=add('details','',row);add('summary','Complete bridge receipt',details);add('pre',JSON.stringify(r,null,2),details);
+  }
+  el('bundle-provenance').textContent=JSON.stringify(bundle.manifest,null,2);
+ }catch(error){if(request===bundleGeneration)el('bundle-status').textContent=error.message+' Previous matched evidence, if any, remains below.';}
 };

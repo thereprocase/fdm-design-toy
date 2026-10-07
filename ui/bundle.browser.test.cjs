@@ -1,0 +1,23 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict'),fixture=require('./evidence-bundle-fixture.cjs');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,headless:true,args:['--no-sandbox']});try{
+ const page=await browser.newPage({locale:'en-US'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(pathToFileURL(path.join(__dirname,'massing-review.html')).href);
+ assert(await page.locator('#review-bundle').isDisabled());
+ await page.locator('#review-draft').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));
+ await page.locator('#review-receipt').setInputFiles(path.join(__dirname,'fixtures/seed-export-report.json'));
+ await page.waitForFunction(()=>!document.querySelector('#review-bundle').disabled);
+ const f=fixture(),files=()=>[{name:'evidence-bundle.json',buffer:Buffer.from(JSON.stringify(f.manifest))},...f.files].map(x=>({...x,mimeType:'application/json'}));
+ await page.locator('#review-bundle').setInputFiles(files());
+ await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('All five'));
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
+ assert.match(await page.locator('#bundle-bridges').innerText(),/122.1 mm/);
+ f.files[0].buffer=Buffer.from('{}');await page.locator('#review-bundle').setInputFiles(files());
+ await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.includes('fingerprint differs'));
+ assert(await page.locator('#bundle-results').isVisible());assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
+ await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.locator('#review-shell').setInputFiles(path.join(__dirname,'fixtures/seed-project-shell-check-v03.json'));
+ await page.waitForFunction(()=>document.querySelector('#bundle-results').hidden);
+ await page.locator('#review-draft').setInputFiles(path.join(__dirname,'fixtures/revised-draft.json'));
+ await page.waitForFunction(()=>document.querySelector('#review-bundle').disabled);
+ assert.deepEqual(errors,[]);console.log('PASS synthetic bundle atomic import, fingerprint rejection, retention, manual override invalidation and mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
