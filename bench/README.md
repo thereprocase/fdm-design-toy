@@ -397,3 +397,38 @@ Receipts: `receipts/road-caps-revised-step5.json` and
 `receipts/road-caps-revised-step12.json`. The audit now records the imported
 producer file's SHA-256 and accepts `--step-frac`; use the default 0.2 or
 `--step-frac 0.08333333333333333` with distinct output files to reproduce.
+
+### Arc fitting on the real bracket (P0-B)
+
+The archived 2-wall, 5-layer audit project of the bracket was re-sliced twice with the same Orca 2.4.2
+executable. The two projects differ only in `enable_arc_fitting`. Both G-code files pass the reader's footer
+guard.
+
+| | arc fitting off | arc fitting on |
+|---|---:|---:|
+| Arc chords inside the object (5° each) | 0 | 87,467 |
+| Credited volume, mm³ | 70,979.670 | 70,979.038 |
+| Orca footer filament, mm | 32,396.18 | 32,394.23 |
+
+Credited volume differs by −0.0009 %, which meets the 0.1 % gate. Orca's own footer differs by −0.006 %, so
+arc fitting also changes the slicer's plan slightly. The overhang-wall role changes by −1.8 % and gap infill
+by +0.2 %, while walls and skins agree within 0.012 %.
+
+On one 0.4 mm print-frame grid with caps off and step 1/3, 1.06 % of the material lands in different cells.
+19,745 of about 1.13 M solid cells flip at a density of 0.5. That is local placement only: arcs and chords
+of the same curve, plus the plan changes above.
+
+What this establishes: the reader credits the same material whether Orca writes this part's curves as arcs
+or as chords, within 0.001 %.
+
+What it does not establish: equality of the deposited field cell by cell, or equality for every part. The
+small-part fixture in `tests/fixtures/gcode/arc-parity/` shows Orca's plan moving gap infill by about 0.1 %.
+It also establishes nothing about the printed part.
+
+Reproduce: re-slice the audit project twice with `enable_arc_fitting` 0 and 1 and arrange and orient off,
+then run the command below. `receipts/arc-parity-bracket.json` records both project and G-code hashes, the
+grid and every number above.
+
+```bash
+PYTHONPATH=src python bench/arc_parity.py PLAIN.gcode ARCED.gcode --project-sha256 PLAIN_SHA ARCED_SHA --out receipt.json
+```

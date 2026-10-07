@@ -1,0 +1,90 @@
+{
+ "schema": "fdmgen-bench/arc-parity@0.1",
+ "projects_sha256": {
+  "plain": "af5f805dae30587f842b9ab356cafb425c9d60a4511bce14ca3568f90dfb8ba5",
+  "arced": "656b642b4e80aa2d31572736a3bdc487aafb4e8f95139a8e68be238c00fd28e9"
+ },
+ "plain": {
+  "gcode_sha256": "66f5703a6b53c196c1f1c9c092df03fc93eb4d3ebf0ac5fcec1cc9a57c5dd83f",
+  "generator": "OrcaSlicer 2.4.2",
+  "enable_arc_fitting": "0",
+  "arc_chords_in_object": 0,
+  "footer_filament_mm": 32396.18,
+  "credited_mm3": 70979.67035686364,
+  "credited_by_role_mm3": {
+   "Bottom surface": 1616.2691079101287,
+   "Bridge": 45.25128950655096,
+   "Gap infill": 196.05774874194893,
+   "Inner wall": 11116.848355757875,
+   "Internal solid infill": 45892.3289241727,
+   "Outer wall": 10414.126085761847,
+   "Overhang wall": 0.5902080665868017,
+   "Top surface": 1698.1986369460008
+  }
+ },
+ "arced": {
+  "gcode_sha256": "4a2d46f5dd38bc8a1979cbbc601b6001d57480220c22f8844a20b2ef576e74ab",
+  "generator": "OrcaSlicer 2.4.2",
+  "enable_arc_fitting": "1",
+  "arc_chords_in_object": 87467,
+  "footer_filament_mm": 32394.23,
+  "credited_mm3": 70979.03750314942,
+  "credited_by_role_mm3": {
+   "Bottom surface": 1616.4564072097667,
+   "Bridge": 45.246262467431364,
+   "Gap infill": 196.51595493921354,
+   "Inner wall": 11116.051654242285,
+   "Internal solid infill": 45891.51329308876,
+   "Outer wall": 10414.387539901705,
+   "Overhang wall": 0.5793842981474806,
+   "Top surface": 1698.287007002103
+  }
+ },
+ "credited_relative_difference": -8.915985535626708e-06,
+ "footer_relative_difference": -6.019228192955859e-05,
+ "role_relative_difference": {
+  "Bottom surface": 0.00011588373416364608,
+  "Bridge": -0.00011109162135299611,
+  "Gap infill": 0.0023370981264693932,
+  "Inner wall": -7.16661314514905e-05,
+  "Internal solid infill": -1.777271066996938e-05,
+  "Outer wall": 2.5105720605343877e-05,
+  "Overhang wall": -0.018338902926073857,
+  "Top surface": 5.203752622324052e-05
+ },
+ "grid": {
+  "frame": "print (plate) frame, extruder offset restored",
+  "cell_mm": 0.4,
+  "shape": [
+   552,
+   523,
+   65
+  ],
+  "origin_mm": [
+   17.71031415926536,
+   23.456314159265357,
+   -0.7996858407346411
+  ],
+  "caps": false,
+  "step_frac": "1/3",
+  "clipped_mm3": {
+   "plain": 0.0,
+   "arced": 0.0
+  }
+ },
+ "occupancy": {
+  "moved_fraction": 0.01057690792716815,
+  "max_abs_cell_density_change": 0.7721977895373361,
+  "solid_mask_flips_at_0p5": 19745,
+  "solid_cells": {
+   "plain": 1125759,
+   "arced": 1126120
+  }
+ },
+ "gate": {
+  "P0-B": "credited volume within 0.1 % (relative)",
+  "met": true
+ },
+ "establishes": "That the reader credits the same material, and places it in the same cells, whether Orca writes this part's curves as arcs or as chords.",
+ "does_not_establish": "Equality for every part (arc fitting changes Orca's own plan, visible as the footer difference), or anything about the printed result."
+}
