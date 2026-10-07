@@ -102,10 +102,10 @@ def bridge_spans(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), cell_mm: float = 0.1, 
         for i in np.flatnonzero(here):
             a, b = tp.start[i, :2] + off[:2], tp.end[i, :2] + off[:2]
             L = float(np.linalg.norm(b - a))
-            if L < 1e-9:
-                continue
             step = cell_mm / 2
             s = np.arange(step / 2, L, step)
+            if len(s) == 0:
+                continue                                      # shorter than half a cell: nothing to measure
             p = a + (b - a) * (s / L)[:, None]
             idx = np.floor((p - lo[:2]) / cell_mm).astype(int)
             sup = supported[idx[:, 0], idx[:, 1]]
