@@ -14,6 +14,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#shell-summary').innerText(),/0.22% of 20000 measured samples/);
  assert.match(await page.locator('#shell-pairing').innerText(),/geometry pairing is not established/);
  assert.match(await page.locator('#shell-method').innerText(),/not structurally recorded/);
+ await page.locator('#review-shell').setInputFiles(fixture('project-shell-check-current'));
+ await page.waitForFunction(()=>document.querySelector('#shell-pairing').textContent.includes('hashes also match'));
+ assert.match(await page.locator('#shell-summary').innerText(),/Recorded T PASS/);
+ assert.equal(JSON.parse(await page.locator('#shell-provenance').textContent()).schema,'fdmgen/shell-check@0.2');
+ const current=JSON.parse(fs.readFileSync(fixture('project-shell-check-current'))),wrongPose=structuredClone(current);
+ wrongPose.pose.t_mm[0]+=1;
+ await page.locator('#review-shell').setInputFiles({name:'wrong-pose.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(wrongPose))});
+ await page.waitForFunction(()=>document.querySelector('#shell-status').textContent.includes('transform differs'));
+ assert.match(await page.locator('#shell-pairing').innerText(),/hashes also match/);
  const original=JSON.parse(fs.readFileSync(fixture('project-shell-check')));
  for(const [patch,message] of [[{gcode_sha256:'a'.repeat(64)},'G-code differs'],[{table_sha256:'b'.repeat(64)},'table_sha256 differs'],[{result:{...original.result,metrics:{...original.result.metrics,samples:1}}},'counts differ']]){
   await page.locator('#review-shell').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({...original,...patch}))});

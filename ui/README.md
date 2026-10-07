@@ -396,3 +396,10 @@ Current `@0.2` shell receipts additionally require matching table/mesh hashes,
 the saved pose transform and recorded slicer settings, plus method and producer
 source provenance. The original receipt is kept intact in the expanded view.
 Legacy samples are never relabelled as current receipts.
+
+`fixtures/seed-project-shell-check-current.json` is a fresh `@0.2` CLI result
+from source `a3f45ed`, not a metadata upgrade of the legacy file. It reruns the
+same project G-code at 0.1 mm with 20,000 samples and records the same result
+(0.22% thin, no unmeasured samples). Its table, mesh, pose and slicer context
+match the seed draft/export/slice fixtures. The browser test exercises this
+exact receipt as well as legacy disclosure and a changed-transform rejection.
