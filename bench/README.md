@@ -113,3 +113,13 @@ NPZ `fdmgen.stress-field.v1` stores installed-frame `centres_mm` (N,3),
 3D print-grid occupancy; indices are in that grid, not installed coordinates.
 `frame` and `voigt_order` are strings in the archive. Samples are at cell
 centres; they do not establish within-cell peak stress or mesh convergence.
+
+The same CPU pilot at 0.8 mm (`receipts/bracket-08-amg-cpu.json`) has 1,143,591
+active DOFs / 72,869,440 nonzeros. Translation candidates require 230 CG
+iterations, rigid6 65, and rigid6 with energy interpolation 32, with true
+residuals 9.88e-7, 7.20e-7 and 5.03e-7. Setup/solve times on one CPU thread
+are 17.03/358.76 s, 27.93/109.58 s and 69.21/53.90 s. Peak process RSS across
+the sequential variants is 9.88 GB. All three completed within the external
+900-second timeout. Compliance agrees to 3.2e-12 relative across variants;
+there is no independent direct reference. This remains a uniform-density,
+isotropic FP64 CPU test, not the TI/E_min/mixed-precision production gate.
