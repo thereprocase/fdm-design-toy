@@ -19,6 +19,7 @@ def _case(nx, ny, nz, C, contrast, seed=1):
 
 @pytest.mark.parametrize("C", [element.isotropic_C(1.0, 0.3), element.ti_C(1.0, 0.87, 0.35, 0.3, 0.33)])
 @pytest.mark.parametrize("contrast", [1.0, 1e-3])
+@pytest.mark.skipif(not wp.is_cuda_available(), reason="CUDA device unavailable")
 def test_matches_direct(C, contrast):
     nx, ny, nz = 16, 8, 8
     Ke, E, fixed, b = _case(nx, ny, nz, C, contrast)
@@ -33,6 +34,7 @@ def test_matches_direct(C, contrast):
     assert abs(info["compliance"] - bb @ u_ref) / abs(bb @ u_ref) < 1e-9
 
 
+@pytest.mark.skipif(not wp.is_cuda_available(), reason="CUDA device unavailable")
 def test_operator_matches_assembled():
     nx, ny, nz = 6, 4, 5
     Ke, E, fixed, b = _case(nx, ny, nz, element.isotropic_C(1.0, 0.3), 1e-2)
@@ -72,6 +74,7 @@ def test_galerkin_element_matrices_equal_rap():
     assert np.allclose(Ac, RAP, rtol=1e-12, atol=1e-12)
 
 
+@pytest.mark.skipif(not wp.is_cuda_available(), reason="CUDA device unavailable")
 def test_masked_domain_matches_direct():
     """Cells outside the part have E = 0; DOFs with no active element become identity rows."""
     nx, ny, nz = 16, 8, 8
