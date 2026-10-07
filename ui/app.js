@@ -43,6 +43,17 @@ function hasSlice(candidate) {
   const c=candidate.columns?.t_support_segments;
   return Number.isFinite(c?.value)&&c.value>=0&&c.verdict!=='NOT_CHECKED';
 }
+function renderBridge(candidate) {
+  const panel=byId('pose-bridges');panel.replaceChildren();
+  for(const [key,label] of [['t_bridge_span_external_mm','External bridges'],['t_bridge_span_internal_mm','Internal bridges']]){
+    const c=candidate.columns?.[key],section=text('article','',panel);
+    text('h4',label,section);
+    const valid=c?.rule==='BRG-001'&&c.level==='T'&&c.unit==='mm'&&['PASS','FAIL'].includes(c.verdict)&&Number.isFinite(c.value)&&c.value>=0&&Number.isFinite(c.limit_mm)&&c.limit_mm>0;
+    text('p',valid?`${c.verdict} · ${c.value.toLocaleString(undefined,{maximumFractionDigits:3})} mm longest unsupported run; recorded limit ${c.limit_mm.toLocaleString()} mm · T${c.provisional?' · provisional':''}`:'Not checked',section);
+    if(valid)text('p',c.fidelity||'Method and slice scope not supplied.',section);
+    if(c){const details=text('details','',section);text('summary','Recorded bridge column, coverage and provenance',details);const raw=text('pre',JSON.stringify(c,null,2),details);raw.style.whiteSpace='pre-wrap';raw.style.overflowWrap='anywhere';}
+  }
+}
 function remember() {if(selected) decisions.set(selected.id,byId('rationale').value);}
 function choose(candidate) {
   remember();selected=candidate;byId('pose-name').textContent=candidate.id;
@@ -64,6 +75,7 @@ function choose(candidate) {
   byId('toolpath-settings').textContent=slice?.fidelity||'No pose slice supplied. These quantities are not checked.';
   const creditedFidelity=candidate.columns?.t_credited_mm3?.fidelity||'';
   byId('credited-scope').textContent=slice?.fidelity&&creditedFidelity.startsWith(slice.fidelity)?'Credited volume: '+creditedFidelity.slice(slice.fidelity.length).replace(/^;\s*/, ''):creditedFidelity;
+  renderBridge(candidate);
   const shell=shellColumn(candidate);
   byId('pose-shell-summary').textContent=shellSummary(candidate);
   byId('pose-shell-fidelity').textContent=shell?.fidelity||'No usable SHELL-001 toolpath screen supplied for this pose.';
@@ -136,7 +148,7 @@ byId('table-file').onchange=async event=>{
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
-    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('pose-shell-summary').textContent='';byId('pose-shell-fidelity').textContent='';byId('pose-shell-coverage').textContent='';byId('pose-shell-receipt').textContent='';byId('pose-shell-details').hidden=true;byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
+    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('pose-bridges').replaceChildren();byId('pose-shell-summary').textContent='';byId('pose-shell-fidelity').textContent='';byId('pose-shell-coverage').textContent='';byId('pose-shell-receipt').textContent='';byId('pose-shell-details').hidden=true;byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
   }catch(error){if(request!==tableRequest)return;byId('status').textContent=`Could not load table: ${error.message}${analysis?' The previous table and current draft remain available.':''}`;}
 };
 byId('pose-sort').onchange=byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};

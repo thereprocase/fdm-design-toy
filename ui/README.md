@@ -441,3 +441,8 @@ Mechanics review separately displays each input's recorded road-end/turn cap
 setting. An absent setting says **not recorded**, rather than assuming caps are
 disabled. The capped R1 receipt is exercised directly in the browser test. Equal
 bead-sampling steps do not imply equal raster domains or transferred load arrays.
+
+Selected poses show optional external and internal BRG-001 T columns separately:
+longest unsupported run, recorded limit, verdict, fidelity and full column
+coverage/provenance. Missing or invalid measurements stay Not checked. The limits
+are provisional; a screen PASS does not prove absence of sag or printed strength.
