@@ -198,17 +198,26 @@ class MGPCG:
         self._vcycle(0, b32, x32)
         wp.launch(cast_32_64, dim=lv.ndof, inputs=[x32, z64], device=self.dev)
 
-    def solve(self, b, tol=1e-6, maxiter=500, use_mg=True, verbose=False):
-        """Solve A u = b (b zero at fixed DOFs). Returns (u, info)."""
+    def solve(self, b, tol=1e-6, maxiter=500, use_mg=True, verbose=False, x0=None):
+        """Solve A u = b (b zero at fixed DOFs), optionally warm-started from x0. Returns (u, info).
+        Tolerance is relative to ||b||."""
         lv = self.levels[0]
         n = lv.ndof
         x, r, z, p, q = (self.v64[k] for k in ("x", "r", "z", "p", "q"))
         bb = np.asarray(b, np.float64).copy()
         bb[lv.fixed_np != 0] = 0.0
-        r.assign(bb)
-        x.zero_()
         H = H64
-        bnorm = np.sqrt(dot64(r, r, self.buf))
+        if x0 is None:
+            r.assign(bb)
+            x.zero_()
+        else:
+            xx = np.asarray(x0, np.float64).copy()
+            xx[lv.fixed_np != 0] = 0.0
+            x.assign(xx)
+            self._A64(x, q)
+            r.assign(bb)
+            wp.launch(H["axpby"], dim=n, inputs=[wp.float64(-1.0), q, wp.float64(1.0), r, r], device=self.dev)
+        bnorm = float(np.linalg.norm(bb))
         self._precond(r, z, use_mg)
         wp.copy(p, z)
         rz = dot64(r, z, self.buf)
