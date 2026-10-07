@@ -496,6 +496,23 @@ def _pose_provenance(a, table, cand, mesh_path) -> dict:
                      "frame": table["mesh"].get("frame"), "sha256": sha(mesh_path)}}
 
 
+def _cmd_evidence(a) -> int:
+    from .evidence import build_bundle
+    try:
+        m = build_bundle(a.report, a.project, a.baseline, a.table, a.pose, a.out, shell_cell_mm=a.shell_cell,
+                         shell_samples=a.samples)
+    except RuntimeError as e:
+        print(f"ERROR   {e}")
+        return 1
+    print(f"wrote {a.out / 'evidence-bundle.json'}")
+    for r in m["receipts"]:
+        print(f"  {r['check']:16s} {r['slice_kind']:10s} {r['verdict']:12s} {r['sha256'][:12]}")
+    for check, d in m["paired"].items():
+        print(f"  paired {check}: " + ("; ".join(f"{k} {v['delta']:+g}" for k, v in d.items()) if "withheld" not in d
+                                       else "withheld: " + "; ".join(d["withheld"])))
+    return 2 if any(r["verdict"] == "FAIL" for r in m["receipts"]) else 0
+
+
 def _cmd_shell_check(a) -> int:
     import numpy as np
 
@@ -639,6 +656,16 @@ def main(argv: list[str] | None = None) -> int:
                      help="a bridge-check@0.2 receipt made with --table/--pose, and its slice kind: shell-only or project")
     obr.add_argument("--out", type=Path, required=True)
     obr.set_defaults(fn=_cmd_orient_bridge)
+    ev = sub.add_parser("evidence", help="every T-level receipt for a project slice and its shell-only baseline, one manifest")
+    ev.add_argument("report", type=Path, help="the .json report written by 'fdmgen massing'")
+    ev.add_argument("project", type=Path, help="slice of the massing project")
+    ev.add_argument("baseline", type=Path, help="slice of the -shell-only project")
+    ev.add_argument("--table", type=Path, required=True)
+    ev.add_argument("--pose", required=True)
+    ev.add_argument("--shell-cell", type=float, default=0.1)
+    ev.add_argument("--samples", type=int, default=20000)
+    ev.add_argument("--out", type=Path, required=True, help="bundle directory")
+    ev.set_defaults(fn=_cmd_evidence)
     sc = sub.add_parser("shell-check", help="SHELL-001 at T level: printed shell thickness by slope from a slice")
     sc.add_argument("gcode", type=Path, help="slice of the posed body (plate coordinates = the table's pose)")
     sc.add_argument("--table", type=Path, required=True)
