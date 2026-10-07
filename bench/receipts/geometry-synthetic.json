@@ -1,0 +1,99 @@
+{
+  "evidence": "measured local geometry benchmark",
+  "establishes": "occupancy parity and timing for the hashed input and software versions",
+  "does_not_establish": "physical accuracy, GPU performance, or bracket acceptance from synthetic input",
+  "input_kind": "synthetic annulus",
+  "mesh_sha256": "d672aa2e1ece86882ba320af189ccf0b1987e2f2c0b6499ed22f3df0dba80e1e",
+  "h_mm": 0.4,
+  "rows": [
+    {
+      "backend": "scanline",
+      "repeat": 0,
+      "seconds": 0.5643882629810832,
+      "shape": [
+        208,
+        208,
+        104
+      ],
+      "solid_cells": 2859200,
+      "occupancy_sha256": "2e2428136756dde41aeeeac8c36b434e6cb8e097faf66a233b286ab4a5ae4a00"
+    },
+    {
+      "backend": "scanline",
+      "repeat": 1,
+      "seconds": 0.5581481480039656,
+      "shape": [
+        208,
+        208,
+        104
+      ],
+      "solid_cells": 2859200,
+      "occupancy_sha256": "2e2428136756dde41aeeeac8c36b434e6cb8e097faf66a233b286ab4a5ae4a00"
+    },
+    {
+      "backend": "scanline",
+      "repeat": 2,
+      "seconds": 0.5535012450418435,
+      "shape": [
+        208,
+        208,
+        104
+      ],
+      "solid_cells": 2859200,
+      "occupancy_sha256": "2e2428136756dde41aeeeac8c36b434e6cb8e097faf66a233b286ab4a5ae4a00"
+    },
+    {
+      "backend": "section",
+      "repeat": 0,
+      "seconds": 1.0893552889465354,
+      "shape": [
+        208,
+        208,
+        104
+      ],
+      "solid_cells": 2859200,
+      "occupancy_sha256": "2e2428136756dde41aeeeac8c36b434e6cb8e097faf66a233b286ab4a5ae4a00"
+    },
+    {
+      "backend": "section",
+      "repeat": 1,
+      "seconds": 1.0818646000116132,
+      "shape": [
+        208,
+        208,
+        104
+      ],
+      "solid_cells": 2859200,
+      "occupancy_sha256": "2e2428136756dde41aeeeac8c36b434e6cb8e097faf66a233b286ab4a5ae4a00"
+    },
+    {
+      "backend": "section",
+      "repeat": 2,
+      "seconds": 1.0958763040252961,
+      "shape": [
+        208,
+        208,
+        104
+      ],
+      "solid_cells": 2859200,
+      "occupancy_sha256": "2e2428136756dde41aeeeac8c36b434e6cb8e097faf66a233b286ab4a5ae4a00"
+    }
+  ],
+  "parity": true,
+  "node_build": {
+    "grid": [
+      200,
+      200,
+      100
+    ],
+    "cells": 4000000,
+    "nodes": 4080501,
+    "output_bytes": 97932024,
+    "seconds": 0.03514687600545585
+  },
+  "versions": {
+    "python": "3.14.7",
+    "numpy": "2.5.3",
+    "trimesh": "5.1.1"
+  }
+}
