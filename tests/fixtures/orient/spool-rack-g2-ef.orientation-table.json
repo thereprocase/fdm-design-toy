@@ -8,7 +8,7 @@
   "source": "spool-wall-rack"
  },
  "generated": {
-  "commit": "8418822",
+  "commit": "7333782",
   "catalog": "v0",
   "card": "polymaker-polylite-asa-t0",
   "card_corner": "design",
@@ -295,6 +295,33 @@
      "verdict": "FAIL",
      "provisional": true,
      "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    },
+    "t_support_segments": {
+     "value": 4344,
+     "unit": "count",
+     "rule": "OVH-001",
+     "level": "T",
+     "verdict": "FAIL",
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm"
+    },
+    "t_support_volume_mm3": {
+     "value": 1351.8001636981883,
+     "unit": "mm3",
+     "rule": "OVH-001",
+     "level": "T",
+     "verdict": null,
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm"
+    },
+    "t_credited_mm3": {
+     "value": 69594.87352618028,
+     "unit": "mm3",
+     "rule": "STR-001",
+     "level": "T",
+     "verdict": null,
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm; thick bridges and support excluded"
     }
    }
   },
@@ -495,6 +522,33 @@
      "verdict": "FAIL",
      "provisional": true,
      "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    },
+    "t_support_segments": {
+     "value": 8596,
+     "unit": "count",
+     "rule": "OVH-001",
+     "level": "T",
+     "verdict": "FAIL",
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm"
+    },
+    "t_support_volume_mm3": {
+     "value": 4217.516128704559,
+     "unit": "mm3",
+     "rule": "OVH-001",
+     "level": "T",
+     "verdict": null,
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm"
+    },
+    "t_credited_mm3": {
+     "value": 69512.81610830707,
+     "unit": "mm3",
+     "rule": "STR-001",
+     "level": "T",
+     "verdict": null,
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm; thick bridges and support excluded"
     }
    }
   },

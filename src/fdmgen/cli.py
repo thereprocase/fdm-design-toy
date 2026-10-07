@@ -58,6 +58,7 @@ def _cmd_orient(a) -> int:
     import hashlib
     import subprocess
 
+    import numpy as np
     import trimesh
     import yaml
 
@@ -92,6 +93,18 @@ def _cmd_orient(a) -> int:
                           "stress": None if stress is None else {"path": Path(a.stress).name, **(stress.meta or {})}}}
     table = build_table(mesh.vertices, mesh.faces, card=card, stress=stress, sf=sf, sphere=a.sphere,
                         voxel=a.voxel, provenance=prov, interfaces=prob.get("interfaces"))
+    if a.gcode:
+        from .orient.table import add_toolpath_columns
+        pairs = dict(g.split("=", 1) for g in a.gcode)
+        add_toolpath_columns(table, mesh.vertices, pairs)
+    if a.export_poses:
+        from .coupons import write_stl
+        a.export_poses.mkdir(parents=True, exist_ok=True)
+        for c in table["candidates"]:
+            if c["feasible"]:
+                V = mesh.vertices @ np.array(c["R_design_to_print"]).T + np.array(c["t_mm"])
+                write_stl(a.export_poses / f"{c['id']}.stl", V, mesh.faces, f"{prob['id']} {c['id']} print frame")
+        print(f"exported feasible poses to {a.export_poses} (print frame, bed-centred; slice with arrange/orient off)")
     out = a.out or Path("out") / prob["id"] / "orientation-table.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(table, indent=1), encoding="utf-8")
@@ -159,6 +172,9 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("--sphere", type=int, default=0, help="also sample N directions on the sphere")
     o.add_argument("--voxel", action="store_true", help="add V-level OVH-001 and BRG-001 on the D5 grid")
     o.add_argument("--out", type=Path)
+    o.add_argument("--export-poses", type=Path, help="write each feasible pose as a print-frame STL into DIR")
+    o.add_argument("--gcode", action="append", metavar="ID=PATH",
+                   help="slice of pose ID (from --export-poses); adds T-level columns; repeatable")
     o.set_defaults(fn=_cmd_orient)
     cp = sub.add_parser("coupons", help="write the overhang + bridge ladder plate (STL + rung metadata)")
     cp.add_argument("--out", type=Path, default=Path("out/coupons"))

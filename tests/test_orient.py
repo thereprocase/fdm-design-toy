@@ -205,3 +205,25 @@ def test_vendor_corner_fl_on_the_bar():
     t = build_table(v, f, card=card, stress=_bar_stress(v, SIG))
     standing = next(c for c in t["candidates"] if abs(abs(c["build_dir_design"][0]) - 1) < 1e-9)
     assert standing["columns"]["F_L_max_vendor_corner"]["value"] == pytest.approx(SIG / 32.0)
+
+
+def test_toolpath_columns_from_a_pose_slice(tmp_path):
+    from fdmgen.orient.table import add_toolpath_columns
+    v, f = box_mesh(30, 20, 10)
+    t = build_table(v, f)
+    c = t["candidates"][0]
+    P = v @ np.array(c["R_design_to_print"]).T + np.array(c["t_mm"])
+    (x0, y0), (x1, y1) = P.min(axis=0)[:2] + 0.21, P.max(axis=0)[:2] - 0.21     # outer-wall centreline
+    g = (f"; filament_diameter: 1.75\nM83\nG90\n; printing object part\n;TYPE:Outer wall\n;Z:0.2\n;HEIGHT:0.2\n"
+         f"G1 X{x0:.3f} Y{y0:.3f} Z0.2\nG1 X{x1:.3f} Y{y0:.3f} E1\nG1 X{x1:.3f} Y{y1:.3f} E1\nG1 X{x0:.3f} Y{y1:.3f} E1\n"
+         f"G1 X{x0:.3f} Y{y0:.3f} E1\n;TYPE:Support\nG1 X{x0 + 5:.3f} Y{y0 + 5:.3f}\nG1 X{x0 + 9:.3f} Y{y0 + 5:.3f} E0.2\n"
+         "; stop printing object part\n; filament used [cm3] = 0.010102\n; CONFIG_BLOCK_START\n; enable_support = 1\n"
+         "; support_threshold_angle = 45\n; CONFIG_BLOCK_END\n")
+    p = tmp_path / "pose.gcode"
+    p.write_text(g)
+    add_toolpath_columns(t, v, {c["id"]: p})
+    col = c["columns"]["t_support_segments"]
+    assert (col["value"], col["verdict"], col["level"]) == (1, "FAIL", "T") and "threshold 45" in col["fidelity"]
+    other = next(o for o in t["candidates"] if abs(o["columns"]["height_mm"]["value"] - 10.0) > 1)   # different footprint
+    with pytest.raises(ValueError, match="does not match the design"):
+        add_toolpath_columns(t, v, {other["id"]: p})             # a slice of a different pose is refused

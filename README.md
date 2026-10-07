@@ -27,7 +27,7 @@ exists yet. What runs today:
 | `fdmgen.orient` | ranked orientation table: stable poses, printability columns, inter-layer index F_L from a stress field | the existing hand-chosen bracket pose ranks first; uniaxial-bar known answers pass |
 | `fdmgen.coupons` | overhang and bridge ladder plate, plus slicer-evidence receipts per rung | Orca supports the 35–45° rungs and leaves 50–60° alone (slicer evidence only) |
 | `fdmgen.fem` | GPU multigrid elasticity solver and cell stress recovery; CPU algebraic-multigrid pilots in [`bench/`](bench/) | solver gate (#4) not met yet |
-| [`ui/`](ui/) | browser workspace for comparing orientations and planning massing | see [`ui/README.md`](ui/README.md) |
+| [`ui/`](ui/) | local browser workspace for comparing orientation evidence and drafting shell and helper regions | draft sketches record intent only; modifier geometry and strength checks come from the Python tools; see [`ui/README.md`](ui/README.md) |
 
 Nothing here is physically qualified. Slicer results say what Orca generates; printed coupons
 (issue #12) and the test rig (issue #18) come next for the physical tier.
