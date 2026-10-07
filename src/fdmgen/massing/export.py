@@ -152,6 +152,8 @@ def export_plan(plan, body_vertices, body_faces, template: bytes, capabilities: 
         "capability_context_matches_template": ctx_match,
         "settings_evidence": evidence,
         "object_settings": object_settings,
+        "body_print_bbox_mm": [plan.to_print(body_vertices).min(axis=0).round(3).tolist(),
+                               plan.to_print(body_vertices).max(axis=0).round(3).tolist()],
         "skin_note": f"{plan.skin_mm} mm skin -> {skin_layers} layers of {layer_height_mm} mm",
         "helpers": [{"id": h.id, "settings": settings,
                      "print_bbox_mm": [plan.to_print(h.corners_design_mm()).min(axis=0).round(3).tolist(),
@@ -165,3 +167,72 @@ def export_plan(plan, body_vertices, body_faces, template: bytes, capabilities: 
         report["warning"] = ("the capability file was measured with a different template profile; every per-helper "
                              "setting is unverified in this context")
     return data, report
+
+
+def _solid_in_boxes(tp, off, shift, boxes):
+    from ..slicer.modifier_spike import _fraction_in_box
+    m = tp.in_object
+    a = tp.start[m, :2] + off[:2] - shift
+    b = tp.end[m, :2] + off[:2] - shift
+    z, role, vol = tp.end[m, 2], tp.role[m], tp.volume[m]
+    out = []
+    for lo, hi in boxes:
+        f = _fraction_in_box(a, b, lo[:2], hi[:2]) * ((z > lo[2]) & (z <= hi[2] + 1e-6))
+        out.append(float((vol * f)[role == "Internal solid infill"].sum()))
+    return out
+
+
+def slice_evidence(report: dict, gcode_text: str, baseline_gcode_text: str | None = None, *,
+                   min_fill_fraction: float = 0.10, min_attributable_mm: float = 0.84,
+                   min_added_mm3: float = 0.5) -> dict:
+    """T level: read the slice of an exported project back; per helper, the solid infill it added.
+
+    With a slice of the shell-only project (same body and settings, no helpers) as the baseline, the
+    helper's contribution is the difference in solid infill inside its box: below min_fill_fraction of the
+    box volume, or below min_added_mm3 (about six bead segments one wall pair long; a fraction means
+    nothing for a box smaller than a bead), is a FAIL (dropped, or outside the body). Without a baseline the body's own solid material
+    (skins, internal plates) cannot be told apart from the helper's, so boxes thinner than
+    min_attributable_mm are NOT_CHECKED and larger ones are judged on the absolute fill.
+    A PASS says the helper added material in its box, not that it is continuous with the shell.
+    """
+    from ..catalog.checks.toolpath import locate
+    from ..gcode import credit, extruder_offset, read_gcode
+    tp = read_gcode(gcode_text)
+    off = extruder_offset(gcode_text)
+    (blo, bhi) = [np.asarray(b) for b in report["body_print_bbox_mm"]]
+    shift = locate(tp, blo[:2], bhi[:2], off)
+    boxes = [tuple(np.asarray(x) for x in h["print_bbox_mm"]) for h in report["helpers"]]
+    solid = _solid_in_boxes(tp, off, shift, boxes)
+    base = None
+    if baseline_gcode_text is not None:
+        tb = read_gcode(baseline_gcode_text)
+        ob = extruder_offset(baseline_gcode_text)
+        base = _solid_in_boxes(tb, ob, locate(tb, blo[:2], bhi[:2], ob), boxes)
+    rows = []
+    for k, h in enumerate(report["helpers"]):
+        lo, hi = boxes[k]
+        box = float(np.prod(hi - lo))
+        added = solid[k] - (base[k] if base is not None else 0.0)
+        frac = added / box if box > 0 else 0.0
+        row = {"id": h["id"], "solid_infill_in_box_mm3": round(solid[k], 3), "box_volume_mm3": round(box, 3),
+               "baseline_solid_infill_mm3": None if base is None else round(base[k], 3),
+               "added_solid_mm3": round(added, 3), "added_fill_fraction": round(frac, 3)}
+        if base is None and float(np.min(hi - lo)) < min_attributable_mm:
+            row.update(verdict="NOT_CHECKED", message=(f"helper {h['id']}: its box is thinner than {min_attributable_mm} mm, "
+                       "so its material cannot be told apart from the body's without a shell-only baseline slice"))
+        elif frac >= min_fill_fraction and added >= min_added_mm3:
+            row.update(verdict="PASS", message=f"helper {h['id']}: added {added:.1f} mm3 of solid infill ({100 * frac:.0f} % of its box)")
+        else:
+            row.update(verdict="FAIL", message=(f"helper {h['id']}: added only {added:.3f} mm3 of solid infill "
+                       f"({100 * frac:.1f} % of its box; needs {100 * min_fill_fraction:.0f} % and {min_added_mm3} mm3); the slicer dropped it "
+                       "or it lies outside the body"))
+        rows.append(row)
+    cr = credit(tp)
+    return {"schema": "fdmgen/massing-slice-evidence@0.1", "tier": "S", "level": "T",
+            "project_3mf_sha256": report["project_3mf_sha256"], "plan": report["plan"],
+            "baseline": "shell-only slice" if base is not None else None,
+            "placement_shift_xy_mm": np.round(shift, 4).tolist(),
+            "credited_mm3": round(cr["structurally_credited_extrusion_volume_mm3"], 1),
+            "min_fill_fraction": min_fill_fraction, "min_added_mm3": min_added_mm3, "helpers": rows,
+            "establishes": "How much solid infill each helper added in its box in the real slice (MOD-001 T).",
+            "does_not_establish": "Bond continuity with the shell, or strength; physical testing is separate."}

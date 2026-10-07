@@ -123,7 +123,33 @@ def test_real_ui_draft_exports_and_flags_the_tiny_helper():
 def test_cli_massing_exit_code_and_outputs(tmp_path, capsys):
     from fdmgen.cli import main
     rc = main(["massing", str(DRAFT), "--table", str(TABLE), "--template", str(TEMPLATE_ZIP), "--out", str(tmp_path)])
+    assert (tmp_path / "spool-rack-g2-ef-facet-00-massing-shell-only.3mf").is_file()
     out = capsys.readouterr().out
     assert rc == 2 and "MOD-001 FAIL" in out and "NOT_CHECKED" in out          # the tiny helper fails, exit code says so
     assert (tmp_path / "spool-rack-g2-ef-facet-00-massing.3mf").is_file()
     assert (tmp_path / "spool-rack-g2-ef-facet-00-massing.json").is_file()
+
+
+def test_massing_slice_evidence_is_differential():
+    from fdmgen.massing import slice_evidence
+    report = {"body_print_bbox_mm": [[100, 100, 0], [140, 120, 10]], "project_3mf_sha256": "p" * 64,
+              "plan": {"candidate_id": "facet-00"},
+              "helpers": [{"id": "kept", "print_bbox_mm": [[105, 105, 2], [115, 115, 8]]},
+                          {"id": "dropped", "print_bbox_mm": [[125, 105, 2], [125.5, 105.5, 2.5]]}]}
+    lo, hi = (100.21, 100.21), (139.79, 119.79)                 # outer-wall centreline 0.21 inside the body
+    shell = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", ";TYPE:Outer wall", ";Z:2.4",
+             ";HEIGHT:0.2", f"G1 X{lo[0]} Y{lo[1]} Z2.4", f"G1 X{hi[0]} Y{lo[1]} E1", f"G1 X{hi[0]} Y{hi[1]} E1",
+             f"G1 X{lo[0]} Y{hi[1]} E1", f"G1 X{lo[0]} Y{lo[1]} E1", ";TYPE:Internal solid infill",
+             "G1 X124 Y105.2", "G1 X126 Y105.2 E0.05"]           # the body's own solid road clipping the tiny box
+    helper = ["G1 X106 Y110", "G1 X114 Y110 E15.0", "G1 X106 Y111", "G1 X114 Y111 E15.0"]   # ~72 mm3 in a 600 mm3 box
+    end = ["; stop printing object part"]
+    with_helpers = "\n".join(shell + helper + end) + "\n; filament used [cm3] = 0.08\n"      # 34.05 mm of filament
+    baseline = "\n".join(shell + end) + "\n; filament used [cm3] = 0.01\n"                   # 4.05 mm
+    ev = slice_evidence(report, with_helpers, baseline)
+    v = {h["id"]: h for h in ev["helpers"]}
+    assert v["kept"]["verdict"] == "PASS" and v["kept"]["added_solid_mm3"] > 0
+    assert v["dropped"]["solid_infill_in_box_mm3"] > 0 and v["dropped"]["added_solid_mm3"] == pytest.approx(0)
+    assert v["dropped"]["verdict"] == "FAIL" and "dropped it" in v["dropped"]["message"]
+    assert ev["placement_shift_xy_mm"] == pytest.approx([0, 0], abs=1e-6) and ev["baseline"] == "shell-only slice"
+    single = {h["id"]: h for h in slice_evidence(report, with_helpers)["helpers"]}
+    assert single["dropped"]["verdict"] == "NOT_CHECKED" and single["kept"]["verdict"] == "PASS"

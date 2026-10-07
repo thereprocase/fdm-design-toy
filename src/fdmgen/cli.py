@@ -199,13 +199,31 @@ def _cmd_massing(a) -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     stem = f"{plan.problem}-{plan.candidate_id}-massing"
     (a.out / f"{stem}.3mf").write_bytes(data)
+    import dataclasses
+    shell_data, _ = export_plan(dataclasses.replace(plan, shell_only=True), body.vertices, body.faces, template,
+                                load_capabilities(a.capabilities))
+    (a.out / f"{stem}-shell-only.3mf").write_bytes(shell_data)    # baseline for massing-evidence
     (a.out / f"{stem}.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
-    print(f"wrote {a.out / (stem + '.3mf')} and {stem}.json ({len(report['helpers'])} helpers)")
+    print(f"wrote {a.out / (stem + '.3mf')}, {stem}-shell-only.3mf (baseline) and {stem}.json "
+          f"({len(report['helpers'])} helpers)")
     for c in report["checks"]:
         print(f"  {c['verdict']:11} {c['message']}")
     if report.get("warning"):
         print(f"  WARNING     {report['warning']}")
     return 0 if all(c["verdict"] != "FAIL" for c in report["checks"]) else 2
+
+
+def _cmd_massing_evidence(a) -> int:
+    from .massing import slice_evidence
+    report = json.loads(a.report.read_text(encoding="utf-8"))
+    ev = slice_evidence(report, a.gcode.read_text(encoding="utf-8"),
+                        a.baseline.read_text(encoding="utf-8") if a.baseline else None)
+    out = a.out or a.report.with_name(a.report.stem + "-slice-evidence.json")
+    out.write_text(json.dumps(ev, indent=1), encoding="utf-8")
+    print(f"wrote {out}; placement shift {ev['placement_shift_xy_mm']} mm, credited {ev['credited_mm3']} mm3")
+    for h in ev["helpers"]:
+        print(f"  {h['verdict']:5} {h['message']}")
+    return 2 if any(h["verdict"] == "FAIL" for h in ev["helpers"]) else 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -261,6 +279,12 @@ def main(argv: list[str] | None = None) -> int:
                     "orca-2.4.2-p1s-asa-modifier-capabilities.yaml")
     mg.add_argument("--out", type=Path, default=Path("out/massing"))
     mg.set_defaults(fn=_cmd_massing)
+    me = sub.add_parser("massing-evidence", help="read a slice of an exported massing project back (T level)")
+    me.add_argument("report", type=Path, help="the .json report written by 'fdmgen massing'")
+    me.add_argument("gcode", type=Path)
+    me.add_argument("--baseline", type=Path, help="slice of the -shell-only.3mf written by 'fdmgen massing'")
+    me.add_argument("--out", type=Path)
+    me.set_defaults(fn=_cmd_massing_evidence)
     a = ap.parse_args(argv)
     return a.fn(a)
 
