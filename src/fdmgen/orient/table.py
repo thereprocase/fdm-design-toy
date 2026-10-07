@@ -168,3 +168,56 @@ def add_toolpath_columns(table: dict, vertices, gcode_by_id: dict) -> dict:
         c["columns"]["t_credited_mm3"] = _col(cr["structurally_credited_extrusion_volume_mm3"], "mm3", "STR-001", "T",
                                               None, False, fid + "; thick bridges and support excluded")
     return table
+
+
+SHELL_KINDS = ("shell-only", "project")
+
+
+def add_shell_columns(table: dict, table_sha256: str, receipts: list[tuple[dict, str, str]]) -> dict:
+    """A new table with a T-level SHELL-001 column from shell-check@0.2 receipts; the input is not modified.
+
+    receipts: (receipt dict, receipt sha256, slice kind "shell-only" | "project"). A receipt is accepted only if
+    it was measured against this exact table (table sha256), mesh (sha256) and pose (R and t equal), so a
+    receipt is never relabelled to another table. Poses without a receipt get no column.
+    """
+    import copy
+
+    if table.get("mesh", {}).get("sha256") is None:
+        raise ValueError("the table records no mesh sha256, so receipts cannot be matched to its body")
+    out = copy.deepcopy(table)
+    by_id = {c["id"]: c for c in out["candidates"]}
+    used = []
+    for rec, rec_sha, kind in receipts:
+        if rec.get("schema") != "fdmgen/shell-check@0.2":
+            raise ValueError(f"receipt {rec_sha[:12]}: schema {rec.get('schema')!r}, need fdmgen/shell-check@0.2")
+        if kind not in SHELL_KINDS:
+            raise ValueError(f"receipt {rec_sha[:12]}: slice kind {kind!r}, use one of {SHELL_KINDS}")
+        pose = rec["pose"]["id"]
+        if rec["table"]["sha256"] != table_sha256:
+            raise ValueError(f"receipt {rec_sha[:12]} was measured against table {rec['table']['sha256'][:12]}, "
+                             f"not this one ({table_sha256[:12]})")
+        if rec["mesh"]["sha256"] != table["mesh"]["sha256"]:
+            raise ValueError(f"receipt {rec_sha[:12]} measured mesh {rec['mesh']['sha256'][:12]}, "
+                             f"the table's body is {table['mesh']['sha256'][:12]}")
+        c = by_id.get(pose)
+        if c is None:
+            raise ValueError(f"receipt {rec_sha[:12]}: pose {pose!r} is not in the table")
+        if rec["pose"]["R_design_to_print"] != c["R_design_to_print"] or rec["pose"]["t_mm"] != c["t_mm"]:
+            raise ValueError(f"receipt {rec_sha[:12]}: pose {pose} R/t differ from the table's")
+        if "t_shell_thin_fraction" in c["columns"]:
+            raise ValueError(f"two receipts for pose {pose}; give one per pose")
+        res, g, m = rec["result"], rec["gcode"], rec["method"]
+        fid = (f"{kind} slice {g['gcode_sha256'][:12]} ({g.get('generator')} {g.get('version')}, "
+               f"{g.get('print_settings_id')} / {g.get('filament_settings_id')}); raster {rec['grid']['cell_mm']} mm, "
+               f"caps {m['deposit']['caps']}, {m['surface_samples']} surface samples, seed {m['seed']}, "
+               f"limit {m['thin_fraction_limit']}")
+        col = _col(res["metrics"]["thin_fraction"], "fraction", "SHELL-001", "T", res["verdict"], res["provisional"], fid)
+        col["receipt"] = {"sha256": rec_sha, "slice_kind": kind, "gcode_sha256": g["gcode_sha256"],
+                          "source_sha256": rec["source_sha256"]}
+        c["columns"]["t_shell_thin_fraction"] = col
+        used.append({"pose": pose, "receipt_sha256": rec_sha, "slice_kind": kind})
+    out["enriched"] = {"from_table_sha256": table_sha256, "columns_added": ["t_shell_thin_fraction"],
+                       "shell_receipts": used,
+                       "does_not_establish": "anything about poses without a receipt, or about a different slice of "
+                                             "the same pose; the column is one slice's measured shell"}
+    return out

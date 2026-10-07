@@ -1,4 +1,7 @@
 """Orientation analysis (#11): poses, F_L known answers (PLAN P1 acceptance), printability table."""
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -241,3 +244,57 @@ def test_with_keep_outs_table_contract():
     assert set(s["rod_interfaces"]) <= {i["id"] for i in t["interfaces"]} and "derivation" in s
     old = json.loads(FIXTURE.read_text())
     assert "keep_outs" not in old and [c["id"] for c in old["candidates"]] == [c["id"] for c in t["candidates"]]
+
+
+SHELL_FIX = Path(__file__).parent / "fixtures" / "shell"
+KEEP_OUT_TABLE = Path(__file__).parent / "fixtures" / "orient" / "spool-rack-g2-ef.with-keep-outs.orientation-table.json"
+
+
+def _shell_receipts():
+    import hashlib
+    out = []
+    for pose in ("facet-00", "facet-01"):
+        raw = (SHELL_FIX / f"{pose}-shell-only.shell-check.json").read_bytes()
+        out.append((json.loads(raw), hashlib.sha256(raw).hexdigest(), "shell-only"))
+    return out
+
+
+def test_shell_column_from_receipts_reproduces_the_enriched_fixture():
+    import hashlib
+
+    from fdmgen.orient.table import add_shell_columns
+    raw = KEEP_OUT_TABLE.read_bytes()
+    src = json.loads(raw)
+    out = add_shell_columns(src, hashlib.sha256(raw).hexdigest(), _shell_receipts())
+    assert "t_shell_thin_fraction" not in src["candidates"][0]["columns"]          # the source is not modified
+    fixture = KEEP_OUT_TABLE.with_name("spool-rack-g2-ef.with-keep-outs.shell.orientation-table.json")
+    assert json.loads(fixture.read_text(encoding="utf-8")) == out
+    col = {c["id"]: c["columns"].get("t_shell_thin_fraction") for c in out["candidates"]}
+    assert col["facet-00"]["value"] == 0.0022 and col["facet-00"]["verdict"] == "PASS"
+    assert col["facet-00"]["unit"] == "fraction" and col["facet-00"]["level"] == "T"
+    assert col["facet-01"]["receipt"]["slice_kind"] == "shell-only" and col["facet-02"] is None
+    assert out["enriched"]["from_table_sha256"] == hashlib.sha256(raw).hexdigest()
+
+
+def test_shell_receipts_are_never_relabelled():
+    import copy
+    import hashlib
+
+    from fdmgen.orient.table import add_shell_columns
+    raw = KEEP_OUT_TABLE.read_bytes()
+    table, sha = json.loads(raw), hashlib.sha256(raw).hexdigest()
+    rec = _shell_receipts()
+    with pytest.raises(ValueError, match="measured against table"):
+        add_shell_columns(table, "0" * 64, rec)                                  # another table's hash
+    moved = copy.deepcopy(rec[0][0])
+    moved["pose"]["id"] = "facet-01"                                              # facet-00 R/t claimed for facet-01
+    with pytest.raises(ValueError, match="R/t differ"):
+        add_shell_columns(table, sha, [(moved, "x" * 64, "shell-only")])
+    legacy = copy.deepcopy(rec[0][0])
+    legacy["schema"] = "fdmgen/shell-check@0.1"
+    with pytest.raises(ValueError, match="schema"):
+        add_shell_columns(table, sha, [(legacy, "y" * 64, "shell-only")])
+    with pytest.raises(ValueError, match="two receipts"):
+        add_shell_columns(table, sha, [rec[0], rec[0]])
+    with pytest.raises(ValueError, match="slice kind"):
+        add_shell_columns(table, sha, [(rec[0][0], rec[0][1], "baseline")])

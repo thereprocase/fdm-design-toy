@@ -387,6 +387,30 @@ def _shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, 
     }
 
 
+def _cmd_orient_shell(a) -> int:
+    import hashlib
+
+    from .orient.table import add_shell_columns
+    raw = a.table.read_bytes()
+    receipts = []
+    for path, kind in a.receipt:
+        rb = Path(path).read_bytes()
+        receipts.append((json.loads(rb), hashlib.sha256(rb).hexdigest(), kind))
+    try:
+        out = add_shell_columns(json.loads(raw), hashlib.sha256(raw).hexdigest(), receipts)
+    except ValueError as e:
+        print(f"ERROR   {e}")
+        return 1
+    a.out.parent.mkdir(parents=True, exist_ok=True)
+    a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
+    for c in out["candidates"]:
+        col = c["columns"].get("t_shell_thin_fraction")
+        if col:
+            print(f"  {c['id']}: SHELL-001 T {col['verdict']} thin {100 * col['value']:.2f} % ({col['receipt']['slice_kind']})")
+    print(f"wrote {a.out} (enriched from table {out['enriched']['from_table_sha256'][:12]})")
+    return 0
+
+
 def _cmd_shell_check(a) -> int:
 
     import numpy as np
@@ -513,6 +537,12 @@ def main(argv: list[str] | None = None) -> int:
     go.add_argument("--report", type=Path, help="fdmgen massing report of the sliced project (adds project sha + plan)")
     go.add_argument("--out", type=Path, required=True)
     go.set_defaults(fn=_cmd_gcode_occupancy)
+    osh = sub.add_parser("orient-shell", help="new orientation table with a SHELL-001 T column from shell-check receipts")
+    osh.add_argument("table", type=Path, help="the orientation table the receipts were measured against")
+    osh.add_argument("--receipt", nargs=2, action="append", required=True, metavar=("RECEIPT", "KIND"),
+                     help="a shell-check@0.2 receipt and its slice kind: shell-only or project")
+    osh.add_argument("--out", type=Path, required=True)
+    osh.set_defaults(fn=_cmd_orient_shell)
     sc = sub.add_parser("shell-check", help="SHELL-001 at T level: printed shell thickness by slope from a slice")
     sc.add_argument("gcode", type=Path, help="slice of the posed body (plate coordinates = the table's pose)")
     sc.add_argument("--table", type=Path, required=True)
