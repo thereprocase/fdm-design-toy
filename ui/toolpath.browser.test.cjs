@@ -11,7 +11,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#sliced-only').uncheck();
  const table=JSON.parse(fs.readFileSync(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json')));
  const base=table.candidates[0];
- table.candidates=['large','zero','unknown','tie'].map((id,i)=>({...structuredClone(base),id,columns:{...structuredClone(base.columns),
+ table.candidates=['large','zero','unknown','tie'].map((id,i)=>({...structuredClone(base),id,feasible:i!==2,columns:{...structuredClone(base.columns),
   t_support_segments:{value:[9,0,-1,9][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   F_L_max:{value:[.3,.1,null,.3][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   contact_mm2:{value:[100,20,null,100][i],verdict:i===2?'NOT_CHECKED':'PASS'},
@@ -35,6 +35,16 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#pose-sort').selectOption('contact_mm2');assert.deepEqual(await order(),['large','tie','zero','unknown']);
  await page.locator('#pose-sort').selectOption('analysis');assert.deepEqual(await order(),['large','zero','unknown','tie']);
  assert.equal(await page.locator('#pose-name').innerText(),'large');assert.equal(await page.locator('#rationale').inputValue(),'Keep this choice while comparing.');
+ // Reveal only relaxes filters excluding the selected pose, without choosing or editing it.
+ await page.locator('#feasible-only').check();await page.locator('#sliced-only').check();
+ assert(await page.locator('#reveal-pose').isHidden());
+ await page.locator('#feasible-only').uncheck();await page.locator('#sliced-only').uncheck();
+ await page.getByRole('button',{name:'unknown',exact:true}).click();await page.locator('#rationale').fill('Preserve my selected pose notes');await page.locator('#walls').fill('6');
+ await page.locator('#pose-sort').selectOption('height_mm');await page.locator('#feasible-only').check();await page.locator('#sliced-only').check();
+ await page.locator('#reveal-pose').click();
+ assert.equal(await page.locator('#feasible-only').isChecked(),false);assert.equal(await page.locator('#sliced-only').isChecked(),false);
+ assert.equal(await page.locator('#pose-sort').inputValue(),'height_mm');assert.equal(await page.locator('#rationale').inputValue(),'Preserve my selected pose notes');assert.equal(await page.locator('#walls').inputValue(),'6');
+ assert.equal(await page.evaluate(()=>document.activeElement.textContent),'unknown');assert(await page.locator('#reveal-pose').isHidden());
  // Actual enriched receipts: preserve producer precision and show provenance as text.
  await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell.orientation-table.json'));
  await page.getByRole('button',{name:'facet-00',exact:true}).click();

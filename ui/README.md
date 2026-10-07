@@ -432,3 +432,7 @@ provisional T PASS. This small difference is not a demonstrated pose advantage.
 The enriched file has a new hash: drafts pinned to the original table still
 require that original file. Receipt hashes retain their original source-table
 binding; enrichment does not relabel the underlying measurements.
+
+If filters hide your selected pose, **Show selected pose** clears only the
+filters excluding it and returns keyboard focus to its row. Your ordering,
+selection, rationale and helper draft stay intact.

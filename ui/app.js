@@ -93,6 +93,7 @@ function renderRows() {
       return sortKey==='contact_mm2'?y-x:x-y;
     });
   }
+  byId('reveal-pose').hidden=!selected||rows.some(c=>c.id===selected.id);
   const sliced=analysis.candidates.filter(c=>hasSlice(c)).length;
   byId('pose-count').textContent=`Showing ${rows.length} of ${analysis.candidates.length} poses; ${sliced} have measured slices.${selected&&!rows.some(c=>c.id===selected.id)?' Selected pose '+selected.id+' is hidden by this filter.':''}`;
   for(const c of rows) {
@@ -104,6 +105,14 @@ function renderRows() {
   }
   if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=7;}
 }
+byId('reveal-pose').onclick=()=>{
+  if(!selected)return;
+  if(!selected.feasible)byId('feasible-only').checked=false;
+  if(!hasSlice(selected))byId('sliced-only').checked=false;
+  renderRows();
+  const button=byId('rows').querySelector('[aria-pressed="true"]');
+  button?.focus();button?.scrollIntoView({block:'nearest',inline:'nearest'});
+};
 byId('table-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=++tableRequest;
   try {
