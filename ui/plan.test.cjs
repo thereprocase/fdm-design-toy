@@ -67,3 +67,15 @@ test('proposal provenance survives edited drafts as independent historical data'
  assert.equal(Plan.create(analysis,hash,candidate,input).proposal,undefined);
  assert.throws(()=>Plan.restore({...draft,proposal:[]},analysis,hash),/generator/);
 });
+
+test('download filenames identify part and pose without changing the draft',()=>{
+ const draft=Plan.create(analysis,hash,candidate,input),before=JSON.stringify(draft);
+ assert.equal(Plan.filename(draft),'test-pose-massing-plan.json');
+ assert.equal(JSON.stringify(draft),before);
+ assert.equal(Plan.filename({source:{problem:{id:'Spool Rack G2'}},orientation:{id:'facet-00'}}),'spool-rack-g2-facet-00-massing-plan.json');
+ assert.equal(Plan.filename({source:{problem:'../../My: Part'},orientation:{id:'../Pose / 2'}}),'my-part-pose-2-massing-plan.json');
+ assert.equal(Plan.filename(null),'part-pose-massing-plan.json');
+ assert.equal(Plan.filename({source:{problem:42},orientation:{id:'...'}}),'part-pose-massing-plan.json');
+ const long=Plan.filename({source:{problem:'x'.repeat(1000)},orientation:{id:'y'.repeat(1000)}});
+ assert.equal(long,`${'x'.repeat(64)}-${'y'.repeat(64)}-massing-plan.json`);
+});

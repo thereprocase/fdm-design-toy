@@ -24,7 +24,7 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
 
   const fill=async(box,name)=>{for(const [key,value] of Object.entries({name,location:'Rear seat to mounting plate',purpose:'Transfer the seat load',keep_clear:'Rod bore and washer seats'}))await box.locator(`[data-key="${key}"]`).fill(value);};
   await fill(page.locator('.helper-region').first(),'Seat rib');await page.locator('#add-helper').click();await fill(page.locator('.helper-region').last(),'Mount backing');
-  const download=async()=>{const pending=page.waitForEvent('download');await page.locator('#export').click();return JSON.parse(await fs.readFile(await (await pending).path(),'utf8'));};
+  const download=async()=>{const pending=page.waitForEvent('download');await page.locator('#export').click();const file=await pending;assert.equal(file.suggestedFilename(),'spool-rack-g2-ef-facet-00-massing-plan.json');return JSON.parse(await fs.readFile(await file.path(),'utf8'));};
   assert.equal(await page.locator('[data-export-error]').count(),0);
   const original=await download();assert.equal(original.massing.helper_regions.length,2);assert.match(await page.locator('#handoff-readiness').innerText(),/2 helper\(s\) without a box/);assert(await page.locator('#handoff').evaluate(e=>e.open));
   assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since the last draft download/);

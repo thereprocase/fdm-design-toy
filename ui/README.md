@@ -598,3 +598,9 @@ selected helper** closes the other editors; **Expand all helpers** restores them
 Folding changes presentation only: every helper remains in the preview and draft,
 and it does not mark the plan edited. Selecting a helper from the preview or
 focusing an export error opens the relevant editor automatically.
+
+Draft downloads use the part and pose identifiers, for example
+`spool-rack-g2-ef-facet-00-massing-plan.json`. Filename segments use safe ASCII
+letters, digits and hyphens, limited to 64 characters each, with `part`/`pose`
+fallbacks. Names help identify files; exact content hashes still control receipt
+pairing. Repeated downloads can have the same suggested name.

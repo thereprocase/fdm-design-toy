@@ -73,6 +73,12 @@ const Plan = (() => {
     else helperRegions=regions(helperRegions,m.shell_only===true,analysis.interfaces||[],analysis.keep_outs||[]);
     return {candidate,input:{walls:m.walls,skin_mm:m.skin_mm,rationale:requireText(draft.orientation?.designer_decision?.rationale,'Choice rationale'),shell_only:m.shell_only===true,helper_regions:helperRegions,...(draft.proposal?{proposal:proposal(draft.proposal)}:{})},migrated};
   }
-  return {schema,create,restore,geometry,boxSeparation};
+  function filename(draft) {
+    const slug=(value,fallback)=>typeof value==='string'
+      ?value.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,64).replace(/^-+|-+$/g,'')||fallback:fallback;
+    const problem=draft?.source?.problem;
+    return `${slug(typeof problem==='string'?problem:problem?.id,'part')}-${slug(draft?.orientation?.id,'pose')}-massing-plan.json`;
+  }
+  return {schema,create,restore,geometry,boxSeparation,filename};
 })();
 if(typeof module!=='undefined')module.exports=Plan;
