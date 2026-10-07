@@ -70,6 +70,11 @@ search loop, keep-out solids), packaged into one reproducible pipeline.
 | **Second workstation** (RTX 3080 Ti 12 GB, confirmed; the spool-rack GPU results came from this card) | second GPU worker: truth stage, parallel orientations. Its FP64 rate is ~2.5× the laptop's by spec (estimate, to measure) |
 | **Compute box** (40 Broadwell threads, 300 GB, no GPU) | off the critical path through P2: slicing/parsing batches, RAM-heavy cases > 20 M cells, CPU multigrid only if a measured need appears. Long jobs in named tmux sessions, heads-up to its owner for multi-hour full-load runs |
 
+**Measured (matvec benchmark, [`research/checks/bench/RESULTS.md`](research/checks/bench/RESULTS.md)):** RTX 3080 Ti ≈ 4,500 M cells/s FP32 and
+≈ 416 M FP64; laptop GPU ≈ 1,400 / 238; compute box (40 threads, Numba) ≈ 61 / 63. The 3080 Ti in FP32 is ≈ 74× the compute
+box, so **the second workstation's 3080 Ti is the solver workhorse, in mixed precision** (FP32 smoothers/V-cycles inside an
+FP64 outer CG), and the compute box is not a solver machine.
+
 **Why GPUs at all:** they are not required. The expensive step is 2–6 elasticity solves per optimiser iteration on a
 few million cells, × hundreds of iterations × dozens of orientations. The validated solver from the spool-rack work is
 GPU code (NVIDIA Warp) and measures ~160–180 M cell-operations/s on the laptop GPU, so it is the default. Consumer GPUs
