@@ -1,0 +1,149 @@
+{
+ "device": "Quadro T2000",
+ "grid": [
+  144,
+  160,
+  16
+ ],
+ "h_mm": [
+  1.6,
+  1.6,
+  1.6
+ ],
+ "evidence": "measured design-solver gate investigation",
+ "does_not_establish": "truth-model strength or physical qualification; coarse repros do not establish the 0.8 mm gate",
+ "warp": "1.17.0",
+ "emin": 1e-06,
+ "coarsest_degree": 40,
+ "coarsest_dofs": 3000,
+ "body_cells": 42648,
+ "bc": {
+  "seat_nodes": {
+   "rear_seat": 626,
+   "front_seat": 648
+  },
+  "clamped_nodes": 1751,
+  "wall_nodes": 1631
+ },
+ "rows": [
+  {
+   "iter": 1,
+   "compliance": 868107.0196110826,
+   "cg_its": 84,
+   "solve_s": 2.896,
+   "setup_s": 81.838,
+   "total_s": 85.51,
+   "inactive_dofs_fine": 1026231,
+   "levels": 4,
+   "true_res": 6.396277207535418e-07,
+   "change": 0.2
+  }
+ ],
+ "gate_converged": true,
+ "problem": {
+  "part": "spool-wall-rack G2 bracket, E+F solid brace core handoff",
+  "source": {
+   "repo": "spool-wall-rack",
+   "commit": "14338e9",
+   "handoff": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6"
+  },
+  "frames": {
+   "installed_to_print": {
+    "R": [
+     [
+      -1.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      1.0
+     ]
+    ],
+    "t_mm": [
+     250.0,
+     182.0,
+     0.0
+    ],
+    "verified_tol_mm": 0.001
+   },
+   "print_z": "bed normal"
+  },
+  "process": {
+   "printer": "P1S",
+   "nozzle_mm": 0.4,
+   "walls": 4,
+   "top_bottom_layers": 8,
+   "layer_mm": 0.2,
+   "base_infill": 0.0,
+   "helpers": "100 %",
+   "infill_credit": false
+  },
+  "design": {
+   "body": "body-only.stl (frozen in P2)",
+   "design_field": "100 % helper density inside the body",
+   "existing_helpers": [
+    "dense-chords-and-seats",
+    "central-rib-plane",
+    "local-transition-backing",
+    "direct-brace-core"
+   ]
+  },
+  "loads_print_N": {
+   "rear_seat": [
+    31.293062243765473,
+    75.1207488871594,
+    0.0
+   ],
+   "front_seat": [
+    -31.293062243765473,
+    42.59925111284059,
+    0.0
+   ]
+  },
+  "loads_installed_N": {
+   "rear_seat": [
+    -31.293062243765473,
+    -75.1207488871594,
+    0.0
+   ],
+   "front_seat": [
+    31.293062243765473,
+    -42.59925111284059,
+    0.0
+   ]
+  },
+  "load_total_N": 117.72,
+  "interfaces": {
+   "rod_axes_installed_XY": {
+    "rear_seat": [
+     90.0,
+     0.0
+    ],
+    "front_seat": [
+     190.0,
+     12.0
+    ]
+   },
+   "mount_axes_installed_YZ": {
+    "upper": [
+     164.0,
+     12.0
+    ],
+    "lower": [
+     40.0,
+     12.0
+    ]
+   },
+   "mount_bore_radius_mm": 2.6,
+   "washer_plane_x_mm": 3.6
+  },
+  "restraint_model": "SOLVER-GATE SIMPLIFICATION: mounting bore surfaces clamped, wall face X=0 roller (u_x = 0, bilateral); the truth model uses washer/bore restraints and unilateral wall contact"
+ }
+}

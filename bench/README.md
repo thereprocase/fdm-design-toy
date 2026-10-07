@@ -45,3 +45,14 @@ repro. At 1.6 mm the body is node-connected but has five face-connected groups;
 at 0.8 mm it is face-connected. Node connectivity does not prove absence of
 hinge modes or full rigid-body restraint. See the hashed connectivity receipt.
 The bracket runner stops optimisation after a failed true-residual check.
+
+R1 masked-bracket comparison on the actual Quadro T2000 (one cold-start solve,
+E_min=1e-6, 0.5 uniform density, h=1.6 mm): degree-40 Chebyshev at the coarsest
+level takes 84 CG iterations / 2.90 s; dense solve with `--coarsest-dofs 4000`
+takes 56 / 1.84 s. True residuals are 6.4e-7 and 2.4e-7; compliance agrees to
+1.17e-10 relative. Setup timings are NOT a fair comparison: the first run
+includes compilation (81.84 s), the second uses a warm cache (2.70 s).
+This supports investigating the coarsest solve but does not meet the <=40 gate,
+and neither R1 run establishes the 0.8 mm per-optimiser-iteration timing gate.
+The receipts pin device, precision, inputs and solver settings. Full R2/R3,
+E_min/TI sweeps, zero-ersatz gap and sustained/memory benchmarks remain open.
