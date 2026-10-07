@@ -29,6 +29,17 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#shell-comparison-status').textContent.includes('Shell method differs'));
  await page.locator('#review-shell-baseline').setInputFiles(fixture('baseline-shell-check-current'));
  await page.waitForFunction(()=>document.querySelector('#shell-comparison-status').textContent.startsWith('Matched sampled-screen comparison'));
+ // Synthetic schema compatibility cases; existing real receipts remain unchanged.
+ const modern=JSON.parse(fs.readFileSync(fixture('project-shell-check-current')));
+ modern.schema='fdmgen/shell-check@0.3';modern.placement={shift_xy_mm:[0,0],tol_mm:.5,min_inside:.99,verified:'Synthetic test',bands:[2,6,10].map(z_mm=>({z_mm,inside_fraction:1,points:100}))};
+ await page.locator('#review-shell').setInputFiles({name:'synthetic-v03.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(modern))});
+ await page.waitForFunction(()=>document.querySelector('#shell-pairing').textContent.includes('at 3 heights'));
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/pose-check provenance differs/);
+ modern.placement.bands=[];
+ await page.locator('#review-shell').setInputFiles({name:'synthetic-short.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(modern))});
+ await page.waitForFunction(()=>document.querySelector('#shell-pairing').textContent.includes('Fewer than three heights'));
+ await page.locator('#review-shell').setInputFiles(fixture('project-shell-check-current'));
+ await page.waitForFunction(()=>document.querySelector('#shell-pairing').textContent.includes('section checks are not recorded'));
  const current=JSON.parse(fs.readFileSync(fixture('project-shell-check-current'))),wrongPose=structuredClone(current);
  wrongPose.pose.t_mm[0]+=1;
  await page.locator('#review-shell').setInputFiles({name:'wrong-pose.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(wrongPose))});

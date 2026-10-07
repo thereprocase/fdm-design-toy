@@ -52,8 +52,17 @@ const MassingReview = (() => {
   if(!['project','baseline'].includes(kind)||kind==='baseline'&&sliced.baseline!=='shell-only slice')throw Error('Shell check needs the requested slice baseline.');
   const context=kind==='baseline'?sliced.baseline_slicer:sliced.slicer;
   if(r&&Object.prototype.hasOwnProperty.call(r,'_receipt'))throw Error('Reserved shell view field in input.');
-  if(r?.schema==='fdmgen/shell-check@0.2'){
+  if(['fdmgen/shell-check@0.2','fdmgen/shell-check@0.3'].includes(r?.schema)){
    const vec=v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite);
+   if(r.schema==='fdmgen/shell-check@0.3'){
+    const p=r.placement;
+    if(!p||!Array.isArray(p.shift_xy_mm)||p.shift_xy_mm.length!==2||!p.shift_xy_mm.every(Number.isFinite)||!Number.isFinite(p.tol_mm)||p.tol_mm<=0||!Number.isFinite(p.min_inside)||p.min_inside<=0||p.min_inside>1||typeof p.verified!=='string'||!p.verified||!Array.isArray(p.bands))throw Error('Invalid shell placement evidence.');
+    const heights=new Set();
+    for(const b of p.bands){
+     if(!Number.isFinite(b.z_mm)||b.z_mm<0||heights.has(b.z_mm)||!Number.isFinite(b.inside_fraction)||b.inside_fraction<p.min_inside||b.inside_fraction>1||!Number.isInteger(b.points)||b.points<=0)throw Error('Invalid shell placement band.');
+     heights.add(b.z_mm);
+    }
+   }
    if(!planningDraft||!vec(r.pose?.t_mm)||!Array.isArray(r.pose?.R_design_to_print)||r.pose.R_design_to_print.length!==3||!r.pose.R_design_to_print.every(vec))throw Error('Shell-check needs the saved pose transform.');
    for(const key of ['R_design_to_print','t_mm'])if(JSON.stringify(r.pose[key])!==JSON.stringify(planningDraft.orientation[key]))throw Error('Shell-check transform differs from the saved draft.');
    if(!hash(r.table?.sha256)||!hash(r.mesh?.sha256)||!vec(r.grid?.origin_mm)||r.grid.frame!=='print (plate) frame of the pose')throw Error('Missing shell geometry provenance.');
@@ -87,6 +96,13 @@ const MassingReview = (() => {
   const p=project?._receipt,b=baseline?._receipt;
   if(!p||!b)return {comparable:false,reasons:['Both shell checks need current geometry and method provenance.']};
   if(contextMismatch(sliced).length)reasons.push('Project and baseline slicer settings differ.');
+  const checked=r=>r.schema==='fdmgen/shell-check@0.3';
+  if(checked(p)!==checked(b))reasons.push('Shell pose-check provenance differs.');
+  if(checked(p)&&checked(b)){
+   if(p.placement.bands.length<3||b.placement.bands.length<3)reasons.push('Fewer than three checked heights do not establish pose consistency for comparison.');
+   for(const key of ['tol_mm','min_inside','shift_xy_mm'])if(JSON.stringify(p.placement[key])!==JSON.stringify(b.placement[key]))reasons.push('Shell pose-check '+key+' differs.');
+   if(JSON.stringify(p.placement.bands.map(x=>x.z_mm))!==JSON.stringify(b.placement.bands.map(x=>x.z_mm)))reasons.push('Shell pose-check heights differ.');
+  }
   const stable=v=>JSON.stringify(v,(_,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.keys(x).sort().map(k=>[k,x[k]])):x);
   for(const [label,x,y] of [['table',p.table.sha256,b.table.sha256],['mesh',p.mesh.sha256,b.mesh.sha256],['pose',p.pose,b.pose],['method',p.method,b.method],['producer source',p.source_sha256,b.source_sha256]])if(stable(x)!==stable(y))reasons.push('Shell '+label+' differs.');
   for(const key of ['frame','origin_mm','cell_mm','shape'])if(stable(p.grid[key])!==stable(b.grid[key]))reasons.push('Shell grid '+key+' differs.');

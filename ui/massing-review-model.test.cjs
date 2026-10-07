@@ -85,3 +85,20 @@ test('paired shell fractions require common current methods and geometry',()=>{
  const mismatch=structuredClone(seedSlice);mismatch.baseline_context_mismatch=['wall_loops'];
  assert(!Review.shellComparison(p,b,mismatch).comparable);
 });
+
+test('shell 0.3 validates section evidence and gates comparisons on checked heights',()=>{
+ const read=name=>JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-'+name+'.json')));
+ const draft=read('draft'),project=read('project-shell-check-current'),baseline=read('baseline-shell-check-current');
+ const placement={shift_xy_mm:[0,0],tol_mm:.5,min_inside:.99,verified:'Synthetic contract test',bands:[2,6,10].map(z_mm=>({z_mm,inside_fraction:1,points:100}))};
+ for(const r of [project,baseline]){r.schema='fdmgen/shell-check@0.3';r.placement=structuredClone(placement);}
+ const p=Review.shell(seedReport,seedSlice,project,draft),b=Review.shell(seedReport,seedSlice,baseline,draft,'baseline');
+ assert(Review.shellComparison(p,b,seedSlice).comparable);
+ for(const mutate of [r=>delete r.placement,r=>r.placement.bands[0].inside_fraction=.2,r=>r.placement.bands[0].points=0,r=>r.placement.bands[1].z_mm=2,r=>r.placement.shift_xy_mm=[0]]){
+  const bad=structuredClone(project);mutate(bad);assert.throws(()=>Review.shell(seedReport,seedSlice,bad,draft),/placement/);
+ }
+ const short=structuredClone(project);short.placement.bands=[];
+ assert(!Review.shellComparison(Review.shell(seedReport,seedSlice,short,draft),b,seedSlice).comparable);
+ assert(!Review.shellComparison(p,Review.shell(seedReport,seedSlice,read('baseline-shell-check-current'),draft,'baseline'),seedSlice).comparable);
+ const policy=structuredClone(baseline);policy.placement.tol_mm=1;
+ assert(!Review.shellComparison(p,Review.shell(seedReport,seedSlice,policy,draft,'baseline'),seedSlice).comparable);
+});

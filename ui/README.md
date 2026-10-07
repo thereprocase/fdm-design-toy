@@ -466,3 +466,11 @@ producer explanation. Multiple columns can report the same rule (for example,
 external and internal bridges); this is a column count, not a count of independent
 physical defects. No recorded failures does not mean all checks were performed
 or that the part is qualified.
+
+Shell review accepts `shell-check@0.3` and displays its recorded road-containment
+checks, tolerance and checked-height count. Malformed or failed placement bands
+are rejected. Fewer than three checked heights remain viewable with a scope
+warning and cannot establish a paired pose comparison. Mixed 0.2/0.3 receipts
+also cannot establish that comparison. Older receipts retain their original
+metadata and explicitly lack recorded section checks; none are relabelled.
+Containment supports consistency with a pose, not unique pose identity.
