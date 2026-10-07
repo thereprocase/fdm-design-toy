@@ -239,3 +239,49 @@ residual gate (1.0131e-8), despite CG reporting success. Tightening the internal
 CG target to 1e-9, with the acceptance gate unchanged, gave residuals below
 2.1e-9 for the accepted 0.75 pair. Do not promote the isolated −2.924% result to
 a design benefit without resolving occupancy sampling and discretisation.
+
+### Bead-sampling sensitivity at threshold 0.5
+
+Refining the deposited-road sampling step on the same 1.6 mm grid retains
+the sign of the paired compliance change in all four trials. These are
+**modified-domain, isotropic FE sensitivities**, not physical stiffness evidence.
+The occupancy producer was unchanged; the input pairs were generated with its
+deposition sampling step bound to h/K. Each receipt preserves that provenance.
+
+| Sampling step | Baseline compliance N·mm | Project compliance N·mm | Project change | Common seat nodes, rear / front | Removed cells, baseline / project |
+|---|---:|---:|---:|---:|---:|
+| h/3 | 484.839 | 470.662 | −2.924% | 620 / 600 | 52 / 51 |
+| h/6 | 466.910 | 451.602 | −3.279% | 619 / 600 | 58 / 58 |
+| h/12 | 479.847 | 465.891 | −2.909% | 616 / 600 | 45 / 45 |
+| h/16 | 476.874 | 462.627 | −2.988% | 618 / 600 | 45 / 45 |
+
+All cases use density >= 0.5, explicit largest-face-component retention,
+E = 1000 MPa and nu = 0.3. Loads are identical within each baseline/project/context
+triple, but surviving seat nodes and transferred load arrays change between
+sampling levels. This is therefore combined sampling/domain/load-discretisation
+sensitivity. Each seat conserves its original force and moment (errors below
+2e-13 N and 3e-11 N·mm); no removed fragment exclusively carried an original
+loaded or fixed DOF. All true relative residuals are below 9e-10.
+
+The h/3 control reproduces the earlier −2.924% result. The four-trial range
+−3.279% to −2.909% is an observed sensitivity range, not a confidence interval
+or convergence bound. Absolute compliance is non-monotonic with refinement.
+The sign reversal in the preceding threshold study remains unresolved; these
+results do not establish robustness to threshold, spatial-grid refinement,
+contact pressure, anisotropy or physical printing. Maximum linear-model movements
+remain about 7.4–8.1 mm, without physical validation.
+
+Receipts: `receipts/occupancy-connected-sampling03-r1.json`,
+`receipts/occupancy-connected-sampling06-r1.json`,
+`receipts/occupancy-connected-sampling12-r1.json`, and
+`receipts/occupancy-connected-sampling16-r1.json`. Reproduce with the
+`seat_load_transfer.py --largest-face-component --solve` command above and
+the corresponding pinned sampling pair. Each receipt records both NPZ hashes,
+the source NPZ hashes, sampling step, domain audit and transferred-load hash.
+
+Input verification initially stopped before solving because the h/12 baseline
+handoff digest contained only 63 characters. The accepted run explicitly pinned
+the observed 64-character digest recorded in its receipt and verified embedded
+provenance against the sidecar and the recorded mask count. No claim is made that
+the malformed handoff digest matched. Solves used source commit `35511cc`; the
+compute-box suite passed 202 tests, with 6 CUDA-only skips.
