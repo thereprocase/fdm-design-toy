@@ -20,8 +20,8 @@ import numpy as np
 import warp as wp
 
 from . import galerkin, reference
-from .warp_structured import (HELPERS, cast_32_64, cast_64_32, diag_elem_f32, dot64,
-                              matvec_elem_f32, operator_module)
+from .warp_structured import (HELPERS, cast_32_64, cast_64_32, cg_p_64, cg_xr_64, copy_slot_64, dense_matvec_f32,
+                              diag_elem_f32, dot64, dot_slot_64, matvec_elem_f32, operator_module, set_slot_64)
 
 H32, H64 = HELPERS[np.float32], HELPERS[np.float64]
 
@@ -36,7 +36,8 @@ class Level:
     fixed: wp.array
     fixed_np: np.ndarray
     dinv: wp.array = None
-    Kel: wp.array = None      # Galerkin element matrices (levels >= 1), flat n*576 FP32
+    Kel: wp.array = None      # Galerkin element matrices (levels >= 2), flat n*576 FP32
+    Ef: wp.array = None       # level 1: fine element multipliers; operator generated on the fly
     Kel_np: np.ndarray = None
     lmax: float = 0.0
     work: dict = field(default_factory=dict)
@@ -80,13 +81,19 @@ class MGPCG:
                     lv.Kel_np = galerkin.first_coarse(E, Ke, prev.nx, prev.ny, prev.nz)
                 else:
                     lv.Kel_np = galerkin.next_coarse(prev.Kel_np, prev.nx, prev.ny, prev.nz)
-                lv.Kel = wp.array(lv.Kel_np.reshape(-1), dtype=wp.float32, device=self.dev)
+                if prev is self.levels[0]:
+                    lv.Ef = prev.E          # level 1: Galerkin on the fly from the 8 children
+                else:
+                    lv.Kel = wp.array(lv.Kel_np.reshape(-1), dtype=wp.float32, device=self.dev)
             self.levels.append(lv)
         for lv in self.levels:
             for name in ("x", "r", "d", "t", "z"):
                 lv.work[name] = wp.zeros(lv.ndof, dtype=wp.float32, device=self.dev)
             dg = wp.zeros(lv.ndof, dtype=wp.float32, device=self.dev)
-            if lv.Kel is not None:
+            if lv.Ef is not None:
+                wp.launch(self.mod.diag_g1, dim=lv.nnode, inputs=[lv.nx, lv.ny, lv.nz, lv.Ef, lv.fixed, dg],
+                          device=self.dev)
+            elif lv.Kel is not None:
                 wp.launch(diag_elem_f32, dim=lv.nnode, inputs=[lv.nx, lv.ny, lv.nz, lv.Kel, lv.fixed, dg], device=self.dev)
             else:
                 wp.launch(self.mod.diag_float32, dim=lv.nnode,
@@ -102,13 +109,19 @@ class MGPCG:
             A = reference.assemble(c.nx, c.ny, c.nz, Ke, c.E.numpy().astype(np.float64), c.fixed_np, c.scale).toarray()
         for lv in self.levels:
             lv.Kel_np = None  # host copies no longer needed
-        self.coarse_inv = np.linalg.inv(A)  # small (<= coarsest_dofs); one host matvec per V-cycle
+        self.coarse_inv = np.linalg.inv(A)  # small (<= coarsest_dofs)
+        self.coarse_inv_dev = wp.array(self.coarse_inv.astype(np.float32).reshape(-1), dtype=wp.float32, device=self.dev)
+        self.scal = wp.zeros(4, dtype=wp.float64, device=self.dev)  # rz, pq, rz_new, rr
         n = self.levels[0].ndof
         self.v64 = {k: wp.zeros(n, dtype=wp.float64, device=self.dev) for k in ("x", "r", "z", "p", "q")}
         self.buf = wp.zeros(1, dtype=wp.float64, device=self.dev)
 
     # ── primitives ──
     def _A32(self, lv, x, y):
+        if lv.Ef is not None:
+            wp.launch(self.mod.matvec_g1, dim=lv.nnode, inputs=[lv.nx, lv.ny, lv.nz, lv.Ef, lv.fixed, x, y],
+                      device=self.dev)
+            return
         if lv.Kel is not None:
             wp.launch(matvec_elem_f32, dim=lv.nnode, inputs=[lv.nx, lv.ny, lv.nz, lv.Kel, lv.fixed, x, y],
                       device=self.dev)
@@ -168,7 +181,7 @@ class MGPCG:
         lv = self.levels[l]
         x.zero_()
         if l == len(self.levels) - 1:
-            x.assign((self.coarse_inv @ b.numpy().astype(np.float64)).astype(np.float32))
+            wp.launch(dense_matvec_f32, dim=lv.ndof, inputs=[lv.ndof, self.coarse_inv_dev, b, x], device=self.dev)
             return
         self._smooth(lv, x, b)
         r, t = lv.work["r"], lv.work["t"]
@@ -198,7 +211,12 @@ class MGPCG:
         self._vcycle(0, b32, x32)
         wp.launch(cast_32_64, dim=lv.ndof, inputs=[x32, z64], device=self.dev)
 
-    def solve(self, b, tol=1e-6, maxiter=500, use_mg=True, verbose=False, x0=None):
+    def _dot_to(self, x, y, slot):
+        n = x.shape[0]
+        wp.launch(set_slot_64, dim=1, inputs=[self.scal, slot, wp.float64(0.0)], device=self.dev)
+        wp.launch(dot_slot_64, dim=65536, inputs=[x, y, n, self.scal, slot], device=self.dev)
+
+    def solve(self, b, tol=1e-6, maxiter=500, use_mg=True, verbose=False, x0=None, check_every=4):
         """Solve A u = b (b zero at fixed DOFs), optionally warm-started from x0. Returns (u, info).
         Tolerance is relative to ||b||."""
         lv = self.levels[0]
@@ -220,25 +238,27 @@ class MGPCG:
         bnorm = float(np.linalg.norm(bb))
         self._precond(r, z, use_mg)
         wp.copy(p, z)
-        rz = dot64(r, z, self.buf)
+        self._dot_to(r, z, 0)                       # rz
         hist = []
         t0 = time.perf_counter()
         it = 0
         for it in range(1, maxiter + 1):
+            # all CG scalars stay on the device; the residual norm is read back every `check_every` iterations
             self._A64(p, q)
-            alpha = rz / dot64(p, q, self.buf)
-            wp.launch(H["axpby"], dim=n, inputs=[wp.float64(alpha), p, wp.float64(1.0), x, x], device=self.dev)
-            wp.launch(H["axpby"], dim=n, inputs=[wp.float64(-alpha), q, wp.float64(1.0), r, r], device=self.dev)
-            rnorm = np.sqrt(dot64(r, r, self.buf))
-            hist.append(rnorm / bnorm)
-            if verbose:
-                print(f"  it {it:4d}  rel res {rnorm / bnorm:.3e}", flush=True)
-            if rnorm / bnorm <= tol:
-                break
+            self._dot_to(p, q, 1)                   # pq
+            wp.launch(cg_xr_64, dim=n, inputs=[self.scal, p, q, x, r], device=self.dev)
+            if it % check_every == 0 or it == maxiter:
+                self._dot_to(r, r, 3)
+                rnorm = float(np.sqrt(self.scal.numpy()[3]))
+                hist.append(rnorm / bnorm)
+                if verbose:
+                    print(f"  it {it:4d}  rel res {rnorm / bnorm:.3e}", flush=True)
+                if rnorm / bnorm <= tol:
+                    break
             self._precond(r, z, use_mg)
-            rz_new = dot64(r, z, self.buf)
-            wp.launch(H["axpby"], dim=n, inputs=[wp.float64(1.0), z, wp.float64(rz_new / rz), p, p], device=self.dev)
-            rz = rz_new
+            self._dot_to(r, z, 2)                   # rz_new
+            wp.launch(cg_p_64, dim=n, inputs=[self.scal, z, p], device=self.dev)
+            wp.launch(copy_slot_64, dim=1, inputs=[self.scal, 0, 2], device=self.dev)
         wp.synchronize()
         t_solve = time.perf_counter() - t0
         u = x.numpy()
