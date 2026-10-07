@@ -415,3 +415,20 @@ difference). This is aggregate sampled evidence, not proof of pointwise equal
 thickness or physical shell integrity. The project receipt was independently
 rerun and reproduced byte-for-byte (SHA-256 `7a7dd851…`); the baseline fixture is
 the producer's unchanged receipt (SHA-256 `b7b362a8…`).
+
+The pose list also shows an optional `t_shell_thin_fraction` column as a
+percentage, retaining its recorded SHELL-001 / T verdict. The selected-pose
+panel shows the producer's fidelity statement, recorded sample coverage and
+complete column provenance. Missing coverage is explicitly unestablished.
+Missing, unchecked or invalid fractions stay **Not checked**; a measured zero
+remains visible. These are sampled toolpath screens of the recorded slice,
+not checks of edits in the planning form. Compare methods and settings before
+comparing fractions; the UI does not rank poses by this value automatically.
+
+Try the new enriched table
+[`spool-rack-g2-ef.with-keep-outs.shell.orientation-table.json`](../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell.orientation-table.json).
+The two feasible poses record 0.22% and 0.19% thin samples, respectively, both
+provisional T PASS. This small difference is not a demonstrated pose advantage.
+The enriched file has a new hash: drafts pinned to the original table still
+require that original file. Receipt hashes retain their original source-table
+binding; enrichment does not relabel the underlying measurements.

@@ -5,6 +5,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
  await page.getByRole('button',{name:'facet-00',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/4,344/);assert.match(await page.locator('#toolpath-settings').innerText(),/support 1, threshold 45/);assert.match(await page.locator('#credited-scope').innerText(),/support excluded/);
  await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/Not checked/);assert.match(await page.locator('#toolpath-settings').innerText(),/No pose slice/);assert.equal(await page.locator('#credited-scope').innerText(),'');
+ assert.equal(await page.locator('#pose-shell-summary').innerText(),'Not checked');
  await page.locator('#sliced-only').check();assert.equal(await page.locator('#rows tr').count(),2);assert.match(await page.locator('#pose-count').innerText(),/Selected pose facet-02 is hidden/);await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/8,596/);
  // Known-order comparison fixture: zero is measured, unchecked numeric values stay last.
  await page.locator('#sliced-only').uncheck();
@@ -14,9 +15,19 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   t_support_segments:{value:[9,0,-1,9][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   F_L_max:{value:[.3,.1,null,.3][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   contact_mm2:{value:[100,20,null,100][i],verdict:i===2?'NOT_CHECKED':'PASS'},
-  height_mm:{value:[30,10,null,30][i],verdict:i===2?'NOT_CHECKED':'PASS'}}}));
+  height_mm:{value:[30,10,null,30][i],verdict:i===2?'NOT_CHECKED':'PASS'},
+  t_shell_thin_fraction:{value:[.02,0,.1,.02][i],unit:'fraction',rule:'SHELL-001',level:'T',verdict:i===2?'NOT_CHECKED':i===0?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only screen; seed 0, cell 0.1 mm. <b>inert</b>'}}}));
  await page.locator('#table-file').setInputFiles({name:'sort-fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.getByRole('button',{name:'large',exact:true}).click();await page.locator('#rationale').fill('Keep this choice while comparing.');
+ assert.match(await page.locator('#pose-shell-summary').innerText(),/FAIL · 2% thin · T/);
+ assert.match(await page.locator('#pose-shell-fidelity').innerText(),/Synthetic shell-only/);
+ assert.match(await page.locator('#pose-shell-coverage').innerText(),/not established/);
+ assert.equal(await page.locator('#pose-shell-fidelity b').count(),0);
+ await page.locator('#sliced-only').check();assert.equal(await page.locator('#rows tr').count(),3);
+ await page.locator('#sliced-only').uncheck();
+ await page.getByRole('button',{name:'zero',exact:true}).click();assert.match(await page.locator('#pose-shell-summary').innerText(),/PASS · 0% thin/);
+ await page.getByRole('button',{name:'unknown',exact:true}).click();assert.equal(await page.locator('#pose-shell-summary').innerText(),'Not checked');
+ await page.getByRole('button',{name:'large',exact:true}).click();
  const order=()=>page.locator('#rows button').allTextContents();
  for(const key of ['t_support_segments','F_L_max','height_mm']){
   await page.locator('#pose-sort').selectOption(key);assert.deepEqual(await order(),['zero','large','tie','unknown']);
@@ -24,6 +35,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#pose-sort').selectOption('contact_mm2');assert.deepEqual(await order(),['large','tie','zero','unknown']);
  await page.locator('#pose-sort').selectOption('analysis');assert.deepEqual(await order(),['large','zero','unknown','tie']);
  assert.equal(await page.locator('#pose-name').innerText(),'large');assert.equal(await page.locator('#rationale').inputValue(),'Keep this choice while comparing.');
+ // Actual enriched receipts: preserve producer precision and show provenance as text.
+ await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell.orientation-table.json'));
+ await page.getByRole('button',{name:'facet-00',exact:true}).click();
+ assert.match(await page.locator('#pose-shell-summary').innerText(),/PASS · 0.22% thin · T · provisional/);
+ assert.match(await page.locator('#pose-shell-fidelity').innerText(),/shell-only slice 494c9ec43d5d/);
+ assert.match(await page.locator('#pose-shell-coverage').innerText(),/20,000 of 20,000.*0 unmeasured; 0 mm³ clipped/);
+ assert.equal(JSON.parse(await page.locator('#pose-shell-receipt').textContent()).receipt.sha256,'b7b362a889869725fa019522e7d73be3671f48fd7805d1a734176a2f847e29fd');
+ await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#pose-shell-summary').innerText(),/0.19% thin/);
+ await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.equal(await page.locator('#pose-shell-summary').innerText(),'Not checked');assert(await page.locator('#pose-shell-details').isHidden());
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

@@ -31,6 +31,18 @@ function formatted(column) {
   const value = Array.isArray(column.value) ? column.value.map(x=>typeof x==='number'?x.toLocaleString(undefined,{maximumFractionDigits:3}):String(x)).join(', ') : typeof column.value === 'number' ? column.value.toLocaleString(undefined,{maximumFractionDigits:3}) : String(column.value);
   return `${column.verdict === 'FAIL' ? 'FAIL · ' : ''}${value}${column.unit && column.unit!=='1' ? ' '+column.unit : ''}${column.provisional ? ' · provisional' : ''}`;
 }
+function shellColumn(candidate) {
+  const c=candidate.columns?.t_shell_thin_fraction;
+  return c?.rule==='SHELL-001'&&c.unit==='fraction'&&c.level==='T'&&['PASS','FAIL'].includes(c.verdict)&&Number.isFinite(c.value)&&c.value>=0&&c.value<=1?c:null;
+}
+function shellSummary(candidate) {
+  const c=shellColumn(candidate);
+  return c?`${c.verdict} · ${(100*c.value).toLocaleString(undefined,{maximumFractionDigits:3})}% thin · T${c.provisional?' · provisional':''}`:'Not checked';
+}
+function hasSlice(candidate) {
+  const c=candidate.columns?.t_support_segments;
+  return Number.isFinite(c?.value)&&c.value>=0&&c.verdict!=='NOT_CHECKED';
+}
 function remember() {if(selected) decisions.set(selected.id,byId('rationale').value);}
 function choose(candidate) {
   remember();selected=candidate;byId('pose-name').textContent=candidate.id;
@@ -52,6 +64,14 @@ function choose(candidate) {
   byId('toolpath-settings').textContent=slice?.fidelity||'No pose slice supplied. These quantities are not checked.';
   const creditedFidelity=candidate.columns?.t_credited_mm3?.fidelity||'';
   byId('credited-scope').textContent=slice?.fidelity&&creditedFidelity.startsWith(slice.fidelity)?'Credited volume: '+creditedFidelity.slice(slice.fidelity.length).replace(/^;\s*/, ''):creditedFidelity;
+  const shell=shellColumn(candidate);
+  byId('pose-shell-summary').textContent=shellSummary(candidate);
+  byId('pose-shell-fidelity').textContent=shell?.fidelity||'No usable SHELL-001 toolpath screen supplied for this pose.';
+  const coverage=shell?.coverage;
+  const coverageValid=coverage&&['samples_requested','measured','unmeasured'].every(k=>Number.isInteger(coverage[k])&&coverage[k]>=0)&&coverage.measured+coverage.unmeasured===coverage.samples_requested&&Number.isFinite(coverage.clipped_outside_grid_mm3)&&coverage.clipped_outside_grid_mm3>=0;
+  byId('pose-shell-coverage').textContent=!shell?'':coverageValid?`${coverage.measured.toLocaleString()} of ${coverage.samples_requested.toLocaleString()} surface samples measured; ${coverage.unmeasured.toLocaleString()} unmeasured; ${coverage.clipped_outside_grid_mm3.toLocaleString()} mm³ clipped outside the raster. Thin fraction is over measured samples only.`:'Sample coverage is not established by this column.';
+  byId('pose-shell-receipt').textContent=JSON.stringify(candidate.columns?.t_shell_thin_fraction||null,null,2);
+  byId('pose-shell-details').hidden=!candidate.columns?.t_shell_thin_fraction;
   byId('metrics').replaceChildren();
   for(const [key,label] of Object.entries(metricNames)) {
     const column=candidate.columns?.[key];text('dt',label,byId('metrics'));
@@ -62,7 +82,7 @@ function choose(candidate) {
 }
 function renderRows() {
   byId('rows').replaceChildren();
-  const rows=analysis.candidates.filter(c=>(!byId('feasible-only').checked || c.feasible)&&(!byId('sliced-only').checked || Number.isFinite(c.columns?.t_support_segments?.value)));
+  const rows=analysis.candidates.filter(c=>(!byId('feasible-only').checked || c.feasible)&&(!byId('sliced-only').checked || hasSlice(c)));
   const sortKey=byId('pose-sort').value;
   if(sortKey!=='analysis'){
     const value=c=>{const m=c.columns?.[sortKey];return m?.verdict!=='NOT_CHECKED'&&Number.isFinite(m?.value)?m.value:null;};
@@ -73,15 +93,16 @@ function renderRows() {
       return sortKey==='contact_mm2'?y-x:x-y;
     });
   }
-  const sliced=analysis.candidates.filter(c=>Number.isFinite(c.columns?.t_support_segments?.value)).length;
+  const sliced=analysis.candidates.filter(c=>hasSlice(c)).length;
   byId('pose-count').textContent=`Showing ${rows.length} of ${analysis.candidates.length} poses; ${sliced} have measured slices.${selected&&!rows.some(c=>c.id===selected.id)?' Selected pose '+selected.id+' is hidden by this filter.':''}`;
   for(const c of rows) {
     const tr=text('tr','',byId('rows'));if(c.id===selected?.id)tr.className='selected';
     const button=text('button',c.id,text('td','',tr));button.type='button';button.setAttribute('aria-pressed',String(c.id===selected?.id));button.onclick=()=>choose(c);
     for(const key of ['F_L_max','ovh_fail_mm2','contact_mm2','t_support_segments'])text('td',formatted(c.columns?.[key]),tr);
+    text('td',shellSummary(c),tr);
     text('td',c.feasible?'Fits / stable; review checks':'Needs review',tr);
   }
-  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=6;}
+  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=7;}
 }
 byId('table-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=++tableRequest;
@@ -106,7 +127,7 @@ byId('table-file').onchange=async event=>{
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
-    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
+    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('pose-shell-summary').textContent='';byId('pose-shell-fidelity').textContent='';byId('pose-shell-coverage').textContent='';byId('pose-shell-receipt').textContent='';byId('pose-shell-details').hidden=true;byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
   }catch(error){if(request!==tableRequest)return;byId('status').textContent=`Could not load table: ${error.message}${analysis?' The previous table and current draft remain available.':''}`;}
 };
 byId('pose-sort').onchange=byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};
