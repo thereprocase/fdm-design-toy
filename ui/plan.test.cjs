@@ -54,3 +54,16 @@ test('declared keep-out references round-trip and unknown ids are rejected',()=>
  assert.deepEqual(Plan.restore(draft,table,hash).input.helper_regions[0].keep_clear.keep_out_ids,['moulding','slide']);
  assert.throws(()=>Plan.restore(draft,analysis,hash),/Unknown keep-out/);
 });
+
+test('proposal provenance survives edited drafts as independent historical data',()=>{
+ const proposal={generator:'fdmgen.massing.seed',status:'helpers_proposed',stress:{sha256:'c'.repeat(64)},accepted:[{id:'h1',F_L_max:.1}],future:{keep:'additive field'}};
+ const draft=Plan.create(analysis,hash,candidate,{...input,proposal});
+ const restored=Plan.restore(draft,analysis,hash);
+ restored.input.helper_regions[0].name='Revised helper';restored.input.walls=6;
+ const edited=Plan.create(analysis,hash,candidate,restored.input);
+ assert.deepEqual(edited.proposal,proposal);assert.equal(edited.proposal_use,'historical_provenance_requires_recheck');
+ assert.equal(edited.massing.walls,6);assert.equal(edited.massing.helper_regions[0].name,'Revised helper');
+ edited.proposal.accepted[0].F_L_max=7;assert.equal(draft.proposal.accepted[0].F_L_max,.1);
+ assert.equal(Plan.create(analysis,hash,candidate,input).proposal,undefined);
+ assert.throws(()=>Plan.restore({...draft,proposal:[]},analysis,hash),/generator/);
+});

@@ -40,6 +40,12 @@ const Plan = (() => {
       return {id,name:requireText(r.name,`Helper ${i+1} name`),location:requireText(r.location,`Helper ${i+1} location`),purpose:requireText(r.purpose,`Helper ${i+1} load purpose`),keep_clear:keepClear(r.keep_clear,interfaces,keepOuts),geometry:geometry(r.geometry),geometry_status:r.geometry?'sketch':'not_created'};
     });
   }
+  function proposal(value) {
+    if(value==null)return null;
+    if(typeof value!=='object'||Array.isArray(value)||typeof value.generator!=='string'||!value.generator.trim())throw Error('Proposal provenance needs a generator.');
+    // Preserve producer fields as historical data, never as current verification.
+    return JSON.parse(JSON.stringify(value));
+  }
   function create(analysis,hash,candidate,input) {
     if(!analysis?.candidates?.some(c=>c.id===candidate?.id))throw Error('Select a pose from the loaded analysis.');
     if(!/^[a-f0-9]{64}$/.test(hash||''))throw Error('The source table needs a valid fingerprint.');
@@ -47,7 +53,7 @@ const Plan = (() => {
     const rationale=requireText(input.rationale,'Choice rationale');
     const helperRegions=regions(input.helper_regions,input.shell_only===true,analysis.interfaces||[],analysis.keep_outs||[]);
     const current=analysis.candidates.find(c=>c.id===candidate.id);
-    return {schema,status:'draft_requires_verification',source:{orientation_table_sha256:hash,orientation_schema:analysis.schema,problem:analysis.problem,mesh:analysis.mesh},
+    return {schema,status:'draft_requires_verification',...(input.proposal?{proposal:proposal(input.proposal),proposal_use:'historical_provenance_requires_recheck'}:{}),source:{orientation_table_sha256:hash,orientation_schema:analysis.schema,problem:analysis.problem,mesh:analysis.mesh},
       orientation:{...current,designer_decision:{choice:'selected_for_planning',candidate_id:current.id,table_sha256:hash,rank_at_decision:current.rank??null,decided_by_role:'designer',rationale}},
       massing:{body:'fixed',walls:input.walls,skin_mm:input.skin_mm,helper_infill_percent:100,sparse_infill_structural_credit:false,shell_only:input.shell_only===true,helper_regions:helperRegions},
       outstanding_checks:['Create and validate helper geometry where requested','Verify interfaces and helper bonding','Slice and check credited material and printability','Verify load cases and material evidence; physical testing remains separate']};
@@ -65,7 +71,7 @@ const Plan = (() => {
     const migrated=draft.schema==='fdmgen.massing-plan.v0.1';
     if(migrated)helperRegions=[{id:'helper-1',name:'Imported helper intent',location:'',purpose:requireText(m.helper_intent,'Legacy helper intent'),keep_clear:'',geometry_status:'not_created'}];
     else helperRegions=regions(helperRegions,m.shell_only===true,analysis.interfaces||[],analysis.keep_outs||[]);
-    return {candidate,input:{walls:m.walls,skin_mm:m.skin_mm,rationale:requireText(draft.orientation?.designer_decision?.rationale,'Choice rationale'),shell_only:m.shell_only===true,helper_regions:helperRegions},migrated};
+    return {candidate,input:{walls:m.walls,skin_mm:m.skin_mm,rationale:requireText(draft.orientation?.designer_decision?.rationale,'Choice rationale'),shell_only:m.shell_only===true,helper_regions:helperRegions,...(draft.proposal?{proposal:proposal(draft.proposal)}:{})},migrated};
   }
   return {schema,create,restore,geometry,boxSeparation};
 })();

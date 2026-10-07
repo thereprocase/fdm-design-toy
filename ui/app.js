@@ -2,6 +2,7 @@
 const byId = id => document.getElementById(id);
 let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draftRequest = 0;
 const decisions = new Map();
+let proposalOrigin=null;
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
 byId('review-poses').onclick=()=>document.querySelector('.candidates').scrollIntoView({block:'start'});
 const viewer = new PartViewer(byId('part-view'));
@@ -125,6 +126,7 @@ function addHelper(region={}) {
   byId('helper-regions').append(box);updateRegions();
 }
 function resetPlan(){
+  proposalOrigin=null;renderProposal();
   activeHelper=null;byId('return-helper').hidden=true;byId('mesh-options').open=true;
   byId('walls').value=4;byId('skin').value=1.6;byId('shell-only').checked=false;byId('helper-panel').hidden=false;
   byId('helper-regions').replaceChildren();byId('draft-status').textContent='';addHelper();
@@ -136,7 +138,7 @@ function regionInput(box){
  return r;
 }
 function planInput(){return {walls:Number(byId('walls').value),skin_mm:Number(byId('skin').value),rationale:byId('rationale').value,shell_only:byId('shell-only').checked,
- helper_regions:Array.from(byId('helper-regions').children,regionInput)};}
+ helper_regions:Array.from(byId('helper-regions').children,regionInput),...(proposalOrigin?{proposal:proposalOrigin}:{})};}
 function updateRegions(){
  const valid=[],warnings=byId('region-warnings');warnings.replaceChildren();
  refreshHelperSelector();
@@ -175,6 +177,7 @@ byId('export').onclick=()=>{
 
 function restoreDraft(raw){
     const restored=Plan.restore(raw,analysis,fingerprint),input=restored.input;
+    proposalOrigin=input.proposal||null;renderProposal();
     choose(restored.candidate);byId('rationale').value=input.rationale;decisions.set(restored.candidate.id,input.rationale);
     byId('walls').value=input.walls;byId('skin').value=input.skin_mm;byId('shell-only').checked=input.shell_only;byId('helper-panel').hidden=input.shell_only;
     byId('helper-regions').replaceChildren();input.helper_regions.forEach(addHelper);
@@ -226,3 +229,27 @@ byId('preview-helper').onchange=()=>{
  setActiveHelper(box||null);
  if(box){box.scrollIntoView({block:'center'});box.querySelector('[data-key="name"]').focus({preventScroll:true});}
 };
+
+function renderProposal(){
+ const panel=byId('proposal-evidence');panel.replaceChildren();panel.hidden=!proposalOrigin;
+ if(!proposalOrigin)return;
+ const p=proposalOrigin;
+ text('h3','Original machine proposal',panel);
+ text('p','Historical proposal provenance. Editing helpers, shell settings or the pose does not rerun the seed or its checks. Export and verify the current plan again.',panel).className='warning';
+ text('p',p.label||'A proposal for review; not an optimum or a strength result.',panel);
+ if(p.status==='no_viable_helpers')text('p','No viable helpers were proposed. The empty helper list does not establish that shell-only is sufficient. Review the rejected clusters and revise the plan deliberately.',panel).className='warning';
+ text('p',`Generator: ${p.generator}. Original pose: ${p.pose?.id||'not recorded'}. Stress frame: ${p.stress?.frame||'not recorded'}.`,panel);
+ if(p.stress?.sha256)text('p',`Recorded stress SHA256: ${p.stress.sha256}. The browser has not verified the stress file.`,panel);
+ if(Array.isArray(p.accepted)&&p.accepted.length){
+  text('h4','Originally proposed helpers',panel);const list=text('ul','',panel);
+  for(const h of p.accepted.filter(h=>h&&typeof h==='object'))text('li',`${h.id}: cluster ${h.cluster}, ${h.cells} cells, F_L max ${h.F_L_max}. Nearest modelled restraint: ${Array.isArray(h.nearest_restraint)?h.nearest_restraint.join(' · ')+' mm':'not recorded'}. Original values, not recomputed for edits.`,list);
+ }
+ if(Array.isArray(p.rejected)&&p.rejected.length){
+  const details=text('details','',panel);text('summary',`${p.rejected.length} rejected clusters at generation`,details);const list=text('ul','',details);
+  for(const item of p.rejected)text('li',item&&typeof item==='object'?`Cluster ${item.cluster} · ${item.cells??'unrecorded'} cells: ${item.reason||JSON.stringify(item)}`:String(item),list);
+ }
+ if(Array.isArray(p.sensitivity)&&p.sensitivity.length){
+  const details=text('details','',panel);text('summary','Restraint exclusion sensitivity (original proposal)',details);text('pre',JSON.stringify(p.sensitivity,null,2),details);
+ }
+ const details=text('details','',panel);text('summary','Complete original proposal provenance',details);text('pre',JSON.stringify(p,null,2),details);
+}

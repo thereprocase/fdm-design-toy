@@ -280,3 +280,21 @@ solid infill is 3,565.268 mm³ versus 398.073 mm³ in the baseline: a measured
 addition of 3,167.195 mm³ (about 82.5% of the box). This T-level screen passes;
 it does not verify bond continuity, strength or physical printability.
 The receipt records both G-code hashes and the exact project hash.
+
+## Review a machine proposal
+
+A saved draft can carry an additive `proposal` block from the stress seeder.
+Reopen it against its exact orientation table as usual. The **Original machine
+proposal** panel shows the source scope, stress fingerprint, original helper
+clusters, nearest modelled restraints, rejected clusters and restraint-margin
+sensitivity. Complete producer metadata remains available, including load,
+material and receipt provenance when supplied. The browser does not verify the
+stress file or rerun the seed.
+
+Edits and exports preserve this block as historical provenance, with
+`proposal_use=historical_provenance_requires_recheck`. The original cluster
+measurements do not become evidence for changed boxes, shell settings or poses.
+A `no_viable_helpers` proposal explicitly warns that an empty helper list does
+not establish shell-only sufficiency. Reopening an ordinary draft or loading a
+new table clears the proposal panel. These proposals are starting points for
+review, not optimised designs or physical qualifications.

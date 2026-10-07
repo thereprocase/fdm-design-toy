@@ -20,3 +20,6 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 
 #preview-helper { display: block; width: 100%; margin-top: 6px; padding: 8px; font: inherit; }
 .helper-region.active-helper { outline: 2px solid #175caa; outline-offset: 2px; }
+#proposal-evidence { overflow-wrap: anywhere; }
+#proposal-evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
+#proposal-evidence summary { cursor: pointer; }
