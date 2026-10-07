@@ -1,0 +1,542 @@
+{
+  "schema": "fdmgen/density-weighted-mechanics-pilot@0.1",
+  "reference_sha256": "12c48165935aeb6b60eb76ad37f2288c9a4c3a9d8e13abd71ca4e0c4f2840d8a",
+  "material": {
+    "E0_MPa": 1000.0,
+    "nu": 0.3,
+    "law": "E/E0 = min(raw_density, 1)^power",
+    "power": 1,
+    "stiffness_floor": 0,
+    "evidence": "uncalibrated homogenisation assumption"
+  },
+  "grid": {
+    "shape": [
+      144,
+      160,
+      16
+    ],
+    "h_mm": [
+      1.6,
+      1.6,
+      1.6
+    ],
+    "origin_print_mm": [
+      40.89395370483398,
+      4.4,
+      -9.177843387890312e-15
+    ]
+  },
+  "installed_to_print": {
+    "R": [
+      [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "t_mm": [
+      250.0,
+      182.0,
+      0.0
+    ]
+  },
+  "bc": {
+    "seat_nodes": {
+      "rear_seat": 626,
+      "front_seat": 648
+    },
+    "clamped_nodes": 1751,
+    "wall_nodes": 1631
+  },
+  "load_policy": "original full-body nodal loads and restraints; no transfer or deletion",
+  "load_sha256": "ac3b7008fb557ff762518e32f4abe1a3a583a48902815fde5ecd465425496aac",
+  "domain_policy": "largest face component of positive-density cells",
+  "establishes": "density-law sensitivity of a coarse isotropic linear FE model",
+  "does_not_establish": [
+    "resolved bead gaps or bonds",
+    "calibrated stiffness-density law",
+    "mesh convergence",
+    "anisotropic strength",
+    "physical movement or qualification",
+    "equivalence to the thresholded and load-transferred pilot"
+  ],
+  "cases": {
+    "full_solid": {
+      "raw_audit": {
+        "status": "blocked",
+        "reasons": [
+          "5 face-connected components; one connected body required"
+        ],
+        "cells": 42648,
+        "active_nodes": 54788,
+        "face_components": 5,
+        "face_component_cell_counts": [
+          42528,
+          60,
+          30,
+          15,
+          15
+        ],
+        "node_connected_components": 1,
+        "restrained_rigid_modes": 6,
+        "original_fixed_dofs": 2071,
+        "retained_fixed_dofs": 2071,
+        "missing_loaded_dofs": 0,
+        "loaded_fixed_dofs": 0,
+        "missing_load_l1_N": 0.0,
+        "original_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ],
+        "retained_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ]
+      },
+      "fragment_removal": {
+        "original_cells": 42648,
+        "retained_cells": 42528,
+        "removed_cells": 120,
+        "removed_component_cell_counts": [
+          60,
+          30,
+          15,
+          15
+        ],
+        "removed_grid_volume_mm3": 491.5200000000001,
+        "removed_deposited_volume_mm3": 491.5200000000001,
+        "removed_original_load_l1_N": 0.0,
+        "removed_fixed_dofs": 0
+      },
+      "audit": {
+        "status": "ready",
+        "reasons": [],
+        "cells": 42528,
+        "active_nodes": 54468,
+        "face_components": 1,
+        "face_component_cell_counts": [
+          42528
+        ],
+        "node_connected_components": 1,
+        "restrained_rigid_modes": 6,
+        "original_fixed_dofs": 2071,
+        "retained_fixed_dofs": 2071,
+        "missing_loaded_dofs": 0,
+        "loaded_fixed_dofs": 0,
+        "missing_load_l1_N": 0.0,
+        "original_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ],
+        "retained_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ]
+      },
+      "positive_stiffness_fraction_min": 1.0,
+      "cells_outside_full_body": 0,
+      "solve": {
+        "status": "solved",
+        "iterations": 19,
+        "cg_status": 0,
+        "true_relative_residual": 6.345325289918675e-10,
+        "setup_s": 10.07370479500969,
+        "solve_s": 3.869074478003313,
+        "dofs": 163404,
+        "compliance_N_mm": 108.51504188611611,
+        "max_displacement_mm": 1.7430532729129957
+      }
+    },
+    "baseline": {
+      "raw_audit": {
+        "status": "ready",
+        "reasons": [],
+        "cells": 32931,
+        "active_nodes": 51785,
+        "face_components": 1,
+        "face_component_cell_counts": [
+          32931
+        ],
+        "node_connected_components": 1,
+        "restrained_rigid_modes": 6,
+        "original_fixed_dofs": 2071,
+        "retained_fixed_dofs": 2071,
+        "missing_loaded_dofs": 0,
+        "loaded_fixed_dofs": 0,
+        "missing_load_l1_N": 0.0,
+        "original_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ],
+        "retained_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ]
+      },
+      "npz_sha256": "d62a7fde462a35039a09566b3f15f6e629d9a9c3493d4bdc3b3fb8eb84662e52",
+      "provenance": {
+        "schema": "fdmgen/occupancy@0.1",
+        "gcode_sha256": "494c9ec43d5dc7417ce4c392d49ec6b4f4e65422ab68f5c046a950e38b01d4c6",
+        "table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+        "pose": "facet-00",
+        "grid_receipt": "bracket-stress-r1.json",
+        "grid_receipt_sha256": "12c48165935aeb6b60eb76ad37f2288c9a4c3a9d8e13abd71ca4e0c4f2840d8a",
+        "grid_frame": "solver print grid of the receipt (installed -> print by installed_to_print)",
+        "grid": {
+          "shape": [
+            144,
+            160,
+            16
+          ],
+          "h_mm": [
+            1.6,
+            1.6,
+            1.6
+          ],
+          "origin_print_mm": [
+            40.89395370483398,
+            4.4,
+            -9.177843387890312e-15
+          ]
+        },
+        "installed_to_print": {
+          "R": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "t_mm": [
+            250.0,
+            182.0,
+            0.0
+          ]
+        },
+        "pose_R_design_to_print": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "pose_t_mm": [
+          24.246979,
+          68.741209,
+          0.0
+        ],
+        "indexing": "C order, axes x y z",
+        "accounting": {
+          "credited_input_mm3": 69589.02618972989,
+          "deposited_inside_grid_mm3": 69589.02618973004,
+          "clipped_outside_grid_mm3": 0.0,
+          "saturation_excess_mm3": 28.79047257990906,
+          "excluded": {
+            "thick_bridge_mm3": 1847.8255459497,
+            "thick_bridge_segments": 2548,
+            "support_and_aux_mm3": 0.0,
+            "nonobject_mm3": 75.52585088770712
+          },
+          "threshold": 0.5,
+          "solid_cells": 17744
+        },
+        "density_kind": {
+          "density": "raw: deposited volume / cell volume, exceeds 1 where beads overlap",
+          "density_capped": "min(raw, 1)",
+          "solid_mask": "raw density >= 0.5"
+        },
+        "note": "approximate bead raster of the slicer's credited roads; not a measured print",
+        "sampling": {
+          "step_frac": "1/16",
+          "step_mm": 0.1,
+          "samples_across_0p42_bead": 5,
+          "recorded_step_frac": "1/3",
+          "identical_to_source_density": false,
+          "source_npz": "seed-shell-only-r1.npz",
+          "source_npz_sha256": "907c4f65ff7a002dd4d58902f6a18271996a1a90801f19b63e872d3ccb986aad",
+          "generator": "private occupancy_resample.py: unchanged producer, deposit step_frac bound to 1/K",
+          "purpose": "sampling-step sensitivity of the paired mechanics comparison; not a new recorded grid"
+        }
+      },
+      "fragment_removal": {
+        "original_cells": 32931,
+        "retained_cells": 32931,
+        "removed_cells": 0,
+        "removed_component_cell_counts": [],
+        "removed_grid_volume_mm3": 0.0,
+        "removed_deposited_volume_mm3": 0.0,
+        "removed_original_load_l1_N": 0.0,
+        "removed_fixed_dofs": 0
+      },
+      "audit": {
+        "status": "ready",
+        "reasons": [],
+        "cells": 32931,
+        "active_nodes": 51785,
+        "face_components": 1,
+        "face_component_cell_counts": [
+          32931
+        ],
+        "node_connected_components": 1,
+        "restrained_rigid_modes": 6,
+        "original_fixed_dofs": 2071,
+        "retained_fixed_dofs": 2071,
+        "missing_loaded_dofs": 0,
+        "loaded_fixed_dofs": 0,
+        "missing_load_l1_N": 0.0,
+        "original_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ],
+        "retained_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ]
+      },
+      "positive_stiffness_fraction_min": 0.0003121437912341207,
+      "cells_outside_full_body": 6670,
+      "solve": {
+        "status": "solved",
+        "iterations": 27,
+        "cg_status": 0,
+        "true_relative_residual": 3.7111199807692733e-10,
+        "setup_s": 8.618669693998527,
+        "solve_s": 4.781694716002676,
+        "dofs": 155355,
+        "compliance_N_mm": 318.1298178169518,
+        "max_displacement_mm": 5.3511278747141375
+      }
+    },
+    "project": {
+      "raw_audit": {
+        "status": "ready",
+        "reasons": [],
+        "cells": 33071,
+        "active_nodes": 51949,
+        "face_components": 1,
+        "face_component_cell_counts": [
+          33071
+        ],
+        "node_connected_components": 1,
+        "restrained_rigid_modes": 6,
+        "original_fixed_dofs": 2071,
+        "retained_fixed_dofs": 2071,
+        "missing_loaded_dofs": 0,
+        "loaded_fixed_dofs": 0,
+        "missing_load_l1_N": 0.0,
+        "original_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ],
+        "retained_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ]
+      },
+      "npz_sha256": "e31045529c3aede7ffaecf2c9fd933723e23b70dba2acfc7dcc2dd22fb0f26f2",
+      "provenance": {
+        "schema": "fdmgen/occupancy@0.1",
+        "gcode_sha256": "0ba93c7d54410b199e5b4c2841967154f16547729320e8d10f6420cca96fb7dc",
+        "table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+        "pose": "facet-00",
+        "grid_receipt": "bracket-stress-r1.json",
+        "grid_receipt_sha256": "12c48165935aeb6b60eb76ad37f2288c9a4c3a9d8e13abd71ca4e0c4f2840d8a",
+        "grid_frame": "solver print grid of the receipt (installed -> print by installed_to_print)",
+        "grid": {
+          "shape": [
+            144,
+            160,
+            16
+          ],
+          "h_mm": [
+            1.6,
+            1.6,
+            1.6
+          ],
+          "origin_print_mm": [
+            40.89395370483398,
+            4.4,
+            -9.177843387890312e-15
+          ]
+        },
+        "installed_to_print": {
+          "R": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "t_mm": [
+            250.0,
+            182.0,
+            0.0
+          ]
+        },
+        "pose_R_design_to_print": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "pose_t_mm": [
+          24.246979,
+          68.741209,
+          0.0
+        ],
+        "indexing": "C order, axes x y z",
+        "accounting": {
+          "credited_input_mm3": 70401.68439338724,
+          "deposited_inside_grid_mm3": 70401.6843933874,
+          "clipped_outside_grid_mm3": 0.0,
+          "saturation_excess_mm3": 29.00454331274933,
+          "excluded": {
+            "thick_bridge_mm3": 1856.2971411374256,
+            "thick_bridge_segments": 2587,
+            "support_and_aux_mm3": 0.0,
+            "nonobject_mm3": 75.52585088770712
+          },
+          "threshold": 0.5,
+          "solid_cells": 17903
+        },
+        "density_kind": {
+          "density": "raw: deposited volume / cell volume, exceeds 1 where beads overlap",
+          "density_capped": "min(raw, 1)",
+          "solid_mask": "raw density >= 0.5"
+        },
+        "project_3mf_sha256": "af0e7529f64eb023e8313ae9fffd5090b70f88b13b39f24e3289a002f3706dfe",
+        "plan": {
+          "draft_sha256": "3a2439879055e673f55688b09a673f7f575b799d5021b5eaee844ca8ed8585e3",
+          "table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+          "mesh_sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e",
+          "problem": "spool-rack-g2-ef",
+          "candidate_id": "facet-00"
+        },
+        "note": "approximate bead raster of the slicer's credited roads; not a measured print",
+        "sampling": {
+          "step_frac": "1/16",
+          "step_mm": 0.1,
+          "samples_across_0p42_bead": 5,
+          "recorded_step_frac": "1/3",
+          "identical_to_source_density": false,
+          "source_npz": "seed-project-r1.npz",
+          "source_npz_sha256": "607ed1bb2af71ca149be73f7c1cd0c967cfb28ccb09b7009f5fcced3401a0d8a",
+          "generator": "private occupancy_resample.py: unchanged producer, deposit step_frac bound to 1/K",
+          "purpose": "sampling-step sensitivity of the paired mechanics comparison; not a new recorded grid"
+        }
+      },
+      "fragment_removal": {
+        "original_cells": 33071,
+        "retained_cells": 33071,
+        "removed_cells": 0,
+        "removed_component_cell_counts": [],
+        "removed_grid_volume_mm3": 0.0,
+        "removed_deposited_volume_mm3": 0.0,
+        "removed_original_load_l1_N": 0.0,
+        "removed_fixed_dofs": 0
+      },
+      "audit": {
+        "status": "ready",
+        "reasons": [],
+        "cells": 33071,
+        "active_nodes": 51949,
+        "face_components": 1,
+        "face_component_cell_counts": [
+          33071
+        ],
+        "node_connected_components": 1,
+        "restrained_rigid_modes": 6,
+        "original_fixed_dofs": 2071,
+        "retained_fixed_dofs": 2071,
+        "missing_loaded_dofs": 0,
+        "loaded_fixed_dofs": 0,
+        "missing_load_l1_N": 0.0,
+        "original_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ],
+        "retained_resultant_grid_N": [
+          4.59243754136196e-13,
+          117.71999999999986,
+          0.0
+        ]
+      },
+      "positive_stiffness_fraction_min": 0.0003121437912341207,
+      "cells_outside_full_body": 6670,
+      "solve": {
+        "status": "solved",
+        "iterations": 25,
+        "cg_status": 0,
+        "true_relative_residual": 3.3325413948686104e-10,
+        "setup_s": 8.654797804003465,
+        "solve_s": 4.452402394992532,
+        "dofs": 155847,
+        "compliance_N_mm": 312.6017734381603,
+        "max_displacement_mm": 5.268936923105059
+      }
+    }
+  },
+  "project_compliance_change_fraction": -0.017376693630058483
+}

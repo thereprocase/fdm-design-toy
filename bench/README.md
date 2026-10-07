@@ -285,3 +285,56 @@ the observed 64-character digest recorded in its receipt and verified embedded
 provenance against the sidecar and the recorded mask count. No claim is made that
 the malformed handoff digest matched. Solves used source commit `35511cc`; the
 compute-box suite passed 202 tests, with 6 CUDA-only skips.
+
+### Density-weighted sensitivity: a different constitutive assumption
+
+`density_weighted.py` replaces binary occupancy with
+`E/E0 = min(raw_density, 1)^power`, using power 1 or 3 and **no stiffness floor**.
+Zero-density cells are absent. This removes the positive density cutoff but
+introduces an uncalibrated homogenisation law: even a small deposit spreads
+stiffness across the whole coarse cell and may bridge an unresolved bead gap.
+A cubic penalty is a sensitivity choice, not a measured printed-material law.
+
+```bash
+python bench/density_weighted.py --root /path/to/part-checkout \
+  --reference bench/receipts/bracket-stress-r1.json \
+  --baseline seed-shell-only-r1-sf16.npz --project seed-project-r1-sf16.npz \
+  --power 1 --largest-face-component --solve --out weighted-p1.json
+# Repeat with --power 3 and a distinct output file.
+```
+
+The script preserves the original full-body nodal load array and restraints.
+Raw and retained-domain audits are both recorded; missing loaded nodes or
+connectivity failures block solving. The explicit largest-component option
+records removed grid/deposited volume and any original load/restraint DOFs lost
+with those cells. It never redistributes the loads.
+
+Measured on the pinned h/16 sampling pair, 1.6 mm solver grid, E0 = 1000 MPa,
+nu = 0.3, with identical original loads in both trials:
+
+| Density exponent | Baseline compliance N·mm | Project compliance N·mm | Project change | Maximum displacement baseline / project, mm |
+|---|---:|---:|---:|---:|
+| 1 | 318.130 | 312.602 | −1.738% | 5.351 / 5.269 |
+| 3 | 622.043 | 603.964 | −2.906% | 10.389 / 10.114 |
+
+Both printed domains are already single face-connected components (32,931 /
+33,071 positive-density cells), retain every original loaded DOF, and lose
+**zero cells** under the largest-component option. The full-body context alone
+loses its usual 120 fragments and gives 108.515 N·mm; it remains contextual,
+not a guaranteed stiffness bound. Minimum retained E/E0 is 3.12e-4 for power 1
+and 3.04e-11 for power 3. This is not an imposed stiffness floor.
+
+Every true relative residual is below 9e-10. The sizeable change in absolute
+response between laws shows why this is not a resolution of model uncertainty.
+The result is not directly equivalent to the binary-mask pilots, whose domain
+and redistributed nodal loads differ. Neither density law establishes bond
+continuity, anisotropic strength, mesh convergence or physical displacement.
+The reported millimetres are unvalidated linear-model outputs.
+
+Receipts: `receipts/occupancy-density-p1-sf16-r1.json` and
+`receipts/occupancy-density-p3-sf16-r1.json`, using the distinct
+`fdmgen/density-weighted-mechanics-pilot@0.1` schema. Existing mechanics UI inputs
+intentionally reject that schema rather than labelling it a thresholded result.
+Both retain full input provenance and hashes. Known-answer tests verify density
+capping, exact zero stiffness outside deposits and compliance scaling of a
+clamped block with a fixed load (1×, 2×, 8× for full, half-linear, half-cubic).
