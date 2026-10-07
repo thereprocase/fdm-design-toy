@@ -108,3 +108,11 @@ support counts and the producer's evidence limits remain visible.
 
 Checks: `node --test ui/coupon-evidence.test.cjs` and, with temporary Playwright
 exposed through `NODE_PATH`, `node ui/coupons.browser.test.cjs`.
+
+The orientation comparison also displays the optional T-level pose-slice columns:
+support segments, support volume and credited material volume. A slice filter
+helps compare only measured poses. Missing columns remain **Not checked**. The
+selected-pose panel retains the producer's slicer/profile/placement fidelity
+text and credited-volume exclusions. Changing the helper draft does not refresh
+these measurements. `node ui/toolpath.browser.test.cjs` (with Playwright exposed)
+checks real measured and unmeasured candidates, filter behavior and mobile layout.

@@ -41,6 +41,14 @@ function choose(candidate) {
   const interfaces=candidate.columns?.interface_roofs;
   if(interfaces?.verdict==='FAIL')text('li','Interface review: '+interfaces.fidelity,byId('reasons'));
   else if(interfaces?.value)text('li','Interface roof declarations checked; geometry and sliced toolpaths still require verification.',byId('reasons'));
+  byId('toolpath-metrics').replaceChildren();
+  for(const [key,label] of [['t_support_segments','Support segments'],['t_support_volume_mm3','Support volume'],['t_credited_mm3','Credited material volume']]){
+    const column=candidate.columns?.[key];text('dt',label,byId('toolpath-metrics'));text('dd',formatted(column)+(column?' · toolpath evidence':''),byId('toolpath-metrics'));
+  }
+  const slice=candidate.columns?.t_support_segments;
+  byId('toolpath-settings').textContent=slice?.fidelity||'No pose slice supplied. These quantities are not checked.';
+  const creditedFidelity=candidate.columns?.t_credited_mm3?.fidelity||'';
+  byId('credited-scope').textContent=slice?.fidelity&&creditedFidelity.startsWith(slice.fidelity)?'Credited volume: '+creditedFidelity.slice(slice.fidelity.length).replace(/^;\s*/, ''):creditedFidelity;
   byId('metrics').replaceChildren();
   for(const [key,label] of Object.entries(metricNames)) {
     const column=candidate.columns?.[key];text('dt',label,byId('metrics'));
@@ -51,14 +59,16 @@ function choose(candidate) {
 }
 function renderRows() {
   byId('rows').replaceChildren();
-  const rows=analysis.candidates.filter(c=>!byId('feasible-only').checked || c.feasible);
+  const rows=analysis.candidates.filter(c=>(!byId('feasible-only').checked || c.feasible)&&(!byId('sliced-only').checked || Number.isFinite(c.columns?.t_support_segments?.value)));
+  const sliced=analysis.candidates.filter(c=>Number.isFinite(c.columns?.t_support_segments?.value)).length;
+  byId('pose-count').textContent=`Showing ${rows.length} of ${analysis.candidates.length} poses; ${sliced} have measured slices.${selected&&!rows.some(c=>c.id===selected.id)?' Selected pose '+selected.id+' is hidden by this filter.':''}`;
   for(const c of rows) {
     const tr=text('tr','',byId('rows'));if(c.id===selected?.id)tr.className='selected';
     const button=text('button',c.id,text('td','',tr));button.type='button';button.setAttribute('aria-pressed',String(c.id===selected?.id));button.onclick=()=>choose(c);
-    for(const key of ['F_L_max','ovh_fail_mm2','contact_mm2'])text('td',formatted(c.columns?.[key]),tr);
+    for(const key of ['F_L_max','ovh_fail_mm2','contact_mm2','t_support_segments'])text('td',formatted(c.columns?.[key]),tr);
     text('td',c.feasible?'Fits / stable; review checks':'Needs review',tr);
   }
-  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=5;}
+  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=6;}
 }
 byId('table-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=++tableRequest;
@@ -73,10 +83,10 @@ byId('table-file').onchange=async event=>{
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
-    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();
+    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();
   }catch(error){if(request!==tableRequest)return;analysis=null;selected=null;byId('workspace').hidden=true;byId('status').textContent=`Could not load table: ${error.message}`;}
 };
-byId('feasible-only').onchange=()=>{if(analysis)renderRows();};
+byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};
 function addHelper(region={}) {
   const box=document.createElement('fieldset');box.className='helper-region';box.dataset.id=region.id||crypto.randomUUID();
   text('legend',region.name||'Helper region',box);
