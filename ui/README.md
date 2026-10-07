@@ -330,3 +330,10 @@ the mechanics input between the threshold-0.25, 0.50 and 0.75 receipts listed in
 +1.317%. These use different common nodal load sets across thresholds, and the
 0.75 model predicts movements outside a physical small-displacement
 interpretation. The isolated 0.50 decrease is not a robust design benefit.
+
+The mechanics view separates **solver cell size** from **bead sampling step**.
+For example, `occupancy-connected-sampling16-r1.json` reports 0.1 mm deposition
+sampling on a 1.6 mm FE grid; it is not a 0.1 mm mechanics solve. Older receipts
+without sampling metadata say “not recorded”. The view links the threshold and
+sampling studies beside the comparison so a single percentage is not presented
+as a robust design benefit.

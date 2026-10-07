@@ -83,6 +83,13 @@ function renderMechanics(r){
  el('mechanics-policy').textContent=`FE pilot · provisional. Domain policy: ${r.domain_policy}; density threshold ${r.threshold}. ${r.domain_policy==='largest-face-component sensitivity'?'Fragments were explicitly removed. This is not the unmodified raster result.':'Original thresholded domains; inspect connectivity failures below.'}`;
  el('mechanics-comparison').textContent=comparable?`Project compliance change versus shell-only: ${num(100*(r.solves.project.compliance_N_mm/r.solves.baseline.compliance_N_mm-1))}%. Applies only to this domain and load policy; not a strength rating.`:'No supported compliance comparison: an audit, conservation or convergence check is missing or failed.';
  el('mechanics-model').textContent=`Load method: ${r.method}. ${r.context_note||''} Material constants are not recorded in this pilot receipt; consult its reproducible benchmark. Linear model outputs do not establish physical movement.`;
+ const grid=r.inputs.baseline.provenance.grid;
+ el('mechanics-resolution').textContent=`Solver cell size: ${grid.h_mm.map(num).join(' × ')} mm; grid ${grid.shape.join(' × ')} cells. Bead sampling refines deposition inside this grid, not the FE mesh.`;
+ el('mechanics-sampling').textContent=[['baseline','Shell-only'],['project','Project']].map(([key,label])=>{
+  const sampling=r.inputs[key].provenance.sampling;
+  const step=sampling?.step_mm;
+  return `${label} bead sampling step: ${typeof step==='number'&&Number.isFinite(step)&&step>0?num(step)+' mm':'not recorded'}.`;
+ }).join(' ');
  el('mechanics-rows').replaceChildren();el('mechanics-audits').replaceChildren();
  for(const [name,label] of [['full_solid','Full-body context'],['baseline','Shell-only'],['project','Seeded project']]){
   const a=r.audits[name],s=r.solves?.[name],row=add('tr','',el('mechanics-rows'));

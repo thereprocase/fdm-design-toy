@@ -15,6 +15,12 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#mechanics-comparison').innerText(),/-2.924%/);
  assert.match(await page.locator('#mechanics-rows').innerText(),/484.839/);
  assert.match(await page.locator('#mechanics-audits').innerText(),/Removed 52 cells/);
+ assert.match(await page.locator('#mechanics-resolution').innerText(),/Solver cell size: 1.6 × 1.6 × 1.6 mm/);
+ assert.match(await page.locator('#mechanics-sampling').innerText(),/Shell-only bead sampling step: not recorded/);
+ await page.locator('#review-mechanics').setInputFiles(path.join(__dirname,'../bench/receipts/occupancy-connected-sampling16-r1.json'));
+ await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('-2.988%'));
+ assert.match(await page.locator('#mechanics-sampling').innerText(),/Shell-only bead sampling step: 0.1 mm. Project bead sampling step: 0.1 mm/);
+ assert.match(await page.locator('#mechanics-resolution').innerText(),/1.6 × 1.6 × 1.6 mm/);
  const wrong=JSON.parse(fs.readFileSync(receipt));wrong.inputs.baseline.provenance.gcode_sha256='a'.repeat(64);
  await page.locator('#review-mechanics').setInputFiles({name:'wrong.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(wrong))});
  await page.waitForFunction(()=>document.querySelector('#mechanics-status').textContent.includes('baseline G-code differs'));
