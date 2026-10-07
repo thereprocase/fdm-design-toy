@@ -12,9 +12,14 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
   await page.getByRole('button',{name:'facet-00',exact:true}).click();
   await page.locator('#rationale').fill('Keep the seat load in the layer plane.');
+  await page.locator('#export').click();
+  assert.equal(await page.evaluate(()=>document.activeElement.dataset.key),'name');
+  assert.equal(await page.locator('.helper-region [data-key="name"]').getAttribute('aria-invalid'),'true');
+
   const fill=async(box,name)=>{for(const [key,value] of Object.entries({name,location:'Rear seat to mounting plate',purpose:'Transfer the seat load',keep_clear:'Rod bore and washer seats'}))await box.locator(`[data-key="${key}"]`).fill(value);};
   await fill(page.locator('.helper-region').first(),'Seat rib');await page.locator('#add-helper').click();await fill(page.locator('.helper-region').last(),'Mount backing');
   const download=async()=>{const pending=page.waitForEvent('download');await page.locator('#export').click();return JSON.parse(await fs.readFile(await (await pending).path(),'utf8'));};
+  assert.equal(await page.locator('[data-export-error]').count(),0);
   const original=await download();assert.equal(original.massing.helper_regions.length,2);assert.match(await page.locator('#handoff-readiness').innerText(),/2 helper\(s\) without a box/);assert(await page.locator('#handoff').evaluate(e=>e.open));
   assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since the last draft download/);
   await page.locator('#view-top').click();assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since/);
@@ -37,6 +42,9 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert(await first.locator('[data-spatial]').isChecked());assert(await first.locator('[data-interface-id]').first().isChecked());
   assert.equal(await first.locator('[data-clearance]').inputValue(),'1.7');
   await page.locator('#export').click(); // Invalid box must not checkpoint failed export.
+  assert.equal(await page.evaluate(()=>document.activeElement.dataset.geometry),'size_mm');
+  assert.equal(await first.locator('[data-geometry="size_mm"]').first().getAttribute('aria-errormessage'),'export-status');
+  assert.equal(await first.locator('[data-geometry="size_mm"]').first().inputValue(),'');
   assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   await page.locator('#walls').fill('6');assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   await page.locator('#walls').fill('7');await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();

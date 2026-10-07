@@ -474,3 +474,9 @@ warning and cannot establish a paired pose comparison. Mixed 0.2/0.3 receipts
 also cannot establish that comparison. Older receipts retain their original
 metadata and explicitly lack recorded section checks; none are relabelled.
 Containment supports consistency with a pose, not unique pose identity.
+
+When draft export rejects a missing required helper description or invalid shell,
+clearance or box value, the editor focuses the first relevant field and associates
+it with the error message for assistive technology. Editing clears the field's
+error marker; export still runs the authoritative draft validation. No values
+are filled in or repaired automatically.

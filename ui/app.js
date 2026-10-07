@@ -229,6 +229,7 @@ function addHelper(region={}) {
   byId('helper-regions').append(box);updateRegions();return box;
 }
 function resetPlan(){
+  clearDraftError();
   clearRemovalHistory();
   proposalOrigin=null;renderProposal();
   activeHelper=null;byId('return-helper').hidden=true;byId('mesh-options').open=true;
@@ -298,7 +299,27 @@ byId('draft-file').onchange=async event=>{
     restoreDraft(raw);
   }catch(error){if(openRequest!==draftRequest)return;byId('draft-status').textContent='Could not reopen draft: '+error.message;}
 };
+function invalidDraftField(){
+ const walls=byId('walls'),skin=byId('skin'),w=Number(walls.value),s=Number(skin.value);
+ if(!Number.isInteger(w)||w<1||w>20)return walls;
+ if(!Number.isFinite(s)||s<.1||s>20)return skin;
+ if(byId('shell-only').checked)return null;
+ const boxes=[...byId('helper-regions').children];
+ if(!boxes.length)return byId('add-helper');
+ for(const box of boxes){
+  for(const key of ['name','location','purpose']){const f=box.querySelector(`[data-key="${key}"]`);if(!f.value.trim())return f;}
+  const clearance=box.querySelector('[data-clearance]');if(clearance.value!==''&&(!Number.isFinite(Number(clearance.value))||Number(clearance.value)<0))return clearance;
+  const note=box.querySelector('[data-key="keep_clear"]');if(!note.value.trim())return note;
+  if(box.querySelector('[data-spatial]').checked)for(const f of box.querySelectorAll('[data-geometry]'))if(f.value===''||!Number.isFinite(Number(f.value))||f.dataset.geometry==='size_mm'&&Number(f.value)<=0)return f;
+ }
+ return null;
+}
+function clearDraftError(){
+ for(const f of document.querySelectorAll('[data-export-error]')){f.removeAttribute('aria-invalid');f.removeAttribute('aria-errormessage');delete f.dataset.exportError;}
+}
+document.addEventListener('input',event=>{if(event.target.hasAttribute('data-export-error'))clearDraftError();});
 byId('export').onclick=()=>{
+  clearDraftError();
   try{
     remember();const draft=Plan.create(analysis,fingerprint,selected,planInput());
     const blob=new Blob([JSON.stringify(draft,null,2)+'\n'],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -307,12 +328,17 @@ byId('export').onclick=()=>{
     const incomplete=draft.massing.helper_regions.filter(h=>!h.geometry);
     byId('handoff-readiness').textContent=incomplete.length?`Last exported draft: ${incomplete.length} helper(s) without a box: ${incomplete.map(h=>h.name).join(', ')}. Enable their spatial controls and set centre/size, then save again before running the exporter.`:'Last exported draft: geometry inputs needed for export are present. The command still checks source fingerprints and helper geometry.';
     byId('handoff').open=true;
-  }catch(error){byId('export-status').textContent=error.message;}
+  }catch(error){
+    byId('export-status').textContent=error.message;
+    const field=invalidDraftField();
+    if(field){if(field.matches('input,textarea')){field.dataset.exportError='';field.setAttribute('aria-invalid','true');field.setAttribute('aria-errormessage','export-status');}field.focus();field.scrollIntoView({block:'center'});}
+  }
 };
 
 function restoreDraft(raw){
     const restored=Plan.restore(raw,analysis,fingerprint),input=restored.input;
     clearRemovalHistory();
+    clearDraftError();
     proposalOrigin=input.proposal||null;renderProposal();
     choose(restored.candidate);byId('rationale').value=input.rationale;decisions.set(restored.candidate.id,input.rationale);
     byId('walls').value=input.walls;byId('skin').value=input.skin_mm;byId('shell-only').checked=input.shell_only;byId('helper-panel').hidden=input.shell_only;
