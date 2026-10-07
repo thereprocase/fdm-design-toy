@@ -175,3 +175,69 @@ def check_bridge(occ, h, max_span_mm: float = 10.0, *, origin=(0, 0, 0), bed_lay
     msg = f"BRG-001 PASS: every unsupported region is anchored and spans <= {max_span_mm:.0f} mm (longest {longest})."
     return CheckResult("BRG-001", "M", Verdict.PASS, msg, provisional, metrics, [],
                        f"No layer region over air spans more than {max_span_mm:.0f} mm between anchors.", does_not)
+
+
+def bead_band_edges(min_bead_fraction: float = 0.85, max_beads: int = 8) -> list[float]:
+    """Arachne bead-count transitions in line widths: n -> n+1 beads at T = n + (2 mb - 1 if n odd else mb).
+
+    With mb = 0.85: 1.70, 2.85, 3.70, 4.85, ... (research/final/frodo.md 3.2, from the double-bead algebra).
+    """
+    mb = min_bead_fraction
+    return [n + ((2 * mb - 1) if n % 2 else mb) for n in range(1, max_beads)]
+
+
+def check_bead_bands(occ, h, *, line_width_mm: float = 0.42, margin_w: float = 0.1, min_bead_fraction: float = 0.85,
+                     max_beads: int = 8, min_length_mm: float = 2.0, origin=(0, 0, 0), provisional=True) -> CheckResult:
+    """WALL-002 (M): thin features whose thickness sits within margin_w line widths of an Arachne band edge.
+
+    Local thickness is measured on each layer along the feature's centreline (ridge of the in-plane
+    distance transform): t = 2 * EDT - pixel. Features thicker than max_beads line widths are interior
+    walls plus infill and are not checked. A taper crosses every edge briefly, so only centreline
+    stretches of at least min_length_mm near one edge are reported.
+    """
+    ndi = _ndi()
+    occ = np.asarray(occ, bool)
+    dx, dy, _ = h
+    px = min(dx, dy)
+    edges = np.array(bead_band_edges(min_bead_fraction, max_beads))
+    flagged = np.zeros_like(occ)
+    worst = {}
+    for k in range(occ.shape[2]):
+        layer = occ[:, :, k]
+        if not layer.any():
+            continue
+        edt = ndi.distance_transform_edt(np.pad(layer, 1), sampling=(dx, dy))[1:-1, 1:-1]
+        ridge = layer & (edt >= ndi.maximum_filter(edt, size=3) - 1e-9)
+        t_w = (2 * edt - px) / line_width_mm
+        near = np.min(np.abs(t_w[..., None] - edges), axis=-1) < margin_w
+        hit = ridge & near & (t_w < max_beads)
+        if not hit.any():
+            continue
+        lab, n = ndi.label(hit, structure=np.ones((3, 3), bool))
+        for i in range(1, n + 1):
+            comp = lab == i
+            length = comp.sum() * px
+            if length >= min_length_mm:
+                flagged[:, :, k] |= comp
+                tw = float(np.median(t_w[comp]))
+                edge = float(edges[np.argmin(np.abs(edges - tw))])
+                if edge not in worst or length > worst[edge]["length_mm"]:
+                    worst[edge] = {"length_mm": round(float(length), 2), "thickness_mm": round(tw * line_width_mm, 3),
+                                   "layer": k}
+    metrics = {"band_edges_w": edges.round(3).tolist(), "line_width_mm": line_width_mm, "margin_w": margin_w,
+               "min_length_mm": min_length_mm, "near_edge": {f"{e:.2f}w": v for e, v in sorted(worst.items())}}
+    does_not = ("The bead count Orca actually chose (T level: read the slice's widths), or features thicker than "
+                f"{max_beads} line widths; applies only when wall_generator = arachne.")
+    if flagged.any():
+        lo, hi = _box(flagged, h, origin)
+        metrics["bbox_print_mm"] = [lo, hi]
+        e, v = max(worst.items(), key=lambda kv: kv[1]["length_mm"])
+        msg = (f"WALL-002 FAIL: {v['length_mm']:.1f} mm of feature centreline is {v['thickness_mm']:.2f} mm thick, within "
+               f"{margin_w} line widths of the {e:.2f}w Arachne bead-count edge; print variation can flip the bead count "
+               f"there and change stiffness. Print-frame X {lo[0]:.1f}..{hi[0]:.1f}, Y {lo[1]:.1f}..{hi[1]:.1f}.")
+        return CheckResult("WALL-002", "M", Verdict.FAIL, msg, provisional, metrics,
+                           [f"move the thickness at least {margin_w * line_width_mm:.2f} mm away from {e * line_width_mm:.2f} mm",
+                            "or use wall_generator = classic for this part"], "", does_not)
+    msg = "WALL-002 PASS: no thin feature runs along an Arachne bead-count edge for 2 mm or more."
+    return CheckResult("WALL-002", "M", Verdict.PASS, msg, provisional, metrics, [],
+                       "Thin features stay clear of the bead-count edges, except brief crossings.", does_not)

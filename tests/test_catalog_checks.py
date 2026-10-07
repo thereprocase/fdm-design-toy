@@ -248,3 +248,25 @@ def test_proc_settings_from_gcode_and_3mf():
         z.writestr("Metadata/project_settings.config", json.dumps({"layer_height": "0.2", "wall_loops": "4"}))
     buf.seek(0)
     assert proc.check_settings({"layer_height": 0.2}, proc.settings_from_3mf(buf)).verdict is Verdict.PASS
+
+
+@pytest.mark.parametrize("thick,verdict", [(1.20, Verdict.FAIL), (1.00, Verdict.PASS), (1.55, Verdict.FAIL), (1.40, Verdict.PASS)])
+def test_wall002_strips_near_and_away_from_band_edges(thick, verdict):
+    """1.2 mm = 2.86w sits on the 2/3-bead edge (2.85w); 1.55 mm = 3.69w on 3/4 (3.70w)."""
+    px = (0.02, 0.02, 0.2)
+    n = round(thick / px[0])
+    occ = np.zeros((round(12 / px[0]), n + 40, 1), bool)
+    occ[round(1 / px[0]):round(11 / px[0]), 20:20 + n, 0] = True
+    r = layers.check_bead_bands(occ, px, line_width_mm=0.42)
+    assert r.verdict is verdict, r.message
+
+
+def test_wall002_taper_crosses_edges_briefly():
+    px = (0.02, 0.02, 0.2)
+    occ = np.zeros((600, 200, 1), bool)
+    for i in range(50, 550):                               # 10 mm long, 0.6 -> 2.4 mm thick
+        t = 0.6 + 1.8 * (i - 50) / 500
+        half = round(t / px[0] / 2)
+        occ[i, 100 - half:100 + half, 0] = True
+    assert layers.check_bead_bands(occ, px).verdict is Verdict.PASS
+    assert layers.bead_band_edges()[:4] == pytest.approx([1.70, 2.85, 3.70, 4.85])

@@ -40,6 +40,8 @@ are here. Why the counts differ is not recorded; nothing was dropped to match th
 | WALL-001 | M | per-layer opening with a 2w disc; corner residue within 0.5 r ignored | 0.6 mm fin fails, 1.2 mm fin passes, square block passes |
 | GAP-001 | M | the same on the void phase | 0.5 mm slot fails, 1.2 mm slot passes, L-corner passes |
 | BRG-001 | M | 2 × max distance from air-borne pixels to supported pixels of the same layer | 12 mm bridge fails at 10 mm, 8 mm passes, floating slab fails |
+| WALL-002 | M | per-layer centreline thickness (distance-transform ridge) against the Arachne bead-count edges | 1.2 mm (2.86w) and 1.55 mm strips fail; 1.0 and 1.4 mm and a 0.6–2.4 mm taper pass |
+| OVH-001 | T | support roads per region in the real slice, placement measured from the footprint | per-rung support on the ladder plate; matches every mesh-level island on the bracket |
 | PROC-001 | T | declared settings vs the G-code CONFIG_BLOCK or 3MF `project_settings.config` | synthetic config with one mismatch and one missing key |
 
 The wedge fixtures are generated in the tests from their defining angles rather than copied from the

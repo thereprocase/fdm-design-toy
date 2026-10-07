@@ -16,6 +16,33 @@ defaults:
     = arachne`
   asa: same
 evidence: U (Fillaprint algebra)
+parameters:
+  line_width_mm:
+    value: 0.42
+    unit: mm
+    tag: S
+    status: PROVISIONAL
+    note: outer wall width of the D9 / spool-rack profiles; use the profile's own value when bound
+  margin_w:
+    value: 0.1
+    unit: '1'
+    tag: U
+    status: PROVISIONAL
+    note: no thickness within +-0.1 w of a band edge (double-bead algebra)
+  min_bead_fraction:
+    value: 0.85
+    unit: '1'
+    tag: S
+    status: PROVISIONAL
+    note: Orca min_bead_width 85 %; sets the band edges 1.70, 2.85, 3.70, 4.85 w
+  min_length_mm:
+    value: 2.0
+    unit: mm
+    tag: H
+    status: PROVISIONAL
+    note: tapers cross every edge briefly; only centreline stretches this long are reported
+checkers:
+  M: fdmgen.catalog.checks.layers.check_bead_bands
 sources:
 - tag: U
   ref: research/final/frodo.md section 3.1 (master table)
