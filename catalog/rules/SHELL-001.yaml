@@ -6,7 +6,7 @@ protects: Thin skin on mid slopes
 convention:
   angle: slope_from_horizontal
 levels:
-- '-'
+- T
 enforcement:
 - constraint
 - post_check
@@ -16,6 +16,39 @@ defaults:
   petg: 'T: ≥ 2 solid beads normal to every surface after `ensure_vertical_shell_thickness`; M reports `t(α)` band'
   asa: same
 evidence: derived; threshold H
+parameters:
+  min_beads:
+    value: 2
+    unit: count
+    tag: H
+    status: PROVISIONAL
+    note: two solid beads along every surface normal; heuristic until a coupon says otherwise
+  bead_spacing_mm:
+    value: 0.38
+    unit: mm
+    tag: derived
+    status: PROVISIONAL
+    note: wall-to-wall flow spacing at w = 0.42, h = 0.2 (w - h (1 - pi/4)), not the nominal width
+  layer_mm:
+    value: 0.2
+    unit: mm
+    tag: derived
+    status: PROVISIONAL
+    note: the process layer height; the requirement along a normal at slope alpha is min_beads (spacing sin alpha + layer cos alpha)
+  thin_fraction_limit:
+    value: 0.01
+    unit: '1'
+    tag: policy
+    status: PROVISIONAL
+    note: fraction of sampled surface allowed below the requirement (edges and sampling noise)
+  outer_width_mm:
+    value: 0.42
+    unit: mm
+    tag: derived
+    status: PROVISIONAL
+    note: outer wall width; the first material may sit half of it (plus 1.5 cells) inside the surface
+checkers:
+  T: fdmgen.catalog.checks.shell.check_shell
 sources:
 - tag: derived
   ref: research/final/frodo.md section 3.1 (master table)

@@ -21,7 +21,7 @@ exists yet. What runs today:
 | Piece | What it does | Evidence so far |
 |---|---|---|
 | [`catalog/`](catalog/) | 35 printability rules as data (units and an evidence tag on every number), a calibration binding, a T0 PolyLite ASA material card | lints clean; known-answer tests per checker |
-| `fdmgen.catalog.checks` | checkers for overhang (grid, mesh and slicer toolpaths), wall width, gap width, bridges, slicer settings | cross-checked on a real bracket: every mesh-level overhang island is where Orca puts support |
+| `fdmgen.catalog.checks` | checkers for overhang (grid, mesh and slicer toolpaths), wall width, gap width, bridges, slicer settings, printed shell thickness from the slice (SHELL-001) | cross-checked on a real bracket: every mesh-level overhang island is where Orca puts support; the bracket's printed shell is at least 2 beads on 99.8 % of its surface |
 | `fdmgen.gcode` | Orca G-code reader: credited vs spent material, arcs, frame chain back to the model | reproduces the pinned credited volume of the archived slice exactly; matches all 24 archived references |
 | [`problems/`](problems/) | `problem.yaml` generated from pinned sources, with a lint that checks load resultants and cross-file consistency | load split matches the pinned reference to 1e-12 |
 | `fdmgen.orient` | ranked orientation table: stable poses, printability columns, inter-layer index F_L from a stress field | the existing hand-chosen bracket pose ranks first; uniaxial-bar known answers pass |
@@ -62,12 +62,14 @@ fdmgen coupons-evidence out/coupons/ladder-plate.json plate_1.gcode
 fdmgen massing draft.json --table TABLE.json --template ORCA_TEMPLATE.3mf --out out/massing
 #   slice out/massing/*-massing.3mf and *-massing-shell-only.3mf with the same Orca (arrange and orient off)
 fdmgen massing-evidence out/massing/*-massing.json project.gcode --baseline shell-only.gcode
+fdmgen shell-check project.gcode --table TABLE.json --pose POSE --cell 0.1    # SHELL-001 at T; heavy below 0.2 mm
+fdmgen orient-shell TABLE.json --receipt out/shell-check.json shell-only --out TABLE.shell.json
 ```
 
 Commands that read the example part need a checkout of its source repository next to this one
 (or `SPOOL_RACK_ROOT`); without it they say so and stop. Output goes to `out/`, which git ignores.
-`fdmgen massing` and `fdmgen massing-evidence` exit with status 2 when any check fails, so they can
-gate a script.
+`fdmgen massing`, `fdmgen massing-evidence` and `fdmgen shell-check` exit with status 2 when any check
+fails, so they can gate a script.
 
 ## Ground rules for work in this repo
 

@@ -112,3 +112,15 @@ def test_cli_receipt_pins_slice_part_pose_grid_and_method(tmp_path, monkeypatch)
     assert set(r["source_sha256"]) == {"fdmgen/catalog/checks/shell.py", "fdmgen/gcode/occupancy.py",
                                        "fdmgen/gcode/reader.py"}
     assert str(tmp_path) not in out.read_text(encoding="utf-8")       # no machine paths in the receipt
+
+
+def test_catalog_rule_parameters_match_the_checker_defaults():
+    """SHELL-001's YAML parameters are what check_shell uses; they must not drift apart."""
+    import inspect
+
+    from fdmgen.catalog import load_rules
+    rule = load_rules()["SHELL-001"]
+    sig = inspect.signature(check_shell).parameters
+    for name in ("min_beads", "bead_spacing_mm", "layer_mm", "thin_fraction_limit", "outer_width_mm"):
+        assert rule.parameters[name]["value"] == sig[name].default, name
+    assert rule.data["checkers"]["T"] == "fdmgen.catalog.checks.shell.check_shell"
