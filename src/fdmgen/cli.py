@@ -426,8 +426,6 @@ def _cmd_bridge_check(a) -> int:
     import hashlib
     import inspect
 
-    import numpy as np
-
     from .catalog.checks import toolpath
     from .gcode import extruder_offset, read_gcode, reader
     from .gcode import occupancy as occ
@@ -445,14 +443,13 @@ def _cmd_bridge_check(a) -> int:
         if isinstance(posed, str):
             print(f"ERROR   {posed}")
             return 1
-        table, cand, mesh_path, _, V = posed
+        table, cand, mesh_path, body, V = posed
         try:
-            shift = toolpath.locate(tp, V.min(axis=0)[:2], V.max(axis=0)[:2], off)
+            placed = toolpath.verify_pose(tp, V, body.faces, off)
         except ValueError as e:
             print(f"ERROR   this slice is not pose {a.pose}: {e}")
             return 1
-        pose_block = {**_pose_provenance(a, table, cand, mesh_path),
-                      "placement": {"shift_xy_mm": np.round(shift, 4).tolist(), "verified": "slice footprint vs posed mesh"}}
+        pose_block = {**_pose_provenance(a, table, cand, mesh_path), "placement": placed}
     r = toolpath.check_bridge_toolpath(tp, offset=off, cell_mm=a.cell)
     sig = {**inspect.signature(toolpath.bridge_spans).parameters, **inspect.signature(toolpath.check_bridge_toolpath).parameters}
     out = {"schema": "fdmgen/bridge-check@0.2", "result": r.to_dict(),
@@ -513,6 +510,12 @@ def _cmd_shell_check(a) -> int:
     raw = a.gcode.read_bytes()
     text = raw.decode("utf-8")
     tp = read_gcode(text)
+    from .catalog.checks.toolpath import verify_pose
+    try:
+        verify_pose(tp, V, body.faces, extruder_offset(text))
+    except ValueError as e:
+        print(f"ERROR   this slice is not pose {a.pose}: {e}")
+        return 1
     origin = grid_origin(V.min(axis=0))
     shape = tuple(int(x) for x in np.ceil((V.max(axis=0) + 1.0 - origin) / a.cell))
     vgrid, outside = deposit(tp, extruder_offset(text), np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5,

@@ -155,3 +155,38 @@ def check_bridge_toolpath(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), max_span_exte
     return CheckResult("BRG-001", "T", Verdict.PASS, msg, provisional, metrics, [],
                        "Every bridge road in the slice spans no more than the limits over the printed layer below.",
                        does_not)
+
+
+def verify_pose(tp: Toolpath, vertices, faces, offset=(0.0, 0.0, 0.0), *, bands=(0.1, 0.3, 0.5, 0.7, 0.9),
+                half_width: float = 0.21, tol_mm: float = 0.5) -> dict:
+    """Check that a slice is this pose of this body, not just the same footprint (a flip keeps the footprint).
+
+    At several heights the XY extent of the slice's non-support object roads (extruder offset restored,
+    placement shift removed) is compared with the posed mesh's cross-section there, less half a line width.
+    Raises ValueError on a mismatch; returns the shift, the per-height errors and what was verified (only the
+    footprint when no height band has both roads and a section, as for a slice of a few layers).
+    """
+    import trimesh
+    V = np.asarray(vertices, float)
+    shift = locate(tp, V.min(axis=0)[:2], V.max(axis=0)[:2], offset)
+    mesh = trimesh.Trimesh(V, faces, process=False)
+    m = tp.in_object & ~_is_support(tp)
+    top = tp.end[:, 2]
+    zmax = float(V[:, 2].max())
+    rows = []
+    for f in bands:
+        z = f * zmax
+        sec = mesh.section(plane_origin=(0, 0, z), plane_normal=(0, 0, 1))
+        layer = m & (top >= z) & (top - tp.height < z)
+        if sec is None or not layer.any():
+            continue
+        mlo, mhi = sec.bounds[0][:2] + half_width, sec.bounds[1][:2] - half_width
+        q = np.vstack([tp.start[layer], tp.end[layer]])[:, :2] + np.asarray(offset, float)[:2] - shift
+        err = float(max(np.abs(q.min(axis=0) - mlo).max(), np.abs(q.max(axis=0) - mhi).max()))
+        rows.append({"z_mm": round(z, 3), "max_error_mm": round(err, 3)})
+        if err > tol_mm:
+            raise ValueError(f"at z {z:.2f} mm the slice's extent differs from the posed body's section by {err:.2f} mm; "
+                             "this is not that pose of that body")
+    method = (f"slice extent vs posed body section at {len(rows)} heights" if rows
+              else "footprint only: no height band had both slice roads and a body section")
+    return {"shift_xy_mm": np.round(shift, 4).tolist(), "bands": rows, "tol_mm": tol_mm, "verified": method}
