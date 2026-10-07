@@ -77,9 +77,19 @@ byId('table-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=++tableRequest;
   try {
     const bytes=await file.arrayBuffer(), raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes), data=JSON.parse(raw);
-    if(!data.schema || !Array.isArray(data.candidates) || !data.candidates.length)throw Error('Expected an orientation table with a schema and candidates.');
+    if(!data || typeof data.schema!=='string' || !data.schema || !Array.isArray(data.candidates) || !data.candidates.length)throw Error('Expected an orientation table with a schema and candidates.');
+    if(data.mesh?.path!==undefined&&typeof data.mesh.path!=='string')throw Error('Mesh path must be text.');
+    for(const key of ['interfaces','keep_outs']){
+      if(data[key]===undefined)continue;
+      if(!Array.isArray(data[key]))throw Error(`${key} must be a list.`);
+      const seen=new Set();
+      for(const item of data[key]){
+        if(!item||typeof item.id!=='string'||!item.id||seen.has(item.id))throw Error(`${key} entries need unique nonempty ids.`);
+        seen.add(item.id);
+      }
+    }
     const ids=new Set();
-    for(const c of data.candidates){if(typeof c.id!=='string'||ids.has(c.id)||!c.columns||!Array.isArray(c.build_dir_design)||c.build_dir_design.length!==3||!c.build_dir_design.every(Number.isFinite))throw Error('Each candidate needs a unique id, columns and a finite build direction.');ids.add(c.id);}
+    for(const c of data.candidates){if(!c||typeof c.id!=='string'||!c.id||ids.has(c.id)||!c.columns||typeof c.columns!=='object'||Array.isArray(c.columns)||!Array.isArray(c.build_dir_design)||c.build_dir_design.length!==3||!c.build_dir_design.every(Number.isFinite))throw Error('Each candidate needs a unique id, columns and a finite build direction.');ids.add(c.id);}
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
     fingerprint=nextFingerprint;analysis=data;selected=null;meshRequest++;mesh=null;meshHash=null;viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
@@ -87,7 +97,7 @@ byId('table-file').onchange=async event=>{
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
     byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
-  }catch(error){if(request!==tableRequest)return;analysis=null;selected=null;byId('workspace').hidden=true;byId('status').textContent=`Could not load table: ${error.message}`;}
+  }catch(error){if(request!==tableRequest)return;byId('status').textContent=`Could not load table: ${error.message}${analysis?' The previous table and current draft remain available.':''}`;}
 };
 byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};
 function addHelper(region={}) {

@@ -356,3 +356,8 @@ form, including undoing a removal, clears the edit indication when it matches
 the checkpoint again. A failed export leaves the indication intact. This is
 a form comparison, not autosave or evidence that a downloaded file was retained
 on disk. Browser refresh still discards unsaved work.
+
+Rejected orientation-table imports leave the last accepted table and current
+draft available, including unsaved edits and helper-removal history. The import
+status explains the error; it does not switch the draft to the rejected file.
+A successfully loaded replacement table still starts a new plan.

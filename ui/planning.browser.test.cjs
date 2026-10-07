@@ -6,6 +6,9 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
  try {
   const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+  await page.locator('#table-file').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('null')});
+  await page.waitForFunction(()=>document.querySelector('#status').textContent.startsWith('Could not load table'));
+  assert(await page.locator('#workspace').isHidden());
   await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
   await page.getByRole('button',{name:'facet-00',exact:true}).click();
   await page.locator('#rationale').fill('Keep the seat load in the layer plane.');
@@ -59,7 +62,23 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   const malformed=Buffer.concat([Buffer.from('{"problem":"'),Buffer.from([0xff]),Buffer.from('"}')]);
   await page.locator('#table-file').setInputFiles({name:'malformed.json',mimeType:'application/json',buffer:malformed});
   await page.waitForFunction(()=>document.querySelector('#status').textContent.startsWith('Could not load table'));
-  assert(await page.locator('#workspace').isHidden());assert.match(await page.locator('#status').innerText(),/encoded data|UTF-8/i);
+  assert(await page.locator('#workspace').isVisible());assert.match(await page.locator('#status').innerText(),/encoded data|UTF-8/i);
+  assert.match(await page.locator('#status').innerText(),/previous table and current draft remain/);
+  assert.deepEqual(await download(),exact);
+  // Render-invalid metadata must be rejected before the current table is replaced.
+  await page.locator('#shell-only').uncheck();await page.locator('#add-helper').click();
+  await fill(page.locator('.helper-region').first(),'Recoverable helper');
+  await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();
+  for(const [change,message] of [[{mesh:{path:7}},'Mesh path'],[{interfaces:{}},'interfaces must'],[{keep_outs:[null]},'keep_outs entries']]){
+    const bad={...JSON.parse(plain),...change};
+    await page.locator('#table-file').setInputFiles({name:'bad-table.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(bad))});
+    await page.waitForFunction(message=>document.querySelector('#status').textContent.includes(message),message);
+    assert(await page.locator('#workspace').isVisible());assert(await page.locator('#undo-remove').isEnabled());
+    assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
+  }
+  await page.locator('#undo-remove').click();assert.equal(await page.locator('.helper-region').first().locator('[data-key="name"]').inputValue(),'Recoverable helper');
+  const recovered=await download();assert.equal(recovered.source.orientation_table_sha256,exact.source.orientation_table_sha256);
+  assert.equal(recovered.massing.helper_regions[0].name,'Recoverable helper');assert.deepEqual(errors,[]);
   console.log('PASS: multi-helper save/reopen, edits restored, exact round-trip, wrong-source rejection preserves draft, shell-only export, mobile, console');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
