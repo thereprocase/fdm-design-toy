@@ -1,0 +1,1 @@
+h=0.8 contrast=None cells=1,410,000 dof=4,352,292 nnz=344,075,508 asm=20.1s setup=85.0s solve=81.1s its=17 relres=8.1e-09 matvec=296ms opcx=1.15 mem_A=4.13GB
