@@ -131,6 +131,11 @@ class MGPCG:
         self.coarse_inv_dev = None
         if c.ndof > coarsest_dofs:
             A = None  # too large to invert: high-degree Chebyshev on the coarsest level (linear, symmetric)
+        elif c.Ef is not None:
+            # A hierarchy can stop at the on-the-fly first Galerkin level.
+            # Its dense solve must invert that operator, not mean-E rediscretisation.
+            Kc = galerkin.first_coarse(E, Ke, nx, ny, nz, dtype=np.float64)
+            A = galerkin.assemble_dense(Kc, c.nx, c.ny, c.nz, c.fixed_np)
         elif c.Kel_np is not None:
             A = galerkin.assemble_dense(c.Kel_np.astype(np.float64), c.nx, c.ny, c.nz, c.fixed_np)
         else:
