@@ -17,3 +17,6 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 #handoff { margin-top: 20px; overflow-wrap: anywhere; }
 #handoff summary { cursor: pointer; font-weight: 600; }
 #handoff pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; background: #edf2e9; padding: 12px; }
+
+#preview-helper { display: block; width: 100%; margin-top: 6px; padding: 8px; font: inherit; }
+.helper-region.active-helper { outline: 2px solid #175caa; outline-offset: 2px; }

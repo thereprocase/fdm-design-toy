@@ -32,6 +32,15 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.equal(draft.massing.helper_regions[0].geometry.frame,'design');assert.equal(draft.massing.helper_regions[0].geometry_status,'sketch');assert.deepEqual(draft.massing.helper_regions[0].keep_clear.interface_ids,['rear_seat']);
   await page.locator('#draft-file').setInputFiles({name:'draft.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(draft))});await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>Number(f.value))),draft.massing.helper_regions[0].geometry.center_mm);
+  await page.locator('#add-helper').click();const second=page.locator('.helper-region').last();
+  await second.locator('[data-key="name"]').fill('Second helper');await second.locator('[data-spatial]').check();
+  assert(await second.evaluate(e=>e.classList.contains('active-helper')));assert.match(await page.locator('#active-helper-status').innerText(),/Second helper/);
+  assert(await page.evaluate(()=>viewer.regions.filter(r=>r.active).length===1&&viewer.regions.find(r=>r.active).name==='Second helper'));
+  const firstId=await region.getAttribute('data-id');await page.locator('#preview-helper').selectOption(firstId);
+  assert(await region.locator('[data-key="name"]').evaluate(e=>e===document.activeElement));assert(await region.evaluate(e=>e.classList.contains('active-helper')));
+  await region.getByRole('button',{name:'Place centre on part'}).click();assert(await page.evaluate(()=>!!viewer.onPick));
+  await second.locator('[data-key="name"]').focus();assert(await page.evaluate(()=>viewer.onPick===null));
+  await second.getByRole('button',{name:'Remove region'}).click();assert.equal(await page.locator('#preview-helper').inputValue(),'');
   if(process.env.FDM_PREVIEW_SCREENSHOT)await page.screenshot({path:process.env.FDM_PREVIEW_SCREENSHOT,fullPage:false});
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
   console.log('PASS spatial click placement, design-frame persistence across poses, size screen, interface refs, sketch export/reopen, mobile, console');

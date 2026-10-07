@@ -79,12 +79,12 @@ class PartViewer {
       const light=.5+.5*Math.abs((.25*n[0]-.45*n[1]+.86*n[2])/norm);faces.push({p,depth:p.reduce((s,p)=>s+p[2],0),light});}
     faces.sort((a,b)=>a.depth-b.depth);
     for(const {p,light} of faces){ctx.beginPath();p.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=`hsl(151 24% ${28+light*30}%)`;ctx.fill();}
-    for(const region of this.regions){
+    for(const region of [...this.regions].sort((a,b)=>Number(!!a.active)-Number(!!b.active))){
       const corners=transformMesh(boxCorners(region.geometry),this.R,this.t),points=[];
       for(let i=0;i<24;i+=3)points.push(project(corners[i],corners[i+1],corners[i+2]));
-      ctx.strokeStyle='#ad501c';ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.beginPath();
+      ctx.strokeStyle=region.active?'#175caa':'#ad501c';ctx.lineWidth=region.active?3:2;ctx.setLineDash(region.active?[]:[5,3]);ctx.beginPath();
       for(let i=0;i<8;i++)for(let a=0;a<3;a++){const j=i^(1<<a);if(j>i){ctx.moveTo(points[i][0],points[i][1]);ctx.lineTo(points[j][0],points[j][1]);}}
-      ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';ctx.fillStyle='#84360f';ctx.fillText(region.name||'Planning region',points[7][0]+5,points[7][1]-5);
+      ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';ctx.fillStyle=region.active?'#174d89':'#84360f';ctx.fillText((region.active?'Editing: ':'')+(region.name||'Planning region'),points[7][0]+5,points[7][1]-5);
     }
     ctx.fillStyle='#344d40';ctx.font='12px system-ui';ctx.fillText('Print Z ↑ · ground at Z = 0 · dimensions in mm',14,height-15);
   }

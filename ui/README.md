@@ -228,3 +228,9 @@ The handoff uses session storage in that tab and is removed after restoration
 or cancellation. Browsers that block this storage show manual reopen
 instructions. Only draft intent is transferred; previous check results do not
 become evidence for edited geometry. Save and check the revised draft again.
+
+The preview's **Helper to edit** selector jumps to a named region. Focusing
+any helper field highlights that box with a solid blue outline and an
+“Editing” label; other boxes remain dashed orange. Switching helpers cancels
+an unfinished surface-placement action so a later click cannot move the old
+region. These are still unclipped planning boxes, not credited material.

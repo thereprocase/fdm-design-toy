@@ -110,13 +110,14 @@ function addHelper(region={}) {
   const place=text('button','Place centre on part',spatial);place.type='button';place.className='secondary';
   place.onclick=()=>{
     if(!mesh||!selected){byId('placement-status').textContent='Load a matching mesh and choose a pose first.';byId('part-view').scrollIntoView({block:'center'});return;}
-    activeHelper=box;byId('return-helper').hidden=false;
+    setActiveHelper(box);byId('return-helper').hidden=false;
     byId('placement-status').textContent='Click a surface to place the region centre. Orbit first if needed.';byId('part-view').style.cursor='crosshair';byId('part-view').scrollIntoView({block:'center'});
     viewer.onPick=point=>{if(!point){byId('placement-status').textContent='No surface at that point. Click the part.';return;}for(let a=0;a<3;a++)box.querySelector(`[data-geometry="center_mm"][data-axis="${a}"]`).value=point[a].toFixed(3);viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='Region centre placed on the surface; edit its size or move the centre inward as needed.';updateRegions();};
   };
   const z=text('p','',spatial);z.className='hint';z.dataset.printZ='';
   toggle.onchange=()=>{spatial.hidden=!toggle.checked;updateRegions();};
   box.addEventListener('input',updateRegions);
+  box.addEventListener('focusin',()=>setActiveHelper(box));
   const remove=text('button','Remove region',box);remove.type='button';remove.className='secondary';remove.onclick=()=>{box.remove();if(activeHelper===box){activeHelper=null;byId('return-helper').hidden=true;}viewer.onPick=null;byId('part-view').style.cursor='';updateRegions();};
   byId('helper-regions').append(box);updateRegions();
 }
@@ -135,8 +136,9 @@ function planInput(){return {walls:Number(byId('walls').value),skin_mm:Number(by
  helper_regions:Array.from(byId('helper-regions').children,regionInput)};}
 function updateRegions(){
  const valid=[],warnings=byId('region-warnings');warnings.replaceChildren();
+ refreshHelperSelector();
  if(!byId('shell-only').checked)for(const box of byId('helper-regions').children){const r=regionInput(box),z=box.querySelector('[data-print-z]');z.textContent='';if(!r.geometry)continue;
-  try{Plan.geometry(r.geometry);valid.push(r);
+  try{Plan.geometry(r.geometry);r.active=box===activeHelper;valid.push(r);
     if(mesh&&meshBounds&&[0,1,2].some(k=>r.geometry.center_mm[k]+r.geometry.size_mm[k]/2<meshBounds.min[k]||r.geometry.center_mm[k]-r.geometry.size_mm[k]/2>meshBounds.max[k]))text('li',`${r.name||'Region'}: box lies outside the part bounds and cannot bond to the body.`,warnings);
     if(r.geometry.size_mm.some(x=>x<.84))text('li',`${r.name||'Region'}: an edge is below the 0.84 mm planning screen (2 × assumed 0.42 mm line width).`,warnings);
     if(selected){const corners=transformMesh(boxCorners(r.geometry),selected.R_design_to_print,selected.t_mm),zs=Array.from(corners).filter((_,i)=>i%3===2);z.textContent=`Print Z extent: ${Math.min(...zs).toFixed(3)}–${Math.max(...zs).toFixed(3)} mm. Layer snapping and body bonding remain unchecked.`;}
@@ -201,3 +203,23 @@ if(location.hash==='#review-edit'){
   byId('review-transfer-status').textContent='Load the original orientation table to restore the reviewed draft and focus its helper. Its exact fingerprint must match. The saved draft and review results remain unchanged.';
  }catch(error){pendingReview=null;byId('review-transfer-status').textContent=error.message+' Load the original table and reopen the saved draft manually.';}
 }
+
+function setActiveHelper(box){
+ if(activeHelper!==box){viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='';}
+ activeHelper=box;byId('return-helper').hidden=!box;updateRegions();
+}
+function refreshHelperSelector(){
+ if(activeHelper&&!activeHelper.isConnected)activeHelper=null;
+ const select=byId('preview-helper');select.replaceChildren();
+ const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose a helper';select.append(placeholder);
+ const boxes=[...byId('helper-regions').children],shellOnly=byId('shell-only').checked;
+ boxes.forEach((box,i)=>{const option=document.createElement('option'),name=box.querySelector('[data-key="name"]').value.trim()||`Helper ${i+1}`;option.value=box.dataset.id;option.textContent=name+(box.querySelector('[data-spatial]').checked?'':' — no box yet');select.append(option);box.classList.toggle('active-helper',box===activeHelper&&!shellOnly);});
+ byId('return-helper').hidden=shellOnly||!activeHelper;
+ select.disabled=shellOnly||!boxes.length;select.value=!shellOnly&&activeHelper?activeHelper.dataset.id:'';
+ byId('active-helper-status').textContent=shellOnly?'Shell-only draft: helper boxes are excluded.':activeHelper?`Editing ${activeHelper.querySelector('[data-key="name"]').value.trim()||'unnamed helper'}. ${activeHelper.querySelector('[data-spatial]').checked?'Its box has the solid blue outline; other boxes are dashed orange.':'Enable its spatial box to preview the region.'}`:'Focus a helper field to highlight its box.';
+}
+byId('preview-helper').onchange=()=>{
+ const box=[...byId('helper-regions').children].find(b=>b.dataset.id===byId('preview-helper').value);
+ setActiveHelper(box||null);
+ if(box){box.scrollIntoView({block:'center'});box.querySelector('[data-key="name"]').focus({preventScroll:true});}
+};
