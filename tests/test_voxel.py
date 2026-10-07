@@ -46,3 +46,12 @@ def test_open_mesh_rejected():
     mesh = trimesh.creation.box(); mesh.update_faces(np.arange(len(mesh.faces) - 1))
     with pytest.raises(ValueError, match="watertight"):
         voxelise(mesh)
+
+
+def test_centres_on_horizontal_edges_are_outside():
+    from fdmgen.geom.voxel import _scanline
+    segments = np.array([[[0, 0], [2, 0]], [[2, 0], [2, 2]],
+                         [[2, 2], [0, 2]], [[0, 2], [0, 0]]], float)
+    filled = _scanline(segments, np.array([0, 1, 2]), np.array([0, 1, 2]))
+    expected = np.zeros((3, 3), bool); expected[1, 1] = True
+    assert np.array_equal(filled, expected)

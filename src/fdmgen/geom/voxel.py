@@ -98,6 +98,7 @@ def _scanline(segments, xs, ys):
     if not len(segments):
         return out
     a, b = segments[:, 0], segments[:, 1]
+    horizontal = segments[a[:, 1] == b[:, 1]]
     dy = b[:, 1] - a[:, 1]
     nonhorizontal = dy != 0
     a, b, dy = a[nonhorizontal], b[nonhorizontal], dy[nonhorizontal]
@@ -111,4 +112,10 @@ def _scanline(segments, xs, ys):
             left = np.searchsorted(row, xs, side="left")
             right = np.searchsorted(row, xs, side="right")
             out[:, start + j] = (left % 2 == 1) & (left == right)
+    # Half-open crossings alone include the lower edge of horizontal walls.
+    # Strict centre-inside semantics exclude those boundary centres as well.
+    for edge in horizontal:
+        rows = np.flatnonzero(np.isclose(ys, edge[0, 1], rtol=0, atol=1e-12))
+        cols = np.flatnonzero((xs >= edge[:, 0].min()) & (xs <= edge[:, 0].max()))
+        out[np.ix_(cols, rows)] = False
     return out
