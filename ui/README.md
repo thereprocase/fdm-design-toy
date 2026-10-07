@@ -27,8 +27,21 @@ Planning is distinct from validated geometry. Helper intent does not create a
 modifier mesh or establish bond, overhang, load-path or strength compliance.
 The interface must show that distinction at the choice and export steps.
 
-Current limits: no geometry viewer or helper geometry editor yet. The table
-consumer has been exercised with synthetic schema-shaped data in Chromium
-(desktop and 390 px mobile): import, selection, unchecked metrics, feasible
-filter, exported source hash, invalid input, and no browser console errors.
-Integration with a generated real orientation table is still required.
+The viewer accepts ASCII or binary STL and checks its SHA256 against the table
+before rendering. It applies the supplied design-to-print matrix and translation;
+mesh cell indices and installed-frame stresses are never treated as print coordinates.
+Drag or use arrow keys to orbit, or choose a top view. The ground rectangle is an
+orientation cue, not a printer bed-fit check. Shading is not stress or support evidence.
+
+Current limits: no helper geometry editor yet. Planning exports are drafts. The
+viewer has been exercised with the real bracket table and STL in Chromium, including
+wrong-mesh rejection and desktop/mobile layout. Synthetic interaction checks cover
+selection, unchecked metrics, feasible filtering, exported source hash and invalid
+input. Run `node --test ui/viewer.test.cjs` for parser/transform known-answer checks.
+
+Optional Chromium integration: install `playwright` into a temporary tools
+directory, expose its `node_modules` through `NODE_PATH`, set `FDM_PREVIEW_MESH`
+to the matching `body-mounted.stl`, and run `node ui/browser.test.cjs` from the
+repository root. `CHROMIUM_PATH` defaults to `/usr/bin/chromium`. The test checks
+the committed real table, matched/mismatched meshes, visible FAIL verdicts,
+camera controls and mobile overflow. It does not verify physical correctness.
