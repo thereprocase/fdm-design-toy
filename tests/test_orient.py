@@ -227,3 +227,17 @@ def test_toolpath_columns_from_a_pose_slice(tmp_path):
     other = next(o for o in t["candidates"] if abs(o["columns"]["height_mm"]["value"] - 10.0) > 1)   # different footprint
     with pytest.raises(ValueError, match="does not match the design"):
         add_toolpath_columns(t, v, {other["id"]: p})             # a slice of a different pose is refused
+
+
+def test_with_keep_outs_table_contract():
+    """Additive: the original fixture stays pinned for historical drafts; this one adds keep_outs."""
+    import json
+    t = json.loads((FIXTURE.parent / "spool-rack-g2-ef.with-keep-outs.orientation-table.json").read_text())
+    ko = {k["id"]: k for k in t["keep_outs"]}
+    assert set(ko) == {"crown_moulding", "spool_slide"} and all(k["frame"] == "installed" for k in ko.values())
+    assert ko["crown_moulding"]["type"] == "box" and ko["crown_moulding"]["max_mm"][:2] == [25.4, -32.0]
+    s = ko["spool_slide"]
+    assert s["type"] == "flange_sweep" and s["clearance_mm"] == 3.5 and s["spool_diameter_mm"] == [180.0, 220.0]
+    assert set(s["rod_interfaces"]) <= {i["id"] for i in t["interfaces"]} and "derivation" in s
+    old = json.loads(FIXTURE.read_text())
+    assert "keep_outs" not in old and [c["id"] for c in old["candidates"]] == [c["id"] for c in t["candidates"]]

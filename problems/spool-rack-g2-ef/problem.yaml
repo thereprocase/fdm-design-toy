@@ -103,12 +103,24 @@ keep_outs:
   structural_support: none
   source: designs/rev-g2/shape-seeds/moulding-clearance.json
 - id: spool_slide
-  type: not_derived
+  type: flange_sweep
   frame: installed
+  axis: Z
+  rod_interfaces:
+  - rear_seat
+  - front_seat
+  spool_diameter_mm:
+  - 180.0
+  - 220.0
+  rail_radius_mm:
+  - 12.4
+  - 12.7
+  clearance_mm: 3.5
   rule: "Preserve axial flange sliding for 180\u2013220 mm spools, with at least 3.5 mm nominal clearance over the\
     \ effective rail-radius interval 12.4\u201312.7 mm."
   source: designs/rev-g2/INTERFACE-CONTRACT.md
-  note: the flange sweep envelope is not derived from the contract text yet; checks report NOT_CHECKED
+  derivation: spool centre R + r from both rod axes, above the rods (the interface_loads model); keep-out = discs
+    of radius R + clearance about it, swept along Z
 load_cases:
 - id: full
   frame: installed

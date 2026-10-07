@@ -151,7 +151,7 @@ def export_plan(plan, body_vertices, body_faces, template: bytes, capabilities: 
             from ..catalog.checks.keepout import check_boxes
             bv = np.asarray(body_vertices, float)
             boxes = {h.id: (h.center_mm - h.size_mm / 2, h.center_mm + h.size_mm / 2) for h in plan.helpers}
-            checks += check_boxes(boxes, keep_outs, bv.min(axis=0), bv.max(axis=0))
+            checks += check_boxes(boxes, keep_outs, bv.min(axis=0), bv.max(axis=0), interfaces=interfaces)
     report = {
         "schema": "fdmgen/massing-export@0.1",
         "plan": {"draft_sha256": plan.draft_sha256, "table_sha256": plan.table_sha256, "mesh_sha256": plan.mesh_sha256,

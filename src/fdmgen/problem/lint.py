@@ -168,7 +168,7 @@ def _check_keep_outs(p: dict, out: list[Finding]) -> None:
     except Exception as e:  # noqa: BLE001 - any corrupt source file is reported as a finding, never a crash
         out.append(Finding("warning", "keep_outs", f"the body mesh {body['path']} could not be read ({e}); keep-outs were NOT checked"))
         return
-    for r in check_body(mesh.vertices, mesh.faces, kos, frame=body.get("frame", "installed")):
+    for r in check_body(mesh.vertices, mesh.faces, kos, frame=body.get("frame", "installed"), interfaces=p.get("interfaces")):
         if r.verdict.value == "FAIL":
             out.append(Finding("error", f"keep_outs ({r.metrics['keep_out_id']})", r.message))
         elif r.verdict.value == "NOT_CHECKED":

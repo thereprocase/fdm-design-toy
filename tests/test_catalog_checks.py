@@ -298,3 +298,26 @@ def test_keepout_body_contact_is_not_intrusion():
     b = check_boxes({"h1": (np.array([9.0, 0, 0]), np.array([12.0, 3, 5])), "h2": (np.array([0.0, 5, 0]), np.array([2.0, 7, 5]))},
                     [entering], v.min(axis=0), v.max(axis=0))
     assert {x.metrics["helper_id"]: x.verdict for x in b} == {"h1": Verdict.FAIL, "h2": Verdict.PASS}
+
+
+def test_flange_sweep_matches_the_load_model_and_catches_intrusions():
+    from fdmgen.adapters import spool_bracket as sb
+    from fdmgen.catalog.checks.keepout import check_body, check_boxes, flange_discs
+    ifs = [{"id": k, "center_xy_mm": list(v)} for k, v in sb.ROD_AXES_I.items()]
+    ko = {"id": "spool_slide", "type": "flange_sweep", "frame": "installed", "rod_interfaces": list(sb.ROD_AXES_I),
+          "spool_diameter_mm": [180.0, 220.0], "rail_radius_mm": [12.4, 12.7], "clearance_mm": 3.5, "rule": "test"}
+    cs, rs = flange_discs(ko, ifs)
+    span = np.hypot(100, 12)
+    rise = np.sqrt((90 + 12.4) ** 2 - span ** 2 / 4)                       # interface_loads: 180 mm spool, 12.4 rail
+    assert cs[0] == pytest.approx([140 - 12 * rise / span, 6 + 100 * rise / span])
+    assert rs[0] == pytest.approx(93.5) and len(cs) == 42
+    c = cs[0]
+    inside = np.array([[c[0] - 1, c[1], 0], [c[0] + 1, c[1], 0], [c[0], c[1] + 1, 5]])     # near the spool centre
+    far = np.array([[0, -50, 0], [5, -50, 0], [0, -45, 5]])
+    v = np.vstack([inside, far])
+    r = check_body(v, np.array([[0, 1, 2], [3, 4, 5]]), [ko], interfaces=ifs)
+    assert r[0].verdict is Verdict.FAIL and r[0].metrics["triangles_inside"] == 1
+    assert check_body(far, np.array([[0, 1, 2]]), [ko], interfaces=ifs)[0].verdict is Verdict.PASS
+    b = check_boxes({"in": (np.array([c[0] - 1, c[1] - 1, 0]), np.array([c[0] + 1, c[1] + 1, 5])),
+                     "out": (np.array([0, -60, 0]), np.array([5, -50, 5]))}, [ko], v.min(axis=0), v.max(axis=0), interfaces=ifs)
+    assert {x.metrics["helper_id"]: x.verdict for x in b} == {"in": Verdict.FAIL, "out": Verdict.PASS}

@@ -36,10 +36,28 @@ def keep_outs(root: Path) -> list[dict]:
         {"id": "crown_moulding", "type": "box", "frame": "installed",
          "min_mm": [float(x0), None, None], "max_mm": [float(x1), float(m["locating_underside_Y_mm"]), None],
          "rule": m["below_moulding_top_rule"], "structural_support": "none", "source": MOULDING},
-        {"id": "spool_slide", "type": "not_derived", "frame": "installed",
-         "rule": spool.group(1).strip() if spool else None, "source": CONTRACT,
-         "note": "the flange sweep envelope is not derived from the contract text yet; checks report NOT_CHECKED"},
+        _spool_slide(spool.group(1).strip() if spool else None),
     ]
+
+
+def _spool_slide(rule: str | None) -> dict:
+    """The flange sweep from the contract sentence, using the adapter's spool-on-two-rails geometry."""
+    import re
+    if not rule:
+        return {"id": "spool_slide", "type": "not_derived", "frame": "installed", "source": CONTRACT,
+                "note": "the contract row was not found; checks report NOT_CHECKED"}
+    d = re.search(r"(\d+)\D(\d+) mm spools", rule)
+    c = re.search(r"at least ([\d.]+) mm", rule)
+    r = re.search(r"interval ([\d.]+)\D([\d.]+) mm", rule)
+    if not (d and c and r):
+        return {"id": "spool_slide", "type": "not_derived", "frame": "installed", "rule": rule, "source": CONTRACT,
+                "note": "spool sizes, clearance or rail radii could not be read from the rule; checks report NOT_CHECKED"}
+    return {"id": "spool_slide", "type": "flange_sweep", "frame": "installed", "axis": "Z",
+            "rod_interfaces": list(sb.ROD_AXES_I), "spool_diameter_mm": [float(d.group(1)), float(d.group(2))],
+            "rail_radius_mm": [float(r.group(1)), float(r.group(2))], "clearance_mm": float(c.group(1)),
+            "rule": rule, "source": CONTRACT,
+            "derivation": ("spool centre R + r from both rod axes, above the rods (the interface_loads model); keep-out = "
+                           "discs of radius R + clearance about it, swept along Z")}
 
 
 def _forces(total_N: float) -> list[dict]:

@@ -44,13 +44,72 @@ def triangles_overlap_box(tri: np.ndarray, lo, hi) -> np.ndarray:
     return hit
 
 
-def check_body(vertices, faces, keep_outs, *, tol_mm: float = 1e-3, frame: str = "installed") -> list[CheckResult]:
+def flange_discs(ko: dict, interfaces, step_mm: float = 1.0):
+    """(centres (n, 2), radii (n,)) of the flange discs sampled over spool radius (step) and both rail-radius ends."""
+    axes = {i["id"]: np.asarray(i["center_xy_mm"], float) for i in interfaces or [] if "center_xy_mm" in i}
+    p0, p1 = (axes[k] for k in ko["rod_interfaces"])
+    span = float(np.linalg.norm(p1 - p0))
+    t = (p1 - p0) / span
+    n = np.array([-t[1], t[0]])
+    n = n if n[1] > 0 else -n                                  # the spool sits above the rods (+Y)
+    mid = (p0 + p1) / 2
+    cs, rs = [], []
+    for R in np.arange(ko["spool_diameter_mm"][0] / 2, ko["spool_diameter_mm"][1] / 2 + 1e-9, step_mm):
+        for r in ko["rail_radius_mm"]:
+            cs.append(mid + n * np.sqrt((R + r) ** 2 - span ** 2 / 4))
+            rs.append(R + ko["clearance_mm"])
+    return np.array(cs), np.array(rs)
+
+
+def _point_triangle_distance_2d(c, tri2):
+    """Distance from point c to each 2D triangle (n, 3, 2); 0 when c is inside."""
+    a, b, d = tri2[:, 0], tri2[:, 1], tri2[:, 2]
+    def seg(p, q):
+        pq = q - p
+        t = np.clip(np.einsum("ij,ij->i", c - p, pq) / np.maximum(np.einsum("ij,ij->i", pq, pq), 1e-30), 0, 1)
+        return np.linalg.norm(p + t[:, None] * pq - c, axis=1)
+    dist = np.minimum(np.minimum(seg(a, b), seg(b, d)), seg(d, a))
+    def cross(p, q):
+        return (q[:, 0] - p[:, 0]) * (c[1] - p[:, 1]) - (q[:, 1] - p[:, 1]) * (c[0] - p[:, 0])
+    s1, s2, s3 = cross(a, b), cross(b, d), cross(d, a)
+    inside = ((s1 >= 0) & (s2 >= 0) & (s3 >= 0)) | ((s1 <= 0) & (s2 <= 0) & (s3 <= 0))
+    return np.where(inside, 0.0, dist)
+
+
+def check_body(vertices, faces, keep_outs, *, tol_mm: float = 1e-3, frame: str = "installed",
+               interfaces=None) -> list[CheckResult]:
     """One result per keep-out: does the body mesh (in `frame`) enter it?"""
     v = np.asarray(vertices, float)
     tri = v[np.asarray(faces)]
     out = []
     for ko in keep_outs or []:
         m = {"keep_out_id": ko["id"]}
+        if ko.get("type") == "flange_sweep" and ko.get("frame") == frame and interfaces:
+            cs, rs = flange_discs(ko, interfaces)
+            tri2 = tri[:, :, :2]
+            worst, hit_any = None, np.zeros(len(tri), bool)
+            for c, r in zip(cs, rs):
+                dd = _point_triangle_distance_2d(c, tri2)
+                hit = dd < r - tol_mm
+                hit_any |= hit
+                if hit.any() and (worst is None or (r - dd[hit].min()) > worst[0]):
+                    worst = (float(r - dd[hit].min()), float(r), c.round(3).tolist())
+            m.update(triangles_inside=int(hit_any.sum()), sampled_spools=len(cs) // 2, sample_step_mm=1.0)
+            if hit_any.any():
+                p = tri[hit_any].reshape(-1, 3)
+                m.update(bbox_mm=[p.min(axis=0).round(3).tolist(), p.max(axis=0).round(3).tolist()],
+                         max_intrusion_mm=round(worst[0], 3))
+                out.append(CheckResult("KEEP-OUT", "M", Verdict.FAIL,
+                                       f"KEEP-OUT FAIL: {hit_any.sum()} body triangles come within the {ko['clearance_mm']} mm "
+                                       f"flange clearance of {ko['id']} (deepest {worst[0]:.2f} mm, sampled spool radii at 1 mm "
+                                       f"steps). {ko['rule']}", True, m, ["cut material back from the flange sweep"]))
+            else:
+                out.append(CheckResult("KEEP-OUT", "M", Verdict.PASS,
+                                       f"KEEP-OUT PASS (sampled): no body triangle comes within the flange clearance of "
+                                       f"{ko['id']} for spool radii sampled at 1 mm steps.", True, m, [],
+                                       f"The body stays clear of the sampled flange sweep of {ko['id']}.",
+                                       "Spool sizes between samples, real spool tolerances, or sliding in practice."))
+            continue
         if ko.get("type") != "box" or ko.get("frame") != frame:
             out.append(CheckResult("KEEP-OUT", "M", Verdict.NOT_CHECKED,
                                    f"KEEP-OUT NOT_CHECKED: {ko['id']} has no box geometry in the {frame} frame "
@@ -73,12 +132,23 @@ def check_body(vertices, faces, keep_outs, *, tol_mm: float = 1e-3, frame: str =
     return out
 
 
-def check_boxes(boxes: dict, keep_outs, extent_lo, extent_hi, *, tol_mm: float = 1e-3) -> list[CheckResult]:
+def check_boxes(boxes: dict, keep_outs, extent_lo, extent_hi, *, tol_mm: float = 1e-3,
+                interfaces=None) -> list[CheckResult]:
     """One result per (box id, keep-out): axis-aligned boxes {id: (lo, hi)} in the keep-outs' frame."""
     out = []
     for bid, (blo, bhi) in boxes.items():
         for ko in keep_outs or []:
             m = {"helper_id": bid, "keep_out_id": ko["id"]}
+            if ko.get("type") == "flange_sweep" and interfaces:
+                cs, rs = flange_discs(ko, interfaces)
+                d = np.linalg.norm(np.maximum(0.0, np.maximum(np.asarray(blo)[:2] - cs, cs - np.asarray(bhi)[:2])), axis=1)
+                bad = d < rs - tol_mm
+                m.update(sampled_spools=len(cs) // 2, sample_step_mm=1.0)
+                out.append(CheckResult("KEEP-OUT", "M", Verdict.FAIL if bad.any() else Verdict.PASS,
+                                       (f"KEEP-OUT FAIL: helper {bid} comes within the flange clearance of {ko['id']}." if bad.any()
+                                        else f"KEEP-OUT PASS (sampled): helper {bid} stays clear of the flange sweep of {ko['id']}."),
+                                       True, m, [f"move helper {bid} away from the spool flanges"] if bad.any() else []))
+                continue
             if ko.get("type") != "box":
                 out.append(CheckResult("KEEP-OUT", "M", Verdict.NOT_CHECKED,
                                        f"KEEP-OUT NOT_CHECKED: helper {bid} vs {ko['id']}: no keep-out geometry.", True, m))

@@ -92,7 +92,7 @@ def _cmd_orient(a) -> int:
                           "card_corner": "design", "fracture_factor": sf,
                           "stress": None if stress is None else {"path": Path(a.stress).name, **(stress.meta or {})}}}
     table = build_table(mesh.vertices, mesh.faces, card=card, stress=stress, sf=sf, sphere=a.sphere,
-                        voxel=a.voxel, provenance=prov, interfaces=prob.get("interfaces"))
+                        voxel=a.voxel, provenance=prov, interfaces=prob.get("interfaces"), keep_outs=prob.get("keep_outs"))
     if a.gcode:
         from .orient.table import add_toolpath_columns
         pairs = dict(g.split("=", 1) for g in a.gcode)
@@ -194,7 +194,9 @@ def _cmd_massing(a) -> int:
     try:
         import yaml
         prob_file = Path(__file__).resolve().parents[2] / "problems" / str(table.get("problem")) / "problem.yaml"
-        keep_outs = yaml.safe_load(prob_file.read_text(encoding="utf-8")).get("keep_outs") if prob_file.is_file() else None
+        keep_outs = table.get("keep_outs")                       # the pinned table first, then the problem file
+        if keep_outs is None and prob_file.is_file():
+            keep_outs = yaml.safe_load(prob_file.read_text(encoding="utf-8")).get("keep_outs")
         data, report = export_plan(plan, body.vertices, body.faces, template, load_capabilities(a.capabilities),
                                    interfaces=table.get("interfaces"), keep_outs=keep_outs)
     except ValueError as e:

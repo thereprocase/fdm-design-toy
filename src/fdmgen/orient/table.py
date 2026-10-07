@@ -30,7 +30,7 @@ def _col(value, unit, rule, level, verdict=None, provisional=True, fidelity="geo
 
 def build_table(vertices, faces, *, card=None, stress: StressField | None = None, sf: float = 4.0,
                 sphere: int = 0, user=(), voxel: bool = False, provenance: dict | None = None,
-                interfaces=None) -> dict:
+                interfaces=None, keep_outs=None) -> dict:
     rules = load_rules()
     bed = _param_values(rules["BED-001"])
     stab = _param_values(rules["BED-002"])
@@ -119,6 +119,8 @@ def build_table(vertices, faces, *, card=None, stress: StressField | None = None
         "interfaces": [{k: i[k] for k in ("id", "type", "axis", "role", "support", "roof_variant", "center_xy_mm",
                                           "center_yz_mm", "d_mm", "seat_radius_mm") if k in i}
                        for i in (interfaces or [])],
+        **({"keep_outs": [dict(ko) for ko in keep_outs]}
+           if keep_outs is not None else {}),
         "feasible_scope": ("feasible covers BED-001 (fits the bed with margins) and BED-002 (contact, stability) only. "
                            "Every other column carries its own verdict; a feasible pose can still fail OVH-001."),
         "establishes": ("For each candidate pose: geometry-level printability (overhang area, flat ceilings, bed fit, "

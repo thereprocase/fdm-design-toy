@@ -1,0 +1,2800 @@
+{
+ "schema": "fdmgen/orientation-table@0.1",
+ "problem": "spool-rack-g2-ef",
+ "mesh": {
+  "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+  "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e",
+  "frame": "design",
+  "source": "spool-wall-rack"
+ },
+ "generated": {
+  "commit": "ca20e5d",
+  "catalog": "v0",
+  "card": "polymaker-polylite-asa-t0",
+  "card_corner": "design",
+  "fracture_factor": 4.0,
+  "stress": {
+   "path": "bracket-stress-r1.npz",
+   "schema": "fdmgen.stress-field.v1",
+   "frame": "installed",
+   "voigt_order": [
+    "xx",
+    "yy",
+    "zz",
+    "yz",
+    "xz",
+    "xy"
+   ],
+   "model": "isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification",
+   "receipt": "bracket-stress-r1.json"
+  }
+ },
+ "pose_convention": "print = R_design_to_print @ design + t_mm. R is the complete rotation: the lift of build_dir_design to +Z, then spin_deg about +Z (counter-clockwise seen from above). t puts the lowest point on the bed (z = 0) and centres the footprint's bounding box on the bed centre. Bed coordinates: origin at a bed corner, X and Y along the bed edges.",
+ "bed": {
+  "x_mm": 256,
+  "y_mm": 256,
+  "max_height_mm": 250,
+  "margin_mm": 10
+ },
+ "interfaces": [
+  {
+   "id": "rear_seat",
+   "type": "rod_seat",
+   "axis": "Z",
+   "role": "interface",
+   "support": "forbidden",
+   "roof_variant": "teardrop_auto",
+   "center_xy_mm": [
+    90.0,
+    0.0
+   ],
+   "seat_radius_mm": [
+    12.4,
+    13.6
+   ]
+  },
+  {
+   "id": "front_seat",
+   "type": "rod_seat",
+   "axis": "Z",
+   "role": "interface",
+   "support": "forbidden",
+   "roof_variant": "teardrop_auto",
+   "center_xy_mm": [
+    190.0,
+    12.0
+   ],
+   "seat_radius_mm": [
+    12.4,
+    13.6
+   ]
+  },
+  {
+   "id": "mount_upper",
+   "type": "screw_clearance",
+   "axis": "X",
+   "role": "interface",
+   "support": "forbidden",
+   "center_yz_mm": [
+    164.0,
+    12.0
+   ],
+   "d_mm": 5.2
+  },
+  {
+   "id": "mount_lower",
+   "type": "screw_clearance",
+   "axis": "X",
+   "role": "interface",
+   "support": "forbidden",
+   "center_yz_mm": [
+    40.0,
+    12.0
+   ],
+   "d_mm": 5.2
+  }
+ ],
+ "keep_outs": [
+  {
+   "id": "crown_moulding",
+   "type": "box",
+   "frame": "installed",
+   "min_mm": [
+    0.0,
+    null,
+    null
+   ],
+   "max_mm": [
+    25.4,
+    -32.0,
+    null
+   ],
+   "rule": "For X from 0 to 25.4 mm, no bracket material may extend below Y=-32 mm. Farther out, downward design space is free of this moulding constraint.",
+   "structural_support": "none",
+   "source": "designs/rev-g2/shape-seeds/moulding-clearance.json"
+  },
+  {
+   "id": "spool_slide",
+   "type": "flange_sweep",
+   "frame": "installed",
+   "axis": "Z",
+   "rod_interfaces": [
+    "rear_seat",
+    "front_seat"
+   ],
+   "spool_diameter_mm": [
+    180.0,
+    220.0
+   ],
+   "rail_radius_mm": [
+    12.4,
+    12.7
+   ],
+   "clearance_mm": 3.5,
+   "rule": "Preserve axial flange sliding for 180\u2013220 mm spools, with at least 3.5 mm nominal clearance over the effective rail-radius interval 12.4\u201312.7 mm.",
+   "source": "designs/rev-g2/INTERFACE-CONTRACT.md",
+   "derivation": "spool centre R + r from both rod axes, above the rods (the interface_loads model); keep-out = discs of radius R + clearance about it, swept along Z"
+  }
+ ],
+ "feasible_scope": "feasible covers BED-001 (fits the bed with margins) and BED-002 (contact, stability) only. Every other column carries its own verdict; a feasible pose can still fail OVH-001.",
+ "establishes": "For each candidate pose: geometry-level printability (overhang area, flat ceilings, bed fit, contact and stability) from the catalog checkers, and the inter-layer index F_L from the supplied stress field.",
+ "does_not_establish": "What Orca will generate (T level) or how the part prints (P level); interface variants such as teardrops per pose; strength beyond the supplied stress model; the bed exclusion zone. A first rank means best of these columns only.",
+ "candidates": [
+  {
+   "id": "facet-00",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     1.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     1.0
+    ]
+   ],
+   "t_mm": [
+    24.246979,
+    68.741209,
+    0.0
+   ],
+   "feasible": true,
+   "reasons": [],
+   "pareto": true,
+   "rank": 0,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 29445.286596258054,
+    "also": [
+     "axis+z"
+    ]
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 368.6626322240361,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 29.074794666430535,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 7855.214313505261,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": 56.52965022800147,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 169.19466421520428,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 24.00000000000001,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 82.227925,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 4.024,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.060984414492348565,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.019920843626201504,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      1.91,
+      40.8,
+      16.8
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.04173620866820105,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    },
+    "t_support_segments": {
+     "value": 4344,
+     "unit": "count",
+     "rule": "OVH-001",
+     "level": "T",
+     "verdict": "FAIL",
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm"
+    },
+    "t_support_volume_mm3": {
+     "value": 1351.8001636981883,
+     "unit": "mm3",
+     "rule": "OVH-001",
+     "level": "T",
+     "verdict": null,
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm"
+    },
+    "t_credited_mm3": {
+     "value": 69594.87352618028,
+     "unit": "mm3",
+     "rule": "STR-001",
+     "level": "T",
+     "verdict": null,
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm; thick bridges and support excluded"
+    }
+   }
+  },
+  {
+   "id": "facet-01",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     -1.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     -1.0
+    ]
+   ],
+   "t_mm": [
+    24.246979,
+    187.258791,
+    24.0
+   ],
+   "feasible": true,
+   "reasons": [],
+   "pareto": false,
+   "rank": 1,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 29445.286596258054,
+    "also": [
+     "axis-z"
+    ]
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 910.0490542460833,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 623.8956453814171,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 6847.382884481296,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": 56.52965022800147,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 169.19466421520428,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 24.00000000000001,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 825.568367,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 52.312,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.060984414492348565,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.019920843626201504,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      1.91,
+      40.8,
+      16.8
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.04173620866820105,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    },
+    "t_support_segments": {
+     "value": 8596,
+     "unit": "count",
+     "rule": "OVH-001",
+     "level": "T",
+     "verdict": "FAIL",
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm"
+    },
+    "t_support_volume_mm3": {
+     "value": 4217.516128704559,
+     "unit": "mm3",
+     "rule": "OVH-001",
+     "level": "T",
+     "verdict": null,
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm"
+    },
+    "t_credited_mm3": {
+     "value": 69512.81610830707,
+     "unit": "mm3",
+     "rule": "STR-001",
+     "level": "T",
+     "verdict": null,
+     "provisional": false,
+     "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm; thick bridges and support excluded"
+    }
+   }
+  },
+  {
+   "id": "facet-02",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    -0.632789127,
+    -0.774324171,
+    0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     0.599577921077,
+     -0.489983915689,
+     0.632789126742
+    ],
+    [
+     -0.489983915689,
+     0.400422078923,
+     0.774324170536
+    ],
+    [
+     -0.632789126742,
+     -0.774324170536,
+     -0.0
+    ]
+   ],
+   "t_mm": [
+    100.765633,
+    134.758941,
+    143.870981
+   ],
+   "feasible": false,
+   "reasons": [
+    "bed contact 39 mm2 is below 100 mm2 or 5 % of the footprint",
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 5794.240488970704
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 8968.301740922527,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 1088.948263759533,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 39.41050180846972,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -81.37260370319053,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 1.7448891327723288,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 168.64935490651487,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 6468.934112,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 59.251606594251946,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.19280070076082617,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.07729268921912455,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      27.51,
+      -29.6,
+      10.4
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.1319479795831904,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 39.256,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 39.256,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    }
+   }
+  },
+  {
+   "id": "facet-03",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     0.0,
+     0.0,
+     -1.0
+    ],
+    [
+     0.0,
+     1.0,
+     0.0
+    ],
+    [
+     1.0,
+     -0.0,
+     0.0
+    ]
+   ],
+   "t_mm": [
+    140.0,
+    68.741209,
+    0.0
+   ],
+   "feasible": false,
+   "reasons": [
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 4991.017822265625,
+    "also": [
+     "axis+x"
+    ]
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 4989.330409330162,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 2687.0275816731314,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 3723.512214784515,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": 11.66877279547325,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 24.000000000000025,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 207.50604248046875,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 2187.009796,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 44.44653273316154,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.21248571938130295,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.09019416935317345,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      16.31,
+      39.2,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.1454199142015792,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
+    }
+   }
+  },
+  {
+   "id": "facet-04",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    -0.442094537,
+    0.896968461,
+    0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     0.804552420604,
+     0.396544856358,
+     0.442094536718
+    ],
+    [
+     0.396544856358,
+     0.195447579396,
+     -0.896968461321
+    ],
+    [
+     -0.442094536718,
+     0.896968461321,
+     -0.0
+    ]
+   ],
+   "t_mm": [
+    43.792515,
+    99.874519,
+    100.14841
+   ],
+   "feasible": false,
+   "reasons": [
+    "does not fit the bed: best spin 0 deg gives 194 x 112 mm, height 258 mm",
+    "bed contact 3 mm2 is below 100 mm2 or 5 % of the footprint",
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 1957.4811878835178
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 7983.3422061268475,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 4.002769928677853,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 2.933194229300832,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -102.41144860559399,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 0.22161338382531426,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 258.01148841275443,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": false,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 4744.677777,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 48.14106812275773,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.23206852844328515,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.09798926327736668,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      29.11,
+      -29.6,
+      10.4
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.15882189915337327,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 26.238,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 26.238,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    }
+   }
+  },
+  {
+   "id": "facet-05",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    0.369166733,
+    0.929363181,
+    0.0
+   ],
+   "spin_deg": 51.0,
+   "R_design_to_print": [
+    [
+     0.810185026834,
+     -0.321826133943,
+     0.489926690235
+    ],
+    [
+     0.455319827514,
+     -0.180864635784,
+     -0.871763636656
+    ],
+    [
+     0.369166733287,
+     0.929363181449,
+     -0.0
+    ]
+   ],
+   "t_mm": [
+    67.169029,
+    107.578505,
+    29.739622
+   ],
+   "feasible": false,
+   "reasons": [
+    "bed contact 24 mm2 is below 100 mm2 or 5 % of the footprint",
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 1626.9615664481366
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 11615.689888526156,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 2.74258792380588,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 23.76389602583292,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -10.295693744105634,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 1.1294772539770008,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 197.73427358398186,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 5323.815377999999,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 9.274861724036645,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.129490352548771,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.062383033964797066,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      27.51,
+      -29.6,
+      10.4
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.08861996002556514,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 21.664,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 21.664,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    }
+   }
+  },
+  {
+   "id": "facet-06",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    -0.106533128,
+    0.994309153,
+    0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     0.988650692549,
+     0.105926864731,
+     0.106533128422
+    ],
+    [
+     0.105926864731,
+     0.011349307451,
+     -0.994309153407
+    ],
+    [
+     -0.106533128422,
+     0.994309153407,
+     0.0
+    ]
+   ],
+   "t_mm": [
+    25.48877,
+    129.085334,
+    64.12304
+   ],
+   "feasible": false,
+   "reasons": [
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 1350.2553239375375
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 8507.409037475372,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 100.98851021610466,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 1350.255323937538,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": 11.668772795473254,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 24.11336823417576,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 239.11867940034668,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 3979.83157,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 25.86417978595107,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.21448405772143633,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.09279812247506371,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.146787527003108,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 6.116,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 6.116,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    }
+   }
+  },
+  {
+   "id": "facet-07",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    -0.000210571,
+    -0.999999978,
+    -0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     0.99999995566,
+     -0.000210570562,
+     0.000210570567
+    ],
+    [
+     -0.000210570562,
+     4.434e-08,
+     0.99999997783
+    ],
+    [
+     -0.000210570567,
+     -0.99999997783,
+     -0.0
+    ]
+   ],
+   "t_mm": [
+    24.263613,
+    116.021844,
+    176.000005
+   ],
+   "feasible": false,
+   "reasons": [
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 286.95750610435067,
+    "also": [
+     "axis-y"
+    ]
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 8681.118704748584,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 442.7429983950886,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 289.0503442660653,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -62.62674256546892,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 12.002528327861151,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 233.46880390254546,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 5010.084218,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 323.932,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.2063788354258809,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.08279671380585733,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.14124051549458724,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 0.012,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 0.012,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    }
+   }
+  },
+  {
+   "id": "facet-08",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    -0.879640341,
+    0.475639433,
+    -0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     0.226232869916,
+     0.418391632906,
+     0.879640341323
+    ],
+    [
+     0.418391632906,
+     0.773767130084,
+     -0.475639432676
+    ],
+    [
+     -0.879640341323,
+     0.475639432676,
+     0.0
+    ]
+   ],
+   "t_mm": [
+    85.963532,
+    75.487591,
+    181.214108
+   ],
+   "feasible": false,
+   "reasons": [
+    "does not fit the bed: best spin 0 deg gives 111 x 177 mm, height 265 mm",
+    "bed contact 3 mm2 is below 100 mm2 or 5 % of the footprint",
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 207.61422399981137
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 7696.4615600371035,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 18.987734419876027,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 2.9335022191023414,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -49.47117523013196,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 0.2901736868604843,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 264.92323668149055,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": false,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 4064.3365759999997,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 14.40372798965601,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.19940163718984774,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.08469435784540598,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.13646549545180206,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 61.599,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 61.599,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
+    }
+   }
+  },
+  {
+   "id": "facet-09",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    -0.926386917,
+    0.376573073,
+    0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     0.14180727927,
+     0.348852368225,
+     0.9263869174
+    ],
+    [
+     0.348852368225,
+     0.85819272073,
+     -0.376573072948
+    ],
+    [
+     -0.9263869174,
+     0.376573072948,
+     0.0
+    ]
+   ],
+   "t_mm": [
+    90.91576,
+    68.637406,
+    190.398539
+   ],
+   "feasible": false,
+   "reasons": [
+    "does not fit the bed: best spin 0 deg gives 96 x 192 mm, height 257 mm",
+    "bed contact 35 mm2 is below 100 mm2 or 5 % of the footprint",
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 184.1678710318414
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 7471.30825533929,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 401.54300064407556,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 35.3193629603806,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -52.22497531258546,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 1.5203297935017872,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 256.67211972287913,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": false,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 4075.7219809999997,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 18.495084968715336,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.20691149137704876,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.0826362642137512,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.14160505191116773,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 67.878,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 67.878,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
+    }
+   }
+  },
+  {
+   "id": "facet-10",
+   "kind": "stable_facet",
+   "build_dir_design": [
+    -0.912901664,
+    -0.408179559,
+    -0.0
+   ],
+   "spin_deg": 6.0,
+   "R_design_to_print": [
+    [
+     0.20464805366,
+     -0.457699422819,
+     0.865234310742
+    ],
+    [
+     -0.353170959551,
+     0.789873841708,
+     0.501367716866
+    ],
+    [
+     -0.912901663632,
+     -0.408179559186,
+     0.0
+    ]
+   ],
+   "t_mm": [
+    133.631561,
+    94.346817,
+    192.69826
+   ],
+   "feasible": false,
+   "reasons": [
+    "bed contact 91 mm2 is below 100 mm2 or 5 % of the footprint",
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {
+    "facet_area_mm2": 181.4370819948848
+   },
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 10502.138928074715,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 13.39752868016407,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 91.00476383538476,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -35.5070429515858,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 10.68599890888865,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 205.76000613539966,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 5947.229554,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 411.23257122460524,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.22989336195821597,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.09763434983454605,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      29.11,
+      -29.6,
+      10.4
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.15733326959015403,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 65.909,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 65.909,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
+    }
+   }
+  },
+  {
+   "id": "axis-x",
+   "kind": "axis",
+   "build_dir_design": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     0.0,
+     0.0,
+     1.0
+    ],
+    [
+     0.0,
+     1.0,
+     0.0
+    ],
+    [
+     -1.0,
+     0.0,
+     0.0
+    ]
+   ],
+   "t_mm": [
+    116.0,
+    68.741209,
+    207.506042
+   ],
+   "feasible": false,
+   "reasons": [
+    "bed contact 36 mm2 is below 100 mm2 or 5 % of the footprint",
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {},
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 5898.072080497108,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 2836.7186675256776,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 35.573014222444435,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -5.12849782576923,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 1.4798331260681152,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 207.50604248046875,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 5257.0210019999995,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 264.00361225559016,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.21248571938130298,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.09019416935317347,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      16.31,
+      39.2,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.1454199142015792,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
+    }
+   }
+  },
+  {
+   "id": "axis+y",
+   "kind": "axis",
+   "build_dir_design": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "spin_deg": 0.0,
+   "R_design_to_print": [
+    [
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     -1.0
+    ],
+    [
+     0.0,
+     1.0,
+     0.0
+    ]
+   ],
+   "t_mm": [
+    24.246979,
+    140.0,
+    57.482418
+   ],
+   "feasible": false,
+   "reasons": [
+    "bed contact 23 mm2 is below 100 mm2 or 5 % of the footprint",
+    "may topple: centre of mass margin or height-to-base ratio outside BED-002"
+   ],
+   "pareto": false,
+   "rank": null,
+   "designer_decision": null,
+   "meta": {},
+   "columns": {
+    "ovh_fail_mm2": {
+     "value": 9192.276075862535,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "bridge_candidate_mm2": {
+     "value": 680.4117271084176,
+     "unit": "mm2",
+     "rule": "BRG-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "contact_mm2": {
+     "value": 23.04281093651007,
+     "unit": "mm2",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "com_margin_mm": {
+     "value": -9.077751027074797,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "base_min_width_mm": {
+     "value": 0.9595870971679688,
+     "unit": "mm",
+     "rule": "BED-002",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "height_mm": {
+     "value": 233.48241806030273,
+     "unit": "mm",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "fits_bed": {
+     "value": true,
+     "unit": "1",
+     "rule": "BED-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "geometry; exclusion zone not modelled"
+    },
+    "v_unsupported_mm2": {
+     "value": 5248.418696,
+     "unit": "mm2",
+     "rule": "OVH-001",
+     "level": "V",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "geometry"
+    },
+    "brg_worst_span_mm": {
+     "value": 63.378,
+     "unit": "mm",
+     "rule": "BRG-001",
+     "level": "V",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "D5 grid, straight-line spans"
+    },
+    "F_L_max": {
+     "value": 0.20640074280906448,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_p99": {
+     "value": 0.08282708583924835,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.14125550835995349,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+    }
+   }
+  }
+ ]
+}
