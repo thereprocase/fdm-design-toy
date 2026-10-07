@@ -355,7 +355,7 @@ def _cmd_shell_check(a) -> int:
     import numpy as np
     import trimesh
 
-    from .catalog.checks.shell import check_shell
+    from .catalog.checks.shell import check_shell, grid_origin
     from .gcode import extruder_offset, read_gcode
     from .gcode.occupancy import deposit
     table = json.loads(a.table.read_text(encoding="utf-8"))
@@ -375,7 +375,7 @@ def _cmd_shell_check(a) -> int:
     raw = a.gcode.read_bytes()
     text = raw.decode("utf-8")
     tp = read_gcode(text)
-    origin = V.min(axis=0) - 1.0
+    origin = grid_origin(V.min(axis=0))
     shape = tuple(int(x) for x in np.ceil((V.max(axis=0) + 1.0 - origin) / a.cell))
     vgrid, outside = deposit(tp, extruder_offset(text), np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5)
     r = check_shell(vgrid / a.cell ** 3, origin, a.cell, V, body.faces, n_samples=a.samples)

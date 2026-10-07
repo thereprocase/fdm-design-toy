@@ -3,10 +3,11 @@
 The catalog makes T binding for SHELL-001: at least min_beads solid beads normal to every surface, after
 the slicer's own shell logic. Input is a density grid of the slice's credited roads in the print frame
 (fdmgen.gcode.occupancy) and the body mesh in the same frame. Surface points are sampled (area-weighted,
-fixed seed) and the printed thickness is the inward distance along the normal until the density drops
-below the threshold. The requirement along a normal at slope alpha (0 = horizontal face, 90 = vertical)
-is the extent of min_beads beads: min_beads x (bead_spacing sin alpha + layer cos alpha), with the
-flow spacing (not the nominal width) between neighbouring walls: a 2-wall shell is about 0.81 mm.
+fixed seed) and the printed thickness is the equivalent solid thickness along the inward normal: the
+integral of the capped density from the first material until the ray is empty for a full cell. The
+requirement along a normal at slope alpha (0 = horizontal face, 90 = vertical) is the extent of min_beads
+beads: min_beads x (bead_spacing sin alpha + layer cos alpha), with the flow spacing (not the nominal
+width) between neighbouring walls: a 2-wall shell is about 0.81 mm.
 Results are reported in slope bands, which is where the t(alpha) mid-slope thin band shows up.
 """
 from __future__ import annotations
@@ -32,26 +33,53 @@ def sample_surface(vertices, faces, n: int, seed: int = 0):
     return p, nrm[k], float(area.sum() / 2)
 
 
-def march(density, origin, h, points, inward, *, step_mm=0.05, max_mm=4.0, threshold=0.5):
-    """Inward distance (mm) until the density first drops below threshold; nan where the ray leaves the grid."""
+# The deposit raster point-samples each bead at (k + 0.5) / n fractions of its width and height. When a cell
+# edge coincides exactly with those sample coordinates (round G-code numbers on a round grid), floor() ties
+# split a layer unevenly between two cells and a ray at one height reads a 0.65 / 1.29 density alternation.
+# Mass is conserved, but a single ray is not. Offsetting the grid by an irrational fraction of a micron makes
+# exact ties impossible at G-code precision and moves nothing measurable.
+TIE_BREAK_MM = 1e-4 * np.pi
+
+
+def grid_origin(lo, pad_mm: float = 1.0):
+    """Shell-check grid origin: pad below the body's lower corner, plus the tie-breaking offset."""
+    return np.asarray(lo, float) - pad_mm + TIE_BREAK_MM
+
+
+def march(density, origin, h, points, inward, *, step_mm=0.025, max_mm=4.0, threshold=0.5, entry_mm=None,
+          empty=0.05):
+    """Equivalent solid thickness (mm) along the inward normal: the integral of min(density, 1) from the first
+    material until the ray has been empty (density < `empty`) for a full cell. Integrating instead of
+    thresholding makes the result independent of where cell edges fall against bead edges (a threshold
+    march on a raster a quarter of a bead wide aliases). Material must start within entry_mm (default 1.5
+    cells) of the surface, else 0; nan where the ray leaves the grid. `threshold` is kept for the record."""
     h = np.broadcast_to(np.asarray(h, float), (3,))
+    cell = float(h.max())
+    entry = 1.5 * cell if entry_mm is None else entry_mm
     shape = np.asarray(density.shape)
-    steps = np.arange(step_mm / 2, max_mm, step_mm)
-    out = np.full(len(points), max_mm)
+    total = np.zeros(len(points))
+    gap = np.zeros(len(points))
+    entered = np.zeros(len(points), bool)
     alive = np.ones(len(points), bool)
-    for s in steps:
+    for s in np.arange(step_mm / 2, max_mm, step_mm):
         q = points + inward * s
         idx = np.floor((q - origin) / h).astype(int)
         inside = np.all((idx >= 0) & (idx < shape), axis=1)
         d = np.zeros(len(points))
         d[inside] = density[tuple(idx[inside].T)]
-        stop = alive & (d < threshold)
-        out[stop] = s - step_mm / 2
-        out[alive & ~inside] = np.nan
-        alive &= ~stop & inside
+        total[alive & ~inside] = np.nan
+        alive &= inside
+        never = alive & ~entered & (d < empty) & (s > entry)
+        total[never] = 0.0
+        alive &= ~never
+        entered |= alive & (d >= empty)
+        on = alive & entered
+        total[on] += np.minimum(d[on], 1.0) * step_mm
+        gap[on] = np.where(d[on] < empty, gap[on] + step_mm, 0.0)
+        alive &= ~(on & (gap >= cell))
         if not alive.any():
             break
-    return out
+    return total
 
 
 def check_shell(density, origin, h, vertices, faces, *, n_samples=20000, min_beads=2, bead_spacing_mm=0.38,

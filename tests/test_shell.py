@@ -8,7 +8,7 @@ pytest.importorskip("scipy")
 trimesh = pytest.importorskip("trimesh")
 
 from fdmgen.catalog import Verdict
-from fdmgen.catalog.checks.shell import check_shell
+from fdmgen.catalog.checks.shell import TIE_BREAK_MM, check_shell
 from fdmgen.gcode import read_gcode
 from fdmgen.gcode.occupancy import deposit
 
@@ -39,9 +39,9 @@ def printed_box(walls):
     return read_gcode("\n".join(g) + "\n", footer_rel_tol=None)
 
 
-def shell_result(walls):
+def shell_result(walls, shift=0.0):
     tp = printed_box(walls)
-    origin, h, shape = np.array([-0.5, -0.5, -0.5]), 0.1, (120, 120, 75)
+    origin, h, shape = np.array([-0.5, -0.5, -0.5]) + shift, 0.1, (120, 120, 75)
     vgrid, _ = deposit(tp, (0, 0, 0), np.eye(3), np.zeros(3), origin, h, shape, mask=np.ones(len(tp), bool))
     box = trimesh.creation.box(extents=(SIDE, SIDE, TOP))
     box.apply_translation((SIDE / 2, SIDE / 2, TOP / 2))
@@ -58,3 +58,17 @@ def test_two_walls_pass_one_wall_fails_on_the_walls():
     assert bands[(80, 90)]["thin_fraction"] > 0.6 and bands[(0, 10)]["thin_fraction"] < 0.05
     assert bands[(80, 90)]["p05_mm"] == pytest.approx(0.42, abs=0.06)
     assert {tuple(b["slope_deg"]): b for b in two.metrics["bands"]}[(80, 90)]["thin_fraction"] == 0.0
+
+
+def test_grid_offset_from_the_surfaces_does_not_read_as_thin():
+    """Regression (real bracket at 0.2 mm): a surface cell only partly inside the body read as 0 mm."""
+    for shift in (0.0137, 0.03, 0.07, 0.0861):
+        r = shell_result(2, shift)
+        assert r.verdict is Verdict.PASS, (shift, r.message)
+
+
+def test_tie_break_offset_removes_the_exact_half_cell_artefact():
+    """At exactly half a cell the deposit's sample points sit on cell edges; the tie-break nudge removes it."""
+    assert shell_result(2, 0.05).verdict is Verdict.FAIL          # documents the raw artefact the nudge exists for
+    r = shell_result(2, 0.05 + TIE_BREAK_MM)
+    assert r.verdict is Verdict.PASS, r.message
