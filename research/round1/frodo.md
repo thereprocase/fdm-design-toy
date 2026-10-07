@@ -12,7 +12,7 @@ in this report has one.
 
 ## 0. Summary and numbered decisions
 
-a collaborator is **mostly right**. The guidance that exists comes in four forms, and none of them is a versioned,
+The collaborator is **mostly right**. The guidance that exists comes in four forms, and none of them is a versioned,
 machine-checkable rule set that is tied to a calibrated printer:
 - Generic standards. [ISO/ASTM 52910](https://www.iso.org/standard/67289.html) explicitly gives no process- or
   material-specific data.

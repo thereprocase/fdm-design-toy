@@ -15,7 +15,7 @@ Nothing was printed, sliced or run remotely for this report. Every number carrie
 
 ## 0. Summary and decisions
 
-a collaborator is mostly right. Guidance exists, but none of it is a versioned, machine-checkable rule set bound to a
+The collaborator is mostly right. Guidance exists, but none of it is a versioned, machine-checkable rule set bound to a
 calibrated printer:
 - Generic standards. [ISO/ASTM 52910](https://www.iso.org/standard/67289.html) explicitly gives no process- or
   material-specific data.
