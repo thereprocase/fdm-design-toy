@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from ..catalog import load_rules
 from .failure import StressField, prescreen
+from .interfaces import interface_roofs
 from .poses import candidate_poses
 from .printability import mesh_volume_centroid, pose_columns
 
@@ -26,7 +27,8 @@ def _col(value, unit, rule, level, verdict=None, provisional=True, fidelity="geo
 
 
 def build_table(vertices, faces, *, card=None, stress: StressField | None = None, sf: float = 4.0,
-                sphere: int = 0, user=(), voxel: bool = False, provenance: dict | None = None) -> dict:
+                sphere: int = 0, user=(), voxel: bool = False, provenance: dict | None = None,
+                interfaces=None) -> dict:
     rules = load_rules()
     bed = _param_values(rules["BED-001"])
     stab = _param_values(rules["BED-002"])
@@ -34,10 +36,13 @@ def build_table(vertices, faces, *, card=None, stress: StressField | None = None
     max_span = rules["BRG-001"].parameters["max_span_external_mm"]["value"]
     _, centroid = mesh_volume_centroid(vertices, faces)
     poses = candidate_poses(vertices, sphere=sphere, user=user)
-    fl = None
+    fl = fl_v = None
     if stress is not None and card is not None:
-        st = card.strength_corners()["design"]
+        corners = card.strength_corners()
+        st = corners["design"]
         fl = prescreen(stress, [p.d for p in poses], st["Z_t"], st["S_il"], st["X_t"])
+        vr = corners["vendor_ratio"]                       # the other corner (PLAN D10: report both)
+        fl_v = prescreen(stress, [p.d for p in poses], vr["Z_t"], vr["S_il"][0], vr["X_t"])
     rows = []
     for i, p in enumerate(poses):
         c, place = pose_columns(vertices, faces, p.d, bed, stab, alpha_min_deg=alpha, centroid=centroid,
@@ -65,9 +70,15 @@ def build_table(vertices, faces, *, card=None, stress: StressField | None = None
             cols["F_L_max"] = _col(fl[i]["F_L_max"], "1", "STR-001", "FE", "PASS" if ok else "FAIL", True, fid)
             cols["F_L_p99"] = _col(fl[i]["F_L_p99"], "1", "STR-001", "FE", None, True, fid)
             cols["F_L_max_at_mm"] = _col(fl[i]["F_L_max_at_mm"], "mm", "STR-001", "FE", None, True, fid)
+            cols["F_L_max_vendor_corner"] = _col(fl_v[i]["F_L_max"], "1", "STR-001", "FE",
+                                                 "PASS" if fl_v[i]["F_L_max"] <= 1.0 / sf else "FAIL", True,
+                                                 fid + "; vendor-ratio Z_t corner (less conservative)")
         else:
             cols["F_L_max"] = _col(None, "1", "STR-001", "FE", "NOT_CHECKED", True, "no stress field supplied")
             cols["F_L_p99"] = _col(None, "1", "STR-001", "FE", "NOT_CHECKED", True, "no stress field supplied")
+        roofs = interface_roofs(interfaces, p.d)
+        cols["interface_roofs"] = _col(roofs["interfaces"], "1", "HOLE-001", "M", roofs["verdict"],
+                                       fidelity=roofs["message"])
         reasons = []
         if not c["fits_bed"]:
             reasons.append(f"does not fit the bed: best spin {c['best_spin_deg']:.0f} deg gives "

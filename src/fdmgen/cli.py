@@ -91,7 +91,7 @@ def _cmd_orient(a) -> int:
                           "card_corner": "design", "fracture_factor": sf,
                           "stress": None if stress is None else {"path": Path(a.stress).name, **(stress.meta or {})}}}
     table = build_table(mesh.vertices, mesh.faces, card=card, stress=stress, sf=sf, sphere=a.sphere,
-                        voxel=a.voxel, provenance=prov)
+                        voxel=a.voxel, provenance=prov, interfaces=prob.get("interfaces"))
     out = a.out or Path("out") / prob["id"] / "orientation-table.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(table, indent=1), encoding="utf-8")

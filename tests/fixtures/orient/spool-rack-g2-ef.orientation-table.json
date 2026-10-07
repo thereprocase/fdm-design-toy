@@ -8,7 +8,7 @@
   "source": "spool-wall-rack"
  },
  "generated": {
-  "commit": "93ecfa6",
+  "commit": "b44c3b4",
   "catalog": "v0",
   "card": "polymaker-polylite-asa-t0",
   "card_corner": "design",
@@ -194,6 +194,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.04173620866820105,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
     }
    }
   },
@@ -351,6 +394,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.04173620866820105,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
     }
    }
   },
@@ -508,6 +594,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.1319479795831904,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 39.256,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 39.256,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
     }
    }
   },
@@ -667,6 +796,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.1454199142015792,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
     }
    }
   },
@@ -825,6 +997,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.15882189915337327,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 26.238,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 26.238,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
     }
    }
   },
@@ -982,6 +1197,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.08861996002556514,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 21.664,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 21.664,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
     }
    }
   },
@@ -1138,6 +1396,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.146787527003108,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 6.116,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 6.116,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
     }
    }
   },
@@ -1297,6 +1598,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.14124051549458724,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 0.012,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 0.012,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
     }
    }
   },
@@ -1455,6 +1799,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.13646549545180206,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 61.599,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 61.599,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
     }
    }
   },
@@ -1613,6 +2000,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.14160505191116773,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 67.878,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 67.878,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
     }
    }
   },
@@ -1770,6 +2200,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.15733326959015403,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 65.909,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 65.909,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
     }
    }
   },
@@ -1925,6 +2398,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.1454199142015792,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 90.0,
+       "needs_roof_variant": false,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "every interface is near-vertical or has a generated roof variant"
     }
    }
   },
@@ -2080,6 +2596,49 @@
      "verdict": null,
      "provisional": true,
      "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_vendor_corner": {
+     "value": 0.14125550835995349,
+     "unit": "1",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": "PASS",
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+    },
+    "interface_roofs": {
+     "value": [
+      {
+       "id": "rear_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "front_seat",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": "teardrop_auto"
+      },
+      {
+       "id": "mount_upper",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      },
+      {
+       "id": "mount_lower",
+       "axis_from_layer_plane_deg": 0.0,
+       "needs_roof_variant": true,
+       "roof_variant": null
+      }
+     ],
+     "unit": "1",
+     "rule": "HOLE-001",
+     "level": "M",
+     "verdict": "FAIL",
+     "provisional": true,
+     "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
     }
    }
   }

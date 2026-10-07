@@ -125,7 +125,8 @@ FIXTURE = __import__("pathlib").Path(__file__).parent / "fixtures" / "orient" / 
 CANDIDATE_KEYS = {"id", "kind", "build_dir_design", "spin_deg", "R_design_to_print", "t_mm", "feasible", "reasons",
                   "pareto", "rank", "designer_decision", "columns"}
 COLUMN_KEYS = {"ovh_fail_mm2", "bridge_candidate_mm2", "v_unsupported_mm2", "brg_worst_span_mm", "contact_mm2",
-               "com_margin_mm", "base_min_width_mm", "height_mm", "fits_bed", "F_L_max", "F_L_p99"}
+               "com_margin_mm", "base_min_width_mm", "height_mm", "fits_bed", "F_L_max", "F_L_p99",
+               "F_L_max_vendor_corner", "interface_roofs"}
 CELL_KEYS = {"value", "unit", "rule", "level", "verdict", "provisional", "fidelity"}
 
 
@@ -179,3 +180,24 @@ def test_candidate_pose_is_complete_spin_and_bed_centring_included():
     P = v @ np.array(lying["R_design_to_print"]).T + np.array(lying["t_mm"])
     assert lying["spin_deg"] == 0.0 and max(np.ptp(P[:, :2], axis=0)) == pytest.approx(100.0, abs=1e-6)  # fits: no spin
     assert "feasible_scope" in t and "pose_convention" in t
+
+
+def test_interface_roofs_per_pose():
+    from fdmgen.orient.interfaces import interface_roofs
+    ifs = [{"id": "seat", "axis": "Z", "roof_variant": "teardrop_auto"}, {"id": "bore", "axis": "X"}]
+    r = interface_roofs(ifs, [0, 0, 1])                  # seat axis vertical, bore axis in the layer plane
+    assert r["verdict"] == "FAIL" and r["missing_variant"] == ["bore"]
+    assert {i["id"]: i["needs_roof_variant"] for i in r["interfaces"]} == {"seat": False, "bore": True}
+    r = interface_roofs(ifs, [1, 0, 0])                  # bore vertical; seat horizontal but has a teardrop variant
+    assert r["verdict"] == "PASS"
+    d45 = [np.sin(np.radians(45.01)), 0, np.cos(np.radians(45.01))]   # bore axis 45.01 deg out of the layer plane
+    assert interface_roofs([{"id": "bore", "axis": "X"}], d45)["verdict"] == "PASS"
+    assert interface_roofs([], [0, 0, 1])["verdict"] == "NOT_CHECKED"
+
+
+def test_vendor_corner_fl_on_the_bar():
+    v, f = box_mesh(100, 10, 10)
+    card = load_card("polymaker-polylite-asa-t0")
+    t = build_table(v, f, card=card, stress=_bar_stress(v, SIG))
+    standing = next(c for c in t["candidates"] if abs(abs(c["build_dir_design"][0]) - 1) < 1e-9)
+    assert standing["columns"]["F_L_max_vendor_corner"]["value"] == pytest.approx(SIG / 32.0)
