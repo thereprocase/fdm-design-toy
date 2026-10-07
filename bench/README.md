@@ -209,3 +209,33 @@ This does not establish the unmodified 0.5-domain result, mesh convergence,
 unchanged local pressure, anisotropic behaviour, large-deflection validity or physical performance.
 The solver uses linear small-displacement elasticity; the reported millimetres
 are model outputs, not validated movement predictions.
+
+### Threshold robustness of the connected-domain comparison
+
+The helper effect is **not established as robust to the coarse modelling
+policy**. Repeating the same explicit largest-component and per-seat
+force/moment-transfer procedure on the same R1 density fields gives:
+
+| Density threshold | Baseline compliance N·mm | Project compliance N·mm | Project change | Common seat nodes, rear / front |
+|---|---:|---:|---:|---:|
+| 0.25 | 287.482 | 283.496 | −1.387% | 626 / 648 |
+| 0.50 | 484.839 | 470.662 | −2.924% | 620 / 600 |
+| 0.75 | 15,695.155 | 15,901.856 | +1.317% | 286 / 214 |
+
+Each pair uses identical load arrays, with each original seat resultant and
+moment conserved. **The nodal arrays differ between thresholds**, so this is a
+combined threshold/domain/load-discretisation sensitivity, not an isolated
+threshold effect. The 0.75 cleanup removes 519 / 540 cells and removes nodes
+that originally carried 63.065 N of summed absolute force components before
+transfer. Its linear-model maximum movements are 224 / 227 mm; these cannot be
+interpreted as physical small-displacement predictions. The sign reversal does
+not establish that the helpers harm the printed part.
+
+Receipts: `receipts/occupancy-connected-threshold025-r1.json` and
+`receipts/occupancy-connected-threshold075-r1.json`, alongside the original 0.50
+receipt. Reproduce with `--threshold 0.25` or `--threshold 0.75` on the command
+above. The first 0.75 baseline solve narrowly missed the independent 1e-8 true
+residual gate (1.0131e-8), despite CG reporting success. Tightening the internal
+CG target to 1e-9, with the acceptance gate unchanged, gave residuals below
+2.1e-9 for the accepted 0.75 pair. Do not promote the isolated −2.924% result to
+a design benefit without resolving occupancy sampling and discretisation.

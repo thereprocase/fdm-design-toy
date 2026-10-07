@@ -323,3 +323,10 @@ explicit fragment-removal policy; it is not a successful solve of the unchanged
 raster. Material constants absent from a receipt are labelled as unrecorded;
 consult the benchmark's reproduction instructions. Occupancy sampling, grid
 refinement, contact realism and physical qualification remain unresolved.
+
+For a sensitivity comparison, load the same seed draft/export/slice and switch
+the mechanics input between the threshold-0.25, 0.50 and 0.75 receipts listed in
+`bench/README.md`. The recorded compliance changes are −1.387%, −2.924% and
++1.317%. These use different common nodal load sets across thresholds, and the
+0.75 model predicts movements outside a physical small-displacement
+interpretation. The isolated 0.50 decrease is not a robust design benefit.

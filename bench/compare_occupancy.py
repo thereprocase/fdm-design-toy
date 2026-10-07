@@ -91,7 +91,8 @@ def solve(mask, grid, fixed, load, maxiter):
     setup_s = time.perf_counter()-start
     count = []
     start = time.perf_counter()
-    u, status = cg(A, rhs, M=ml.aspreconditioner(), rtol=1e-8, atol=0, maxiter=maxiter,
+    # Leave margin for the independently recomputed true residual (acceptance 1e-8).
+    u, status = cg(A, rhs, M=ml.aspreconditioner(), rtol=1e-9, atol=0, maxiter=maxiter,
                    callback=lambda _:count.append(1))
     residual = float(np.linalg.norm(rhs-A@u)/np.linalg.norm(rhs))
     valid = status == 0 and np.isfinite(residual) and residual <= 1e-8
