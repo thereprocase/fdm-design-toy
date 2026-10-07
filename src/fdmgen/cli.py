@@ -355,7 +355,7 @@ def _shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, 
     import hashlib
     import inspect
 
-    from .catalog.checks import shell
+    from .catalog.checks import shell, toolpath
     from .gcode import extruder_offset, reader
     from .gcode import occupancy as occ
     from .massing.export import _slicer_context
@@ -380,7 +380,7 @@ def _shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, 
                    "march": defaults(shell.march, "step_mm", "max_mm", "empty"),
                    "entry_mm": chk["outer_width_mm"] / 2 + 1.5 * a.cell},
         "source_sha256": {f"fdmgen/{Path(m.__file__).relative_to(Path(__file__).parent).as_posix()}": sha(m.__file__)
-                          for m in (shell, occ, reader)},
+                          for m in (shell, occ, reader, toolpath)},
     }
 
 
@@ -518,7 +518,10 @@ def _cmd_shell_check(a) -> int:
         return 1
     origin = grid_origin(V.min(axis=0))
     shape = tuple(int(x) for x in np.ceil((V.max(axis=0) + 1.0 - origin) / a.cell))
-    vgrid, outside = deposit(tp, extruder_offset(text), np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5,
+    # the slice's object may sit shifted on the plate; take the measured shift out so roads land on the posed body
+    off = np.asarray(extruder_offset(text), float) - np.append(placed["shift_xy_mm"], 0.0)
+    placed["deposit_offset_mm"] = [float(x) for x in off]
+    vgrid, outside = deposit(tp, off, np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5,
                              caps=True)
     r = check_shell(vgrid / a.cell ** 3, origin, a.cell, V, body.faces, n_samples=a.samples)
     out = {"schema": "fdmgen/shell-check@0.3", "result": r.to_dict(),

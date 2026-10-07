@@ -113,7 +113,7 @@ def test_cli_receipt_pins_slice_part_pose_grid_and_method(tmp_path, monkeypatch)
     assert len(r["table"]["sha256"]) == 64 and len(r["mesh"]["sha256"]) == 64 and r["mesh"]["path"] == "box.stl"
     assert r["method"]["deposit"]["caps"] is True and r["method"]["seed"] == 0 and r["method"]["surface_samples"] == 200
     assert set(r["source_sha256"]) == {"fdmgen/catalog/checks/shell.py", "fdmgen/gcode/occupancy.py",
-                                       "fdmgen/gcode/reader.py"}
+                                       "fdmgen/gcode/reader.py", "fdmgen/catalog/checks/toolpath.py"}
     assert str(tmp_path) not in out.read_text(encoding="utf-8")       # no machine paths in the receipt
 
 
@@ -127,3 +127,46 @@ def test_catalog_rule_parameters_match_the_checker_defaults():
     for name in ("min_beads", "bead_spacing_mm", "layer_mm", "thin_fraction_limit", "outer_width_mm"):
         assert rule.parameters[name]["value"] == sig[name].default, name
     assert rule.data["checkers"]["T"] == "fdmgen.catalog.checks.shell.check_shell"
+
+
+
+def test_cli_takes_the_measured_plate_shift_out_before_rasterising(tmp_path, monkeypatch):
+    """The same slice placed 3 mm off on the plate gives the same SHELL-001 metrics: the pose check measures the
+    shift and the raster removes it (without that, a shifted slice would be judged against a displaced body)."""
+    import json
+
+    from fdmgen.cli import main
+    box = trimesh.creation.box(extents=(SIDE, SIDE, TOP))
+    box.apply_translation((SIDE / 2, SIDE / 2, TOP / 2))
+    box.export(tmp_path / "box.stl")
+    table = {"mesh": {"path": "box.stl", "frame": "design"},
+             "candidates": [{"id": "p0", "R_design_to_print": np.eye(3).tolist(), "t_mm": [0.0, 0.0, 0.0]}]}
+    (tmp_path / "table.json").write_text(json.dumps(table), encoding="utf-8")
+    monkeypatch.setenv("SPOOL_RACK_ROOT", str(tmp_path))
+    metrics = {}
+    for name, dx in (("at", 0.0), ("off", 3.0)):
+        tp_text = _shifted_box_text(dx)
+        (tmp_path / f"{name}.gcode").write_text(tp_text, encoding="utf-8")
+        out = tmp_path / f"{name}.json"
+        main(["shell-check", str(tmp_path / f"{name}.gcode"), "--table", str(tmp_path / "table.json"), "--pose", "p0",
+              "--cell", "0.2", "--samples", "300", "--out", str(out)])
+        r = json.loads(out.read_text(encoding="utf-8"))
+        assert r["placement"]["shift_xy_mm"][0] == pytest.approx(dx, abs=1e-3)
+        metrics[name] = r["result"]["metrics"]
+    assert metrics["off"] == metrics["at"]
+
+
+def _shifted_box_text(dx):
+    """printed_box(2) as G-code text with every X moved by dx, plus a footer that matches its extrusion."""
+    g = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", f";WIDTH:{W}", f";HEIGHT:{H}"]
+    total = 0.0
+    for k in range(1, round(TOP / H) + 1):
+        z = round(k * H, 3)
+        g += [f";Z:{z}", f"G1 Z{z}", ";TYPE:Outer wall"]
+        for i in range(2):
+            a, b, e = W / 2 + 0.4 * i, SIDE - W / 2 - 0.4 * i, W / 2
+            for x0, y0, x1, y1 in ((a - e, a, b + e, a), (b, a - e, b, b + e), (b + e, b, a - e, b), (a, b + e, a, a - e)):
+                g += road(x0 + dx, y0, x1 + dx, y1)
+                total += W * H * math.hypot(x1 - x0, y1 - y0)
+    g += ["; stop printing object part", f"; filament used [cm3] = {total / 1000:.8f}"]
+    return "\n".join(g) + "\n"
