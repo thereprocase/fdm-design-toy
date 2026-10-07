@@ -1,0 +1,62 @@
+{
+ "schema": "fdmgen/massing-slice-evidence@0.1",
+ "tier": "S",
+ "level": "T",
+ "project_3mf_sha256": "f158d73779c3ccb9cf78ea13a868b4e58539b888792a0fea82ecd4cf4facf37e",
+ "plan": {
+  "draft_sha256": "9dae01109b2e9eb64c8a7550634a92c791d119cc0c0ce46ae8eb0ab35ac7c750",
+  "table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+  "mesh_sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e",
+  "problem": "spool-rack-g2-ef",
+  "candidate_id": "facet-00"
+ },
+ "baseline": "shell-only slice",
+ "slicer": {
+  "gcode_sha256": "97c20852ad58f552a763fefaab6ba92bd872313118125500309ccf3d3201e844",
+  "generator": "OrcaSlicer",
+  "version": "2.4.2",
+  "printer_model": "Bambu Lab P1S",
+  "print_settings_id": "Part P1S ASA 4w 8-skin screen",
+  "filament_settings_id": "\"ASA print-control screen\"",
+  "layer_height": "0.2",
+  "wall_loops": "4",
+  "sparse_infill_density": "0%",
+  "filament_shrink": "100%",
+  "enable_support": "0"
+ },
+ "baseline_slicer": {
+  "gcode_sha256": "180a50495323d84a512b9e2bf676a64b496d4e8ffab96466be33d92366238af5",
+  "generator": "OrcaSlicer",
+  "version": "2.4.2",
+  "printer_model": "Bambu Lab P1S",
+  "print_settings_id": "Part P1S ASA 4w 8-skin screen",
+  "filament_settings_id": "\"ASA print-control screen\"",
+  "layer_height": "0.2",
+  "wall_loops": "4",
+  "sparse_infill_density": "0%",
+  "filament_shrink": "100%",
+  "enable_support": "0"
+ },
+ "baseline_context_mismatch": [],
+ "placement_shift_xy_mm": [
+  -0.0005,
+  0.005
+ ],
+ "credited_mm3": 72748.8,
+ "min_fill_fraction": 0.1,
+ "min_added_mm3": 0.5,
+ "helpers": [
+  {
+   "id": "c45facd3-9606-4192-9ab7-7fc96a4bc9cb",
+   "solid_infill_in_box_mm3": 3565.268,
+   "box_volume_mm3": 3840.0,
+   "baseline_solid_infill_mm3": 398.073,
+   "added_solid_mm3": 3167.195,
+   "added_fill_fraction": 0.825,
+   "verdict": "PASS",
+   "message": "helper c45facd3-9606-4192-9ab7-7fc96a4bc9cb: added 3167.2 mm3 of solid infill (82 % of its box)"
+  }
+ ],
+ "establishes": "How much solid infill each helper added in its box in the real slice (MOD-001 T).",
+ "does_not_establish": "Bond continuity with the shell, or strength; physical testing is separate."
+}

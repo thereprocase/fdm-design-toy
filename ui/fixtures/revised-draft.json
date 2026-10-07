@@ -1,0 +1,297 @@
+{
+  "schema": "fdmgen.massing-plan.v0.3",
+  "status": "draft_requires_verification",
+  "source": {
+    "orientation_table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+    "orientation_schema": "fdmgen/orientation-table@0.1",
+    "problem": "spool-rack-g2-ef",
+    "mesh": {
+      "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+      "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e",
+      "frame": "design",
+      "source": "spool-wall-rack"
+    }
+  },
+  "orientation": {
+    "id": "facet-00",
+    "kind": "stable_facet",
+    "build_dir_design": [
+      0,
+      0,
+      1
+    ],
+    "spin_deg": 0,
+    "R_design_to_print": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ],
+    "t_mm": [
+      24.246979,
+      68.741209,
+      0
+    ],
+    "feasible": true,
+    "reasons": [],
+    "pareto": true,
+    "rank": 0,
+    "designer_decision": {
+      "choice": "selected_for_planning",
+      "candidate_id": "facet-00",
+      "table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+      "rank_at_decision": 0,
+      "decided_by_role": "designer",
+      "rationale": "Revise the backing box away from the rear-seat clearance envelope; extend through the body thickness to contact the skins; verify geometry and sliced material before further analysis."
+    },
+    "meta": {
+      "facet_area_mm2": 29445.286596258054,
+      "also": [
+        "axis+z"
+      ]
+    },
+    "columns": {
+      "ovh_fail_mm2": {
+        "value": 368.6626322240361,
+        "unit": "mm2",
+        "rule": "OVH-001",
+        "level": "M",
+        "verdict": "FAIL",
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "bridge_candidate_mm2": {
+        "value": 29.074794666430535,
+        "unit": "mm2",
+        "rule": "BRG-001",
+        "level": "M",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "contact_mm2": {
+        "value": 7855.214313505261,
+        "unit": "mm2",
+        "rule": "BED-002",
+        "level": "M",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "com_margin_mm": {
+        "value": 56.52965022800147,
+        "unit": "mm",
+        "rule": "BED-002",
+        "level": "M",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "base_min_width_mm": {
+        "value": 169.19466421520428,
+        "unit": "mm",
+        "rule": "BED-002",
+        "level": "M",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "height_mm": {
+        "value": 24.00000000000001,
+        "unit": "mm",
+        "rule": "BED-001",
+        "level": "M",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "fits_bed": {
+        "value": true,
+        "unit": "1",
+        "rule": "BED-001",
+        "level": "M",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "geometry; exclusion zone not modelled"
+      },
+      "v_unsupported_mm2": {
+        "value": 82.227925,
+        "unit": "mm2",
+        "rule": "OVH-001",
+        "level": "V",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "brg_worst_span_mm": {
+        "value": 4.024,
+        "unit": "mm",
+        "rule": "BRG-001",
+        "level": "V",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "D5 grid, straight-line spans"
+      },
+      "F_L_max": {
+        "value": 0.060984414492348565,
+        "unit": "1",
+        "rule": "STR-001",
+        "level": "FE",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+      },
+      "F_L_p99": {
+        "value": 0.019920843626201504,
+        "unit": "1",
+        "rule": "STR-001",
+        "level": "FE",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+      },
+      "F_L_max_at_mm": {
+        "value": [
+          1.91,
+          40.8,
+          16.8
+        ],
+        "unit": "mm",
+        "rule": "STR-001",
+        "level": "FE",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+      },
+      "F_L_max_vendor_corner": {
+        "value": 0.04173620866820105,
+        "unit": "1",
+        "rule": "STR-001",
+        "level": "FE",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+      },
+      "interface_roofs": {
+        "value": [
+          {
+            "id": "rear_seat",
+            "axis_from_layer_plane_deg": 90,
+            "needs_roof_variant": false,
+            "roof_variant": "teardrop_auto"
+          },
+          {
+            "id": "front_seat",
+            "axis_from_layer_plane_deg": 90,
+            "needs_roof_variant": false,
+            "roof_variant": "teardrop_auto"
+          },
+          {
+            "id": "mount_upper",
+            "axis_from_layer_plane_deg": 0,
+            "needs_roof_variant": true,
+            "roof_variant": null
+          },
+          {
+            "id": "mount_lower",
+            "axis_from_layer_plane_deg": 0,
+            "needs_roof_variant": true,
+            "roof_variant": null
+          }
+        ],
+        "unit": "1",
+        "rule": "HOLE-001",
+        "level": "M",
+        "verdict": "FAIL",
+        "provisional": true,
+        "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+      },
+      "t_support_segments": {
+        "value": 4344,
+        "unit": "count",
+        "rule": "OVH-001",
+        "level": "T",
+        "verdict": "FAIL",
+        "provisional": false,
+        "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm"
+      },
+      "t_support_volume_mm3": {
+        "value": 1351.8001636981883,
+        "unit": "mm3",
+        "rule": "OVH-001",
+        "level": "T",
+        "verdict": null,
+        "provisional": false,
+        "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm"
+      },
+      "t_credited_mm3": {
+        "value": 69594.87352618028,
+        "unit": "mm3",
+        "rule": "STR-001",
+        "level": "T",
+        "verdict": null,
+        "provisional": false,
+        "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.001, 0.004] mm; thick bridges and support excluded"
+      }
+    }
+  },
+  "massing": {
+    "body": "fixed",
+    "walls": 4,
+    "skin_mm": 1.6,
+    "helper_infill_percent": 100,
+    "sparse_infill_structural_credit": false,
+    "shell_only": false,
+    "helper_regions": [
+      {
+        "id": "c45facd3-9606-4192-9ab7-7fc96a4bc9cb",
+        "name": "Rear seat backing",
+        "location": "Below rear seat",
+        "purpose": "Transfer seat load",
+        "keep_clear": {
+          "interface_ids": [
+            "rear_seat"
+          ],
+          "keep_out_ids": [
+            "crown_moulding",
+            "spool_slide"
+          ],
+          "clearance_mm": 0.5,
+          "note": "Keep 0.5 mm beyond the declared rear-seat cylinder; retain moulding and sampled spool-slide clearance."
+        },
+        "geometry": {
+          "type": "box",
+          "frame": "design",
+          "center_mm": [
+            90,
+            -20,
+            12
+          ],
+          "size_mm": [
+            16,
+            10,
+            24
+          ]
+        },
+        "geometry_status": "sketch"
+      }
+    ]
+  },
+  "outstanding_checks": [
+    "Create and validate helper geometry where requested",
+    "Verify interfaces and helper bonding",
+    "Slice and check credited material and printability",
+    "Verify load cases and material evidence; physical testing remains separate"
+  ]
+}

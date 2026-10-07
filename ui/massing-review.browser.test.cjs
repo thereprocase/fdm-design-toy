@@ -33,5 +33,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#review-draft').setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{}')});
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.includes('current planning draft'));
  assert(await page.locator('#review-workspace').isHidden());assert(await page.locator('#review-receipt').isDisabled());assert.deepEqual(errors,[]);
+ await page.locator('#review-draft').setInputFiles(path.join(__dirname,'fixtures/revised-draft.json'));
+ await page.locator('#review-receipt').setInputFiles(path.join(__dirname,'fixtures/revised-export-report.json'));
+ await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
+ assert.match(await page.locator('#review-checks').innerText(),/15.00 mm/);
+ await page.locator('#review-slice').setInputFiles(path.join(__dirname,'fixtures/revised-slice-evidence.json'));
+ await page.waitForFunction(()=>document.querySelector('#slice-status').textContent.startsWith('Slice receipt matches'));
+ assert.match(await page.locator('#slice-helpers').innerText(),/3,167.195/);
+ assert.match(await page.locator('#slice-helpers').innerText(),/T PASS/);
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS real exporter receipt/draft pairing, named tiny helper failure, context mismatch, wrong receipt retention, new draft invalidation, mobile');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

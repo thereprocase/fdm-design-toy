@@ -76,8 +76,8 @@ is not proof of body intersection or bonding; exact clipping remains downstream.
 Print-Z extents are displayed, but layer snapping is not applied. These boxes
 are intent, not modifier meshes, credited volume or a new strength result.
 
-`keep_clear` now stores validated `interface_ids`, empty `keep_out_ids`, optional
-`clearance_mm`, and a human `note`. Unknown interface IDs are rejected. Older
+`keep_clear` stores validated `interface_ids` and `keep_out_ids`, optional
+`clearance_mm`, and a human `note`. Unknown reference IDs are rejected. Older
 string notes are migrated. Decision metadata includes candidate ID, source hash,
 rank at decision and designer role. v0.1/v0.2 drafts remain readable.
 Run `node ui/spatial.browser.test.cjs` with the same Playwright/mesh environment
@@ -248,3 +248,35 @@ The original example table and its historical receipts remain unchanged. Use
 `tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json`
 for a new draft with the crown-moulding and spool-slide declarations. Existing
 drafts still require their original table; they are not silently migrated.
+
+## Worked helper revision
+
+Load the with-keep-outs table above, then reopen
+[`fixtures/revised-draft.json`](fixtures/revised-draft.json). The single backing
+helper has design-frame centre `[90, -20, 12]` mm and size `[16, 10, 24]` mm.
+It requests 0.5 mm clearance beyond the rear-seat cylinder and tracks both
+keep-outs. Its shell is four walls and 1.6 mm skins, with no sparse infill.
+
+This draft was exported through the browser controls. Compared with the older
+two-helper negative fixture, the tiny test box is absent and the backing moves
+2 mm away from the seat. A first revision kept its 20 mm thickness: the geometry
+sampler reported **NOT_CHECKED** for shell contact. Extending it through the
+24 mm body thickness gave 128 of 512 sampled points in the shell band.
+The modelled seat-axis distance is 15.0 mm against 14.1 mm required; the crown
+box and sampled spool sweep also pass their geometry checks. These are
+provisional geometry observations, not proof of a continuous printed bond.
+
+Open helper review and load that exact draft followed by
+[`fixtures/revised-export-report.json`](fixtures/revised-export-report.json).
+The report preserves the check scope and exact draft/table/body fingerprints.
+The historical negative fixtures remain available for comparison; they use
+their original table and cannot be reopened against the new table.
+
+Then load [`fixtures/revised-slice-evidence.json`](fixtures/revised-slice-evidence.json).
+The exact project and shell-only companion were sliced with Orca 2.4.2, 0.2 mm
+layers, four walls, eight skin layers, 0% body infill, support off and 100%
+filament shrink. Recorded baseline settings match. Inside the helper box,
+solid infill is 3,565.268 mm³ versus 398.073 mm³ in the baseline: a measured
+addition of 3,167.195 mm³ (about 82.5% of the box). This T-level screen passes;
+it does not verify bond continuity, strength or physical printability.
+The receipt records both G-code hashes and the exact project hash.
