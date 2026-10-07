@@ -17,16 +17,26 @@ def mesh_volume_centroid(vertices, faces):
     return float(abs(vol)), c
 
 
-def _min_width_and_best_spin(xy, step_deg):
+def spin_matrix(spin_deg: float) -> np.ndarray:
+    """Rotation about +Z by spin_deg, counter-clockwise seen from above (p' = Rz p)."""
+    r = np.radians(spin_deg)
+    return np.array([[np.cos(r), -np.sin(r), 0.0], [np.sin(r), np.cos(r), 0.0], [0.0, 0.0, 1.0]])
+
+
+def _min_width_and_best_spin(xy, step_deg, usable_mm=None):
+    """Minimum caliper width of a 2D point set, and the spin to print at.
+
+    The spin is the smallest angle from 0 whose footprint box fits usable_mm x usable_mm (so parts that
+    fit stay axis-aligned); if none fits, the angle with the smallest larger side.
+    """
     h = xy[ConvexHull(xy).vertices]
-    best, minw = None, np.inf
+    minw, rows = np.inf, []
     for a in np.arange(0.0, 180.0, step_deg):
-        r = np.radians(a)
-        ext = np.ptp(h @ np.array([[np.cos(r), -np.sin(r)], [np.sin(r), np.cos(r)]]), axis=0)
+        ext = np.ptp(h @ spin_matrix(a)[:2, :2].T, axis=0)
         minw = min(minw, float(ext.min()))
-        if best is None or ext.max() < max(best[1]):
-            best = (float(a), ext.tolist())
-    return minw, best
+        rows.append((float(a), ext.tolist()))
+    fit = [r for r in rows if usable_mm is not None and max(r[1]) <= usable_mm]
+    return minw, (fit[0] if fit else min(rows, key=lambda r: max(r[1])))
 
 
 def pose_columns(vertices, faces, d, bed: dict, stab: dict, *, alpha_min_deg=50.0, centroid=None,
@@ -52,10 +62,16 @@ def pose_columns(vertices, faces, d, bed: dict, stab: dict, *, alpha_min_deg=50.
         c["base_min_width_mm"], _ = _min_width_and_best_spin(cxy, bed["spin_step_deg"])
     else:
         c["com_margin_mm"], c["base_min_width_mm"] = None, 0.0
-    _, (spin, ext) = _min_width_and_best_spin(V[:, :2], bed["spin_step_deg"])
+    usable = min(bed["bed_x_mm"], bed["bed_y_mm"]) - 2 * bed["margin_mm"]
+    _, (spin, ext) = _min_width_and_best_spin(V[:, :2], bed["spin_step_deg"], usable)
     c["footprint_mm2"] = float(ConvexHull(V[:, :2]).volume)
     c["best_spin_deg"], c["best_bbox_mm"] = spin, ext
-    usable = min(bed["bed_x_mm"], bed["bed_y_mm"]) - 2 * bed["margin_mm"]
+    # complete pose: lift d to +Z, spin about +Z, lowest point on the bed, footprint box centred on the bed
+    Rs = spin_matrix(spin)
+    R_full = Rs @ R
+    P = np.asarray(vertices, float) @ R_full.T
+    lo, hi = P.min(axis=0), P.max(axis=0)
+    t_full = np.array([bed["bed_x_mm"] / 2 - (lo[0] + hi[0]) / 2, bed["bed_y_mm"] / 2 - (lo[1] + hi[1]) / 2, -lo[2]])
     c["fits_bed"] = bool(max(ext) <= usable and c["height_mm"] <= bed["max_height_mm"])
     c["contact_ok"] = bool(c["contact_mm2"] >= stab["contact_min_mm2"]
                            and c["contact_mm2"] >= stab["contact_min_fraction"] * c["footprint_mm2"])
@@ -72,4 +88,4 @@ def pose_columns(vertices, faces, d, bed: dict, stab: dict, *, alpha_min_deg=50.
         w = rb.metrics.get("worst")
         c["brg_worst_span_mm"] = None if w is None else float(w["span_mm"])
         c["brg_verdict"] = rb.verdict.value
-    return c, {"R": R, "t": t}
+    return c, {"R": R_full, "t": t_full}

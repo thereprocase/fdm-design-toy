@@ -97,6 +97,14 @@ def build_table(vertices, faces, *, card=None, stress: StressField | None = None
     rows.sort(key=lambda r: (r["rank"] is None, r["rank"] if r["rank"] is not None else 0))
     return {
         "schema": SCHEMA, **(provenance or {}),
+        "pose_convention": ("print = R_design_to_print @ design + t_mm. R is the complete rotation: the lift of "
+                            "build_dir_design to +Z, then spin_deg about +Z (counter-clockwise seen from above). t puts "
+                            "the lowest point on the bed (z = 0) and centres the footprint's bounding box on the bed "
+                            "centre. Bed coordinates: origin at a bed corner, X and Y along the bed edges."),
+        "bed": {"x_mm": bed["bed_x_mm"], "y_mm": bed["bed_y_mm"], "max_height_mm": bed["max_height_mm"],
+                "margin_mm": bed["margin_mm"]},
+        "feasible_scope": ("feasible covers BED-001 (fits the bed with margins) and BED-002 (contact, stability) only. "
+                           "Every other column carries its own verdict; a feasible pose can still fail OVH-001."),
         "establishes": ("For each candidate pose: geometry-level printability (overhang area, flat ceilings, bed fit, "
                         "contact and stability) from the catalog checkers"
                         + (", and the inter-layer index F_L from the supplied stress field" if fl else "") + "."),

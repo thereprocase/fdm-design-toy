@@ -8,14 +8,36 @@
   "source": "spool-wall-rack"
  },
  "generated": {
-  "commit": "30fa034",
+  "commit": "93ecfa6",
   "catalog": "v0",
   "card": "polymaker-polylite-asa-t0",
   "card_corner": "design",
   "fracture_factor": 4.0,
-  "stress": null
+  "stress": {
+   "path": "bracket-stress-r1.npz",
+   "schema": "fdmgen.stress-field.v1",
+   "frame": "installed",
+   "voigt_order": [
+    "xx",
+    "yy",
+    "zz",
+    "yz",
+    "xz",
+    "xy"
+   ],
+   "model": "isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification",
+   "receipt": "bracket-stress-r1.json"
+  }
  },
- "establishes": "For each candidate pose: geometry-level printability (overhang area, flat ceilings, bed fit, contact and stability) from the catalog checkers.",
+ "pose_convention": "print = R_design_to_print @ design + t_mm. R is the complete rotation: the lift of build_dir_design to +Z, then spin_deg about +Z (counter-clockwise seen from above). t puts the lowest point on the bed (z = 0) and centres the footprint's bounding box on the bed centre. Bed coordinates: origin at a bed corner, X and Y along the bed edges.",
+ "bed": {
+  "x_mm": 256,
+  "y_mm": 256,
+  "max_height_mm": 250,
+  "margin_mm": 10
+ },
+ "feasible_scope": "feasible covers BED-001 (fits the bed with margins) and BED-002 (contact, stability) only. Every other column carries its own verdict; a feasible pose can still fail OVH-001.",
+ "establishes": "For each candidate pose: geometry-level printability (overhang area, flat ceilings, bed fit, contact and stability) from the catalog checkers, and the inter-layer index F_L from the supplied stress field.",
  "does_not_establish": "What Orca will generate (T level) or how the part prints (P level); interface variants such as teardrops per pose; strength beyond the supplied stress model; the bed exclusion zone. A first rank means best of these columns only.",
  "candidates": [
   {
@@ -26,7 +48,7 @@
     0.0,
     1.0
    ],
-   "spin_deg": 174.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      1.0,
@@ -45,8 +67,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    24.246979,
+    68.741209,
     0.0
    ],
    "feasible": true,
@@ -143,22 +165,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.060984414492348565,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.019920843626201504,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      1.91,
+      40.8,
+      16.8
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -170,7 +205,7 @@
     0.0,
     -1.0
    ],
-   "spin_deg": 6.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      1.0,
@@ -189,8 +224,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    24.246979,
+    187.258791,
     24.0
    ],
    "feasible": true,
@@ -287,22 +322,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.060984414492348565,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.019920843626201504,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      1.91,
+      40.8,
+      16.8
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -314,7 +362,7 @@
     -0.774324171,
     0.0
    ],
-   "spin_deg": 6.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      0.599577921077,
@@ -333,8 +381,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    100.765633,
+    134.758941,
     143.870981
    ],
    "feasible": false,
@@ -431,22 +479,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.19280070076082617,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.07729268921912455,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      27.51,
+      -29.6,
+      10.4
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -458,7 +519,7 @@
     -0.0,
     -0.0
    ],
-   "spin_deg": 45.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      0.0,
@@ -477,8 +538,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    140.0,
+    68.741209,
     0.0
    ],
    "feasible": false,
@@ -532,7 +593,7 @@
      "fidelity": "geometry"
     },
     "base_min_width_mm": {
-     "value": 24.00000000000001,
+     "value": 24.000000000000025,
      "unit": "mm",
      "rule": "BED-002",
      "level": "M",
@@ -577,22 +638,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.21248571938130295,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.09019416935317345,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      16.31,
+      39.2,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -604,7 +678,7 @@
     0.896968461,
     0.0
    ],
-   "spin_deg": 161.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      0.804552420604,
@@ -623,13 +697,13 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    43.792515,
+    99.874519,
     100.14841
    ],
    "feasible": false,
    "reasons": [
-    "does not fit the bed: best spin 161 deg gives 161 x 162 mm, height 258 mm",
+    "does not fit the bed: best spin 0 deg gives 194 x 112 mm, height 258 mm",
     "bed contact 3 mm2 is below 100 mm2 or 5 % of the footprint",
     "may topple: centre of mass margin or height-to-base ratio outside BED-002"
    ],
@@ -722,22 +796,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.23206852844328515,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.09798926327736668,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      29.11,
+      -29.6,
+      10.4
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -749,17 +836,17 @@
     0.929363181,
     0.0
    ],
-   "spin_deg": 113.0,
+   "spin_deg": 51.0,
    "R_design_to_print": [
     [
-     0.863715923034,
-     -0.343089969733,
-     -0.369166733287
+     0.810185026834,
+     -0.321826133943,
+     0.489926690235
     ],
     [
-     -0.343089969733,
-     0.136284076966,
-     -0.929363181449
+     0.455319827514,
+     -0.180864635784,
+     -0.871763636656
     ],
     [
      0.369166733287,
@@ -768,8 +855,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    67.169029,
+    107.578505,
     29.739622
    ],
    "feasible": false,
@@ -866,22 +953,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.129490352548771,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.062383033964797066,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      27.51,
+      -29.6,
+      10.4
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -893,7 +993,7 @@
     0.994309153,
     0.0
    ],
-   "spin_deg": 141.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      0.988650692549,
@@ -912,8 +1012,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    25.48877,
+    129.085334,
     64.12304
    ],
    "feasible": false,
@@ -964,7 +1064,7 @@
      "fidelity": "geometry"
     },
     "base_min_width_mm": {
-     "value": 24.113368234175773,
+     "value": 24.11336823417576,
      "unit": "mm",
      "rule": "BED-002",
      "level": "M",
@@ -1009,22 +1109,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.21448405772143633,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.09279812247506371,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -1036,7 +1149,7 @@
     -0.999999978,
     -0.0
    ],
-   "spin_deg": 45.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      0.99999995566,
@@ -1055,8 +1168,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    24.263613,
+    116.021844,
     176.000005
    ],
    "feasible": false,
@@ -1110,7 +1223,7 @@
      "fidelity": "geometry"
     },
     "base_min_width_mm": {
-     "value": 12.00252832786115,
+     "value": 12.002528327861151,
      "unit": "mm",
      "rule": "BED-002",
      "level": "M",
@@ -1155,22 +1268,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.2063788354258809,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.08279671380585733,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -1182,7 +1308,7 @@
     0.475639433,
     -0.0
    ],
-   "spin_deg": 17.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      0.226232869916,
@@ -1201,13 +1327,13 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    85.963532,
+    75.487591,
     181.214108
    ],
    "feasible": false,
    "reasons": [
-    "does not fit the bed: best spin 17 deg gives 151 x 150 mm, height 265 mm",
+    "does not fit the bed: best spin 0 deg gives 111 x 177 mm, height 265 mm",
     "bed contact 3 mm2 is below 100 mm2 or 5 % of the footprint",
     "may topple: centre of mass margin or height-to-base ratio outside BED-002"
    ],
@@ -1255,7 +1381,7 @@
      "fidelity": "geometry"
     },
     "base_min_width_mm": {
-     "value": 0.2901736868604985,
+     "value": 0.2901736868604843,
      "unit": "mm",
      "rule": "BED-002",
      "level": "M",
@@ -1300,22 +1426,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.19940163718984774,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.08469435784540598,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -1327,7 +1466,7 @@
     0.376573073,
     0.0
    ],
-   "spin_deg": 23.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      0.14180727927,
@@ -1346,13 +1485,13 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    90.91576,
+    68.637406,
     190.398539
    ],
    "feasible": false,
    "reasons": [
-    "does not fit the bed: best spin 23 deg gives 157 x 156 mm, height 257 mm",
+    "does not fit the bed: best spin 0 deg gives 96 x 192 mm, height 257 mm",
     "bed contact 35 mm2 is below 100 mm2 or 5 % of the footprint",
     "may topple: centre of mass margin or height-to-base ratio outside BED-002"
    ],
@@ -1445,22 +1584,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.20691149137704876,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.0826362642137512,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -1472,17 +1624,17 @@
     -0.408179559,
     -0.0
    ],
-   "spin_deg": 159.0,
+   "spin_deg": 6.0,
    "R_design_to_print": [
     [
-     0.166610552537,
-     -0.372627798642,
-     0.912901663632
+     0.20464805366,
+     -0.457699422819,
+     0.865234310742
     ],
     [
-     -0.372627798642,
-     0.833389447463,
-     0.408179559186
+     -0.353170959551,
+     0.789873841708,
+     0.501367716866
     ],
     [
      -0.912901663632,
@@ -1491,8 +1643,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    133.631561,
+    94.346817,
     192.69826
    ],
    "feasible": false,
@@ -1589,22 +1741,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.22989336195821597,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.09763434983454605,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      29.11,
+      -29.6,
+      10.4
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -1616,7 +1781,7 @@
     0.0,
     0.0
    ],
-   "spin_deg": 45.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      0.0,
@@ -1635,8 +1800,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    116.0,
+    68.741209,
     207.506042
    ],
    "feasible": false,
@@ -1731,22 +1896,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.21248571938130298,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.09019416935317347,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      16.31,
+      39.2,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   },
@@ -1758,7 +1936,7 @@
     1.0,
     0.0
    ],
-   "spin_deg": 45.0,
+   "spin_deg": 0.0,
    "R_design_to_print": [
     [
      1.0,
@@ -1777,8 +1955,8 @@
     ]
    ],
    "t_mm": [
-    0.0,
-    0.0,
+    24.246979,
+    140.0,
     57.482418
    ],
    "feasible": false,
@@ -1873,22 +2051,35 @@
      "fidelity": "D5 grid, straight-line spans"
     },
     "F_L_max": {
-     "value": null,
+     "value": 0.20640074280906448,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": "PASS",
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     },
     "F_L_p99": {
-     "value": null,
+     "value": 0.08282708583924835,
      "unit": "1",
      "rule": "STR-001",
      "level": "FE",
-     "verdict": "NOT_CHECKED",
+     "verdict": null,
      "provisional": true,
-     "fidelity": "no stress field supplied"
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+    },
+    "F_L_max_at_mm": {
+     "value": [
+      14.71,
+      40.8,
+      23.2
+     ],
+     "unit": "mm",
+     "rule": "STR-001",
+     "level": "FE",
+     "verdict": null,
+     "provisional": true,
+     "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
     }
    }
   }

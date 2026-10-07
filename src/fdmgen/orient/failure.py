@@ -8,6 +8,7 @@ stress_mpa (N, 6) Voigt xx yy zz yz xz xy, cell_volume_mm3 (N,), plus cell_indic
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -35,7 +36,17 @@ class StressField:
             raise ValueError(f"{path}: stress_mpa must be (N, 6) Voigt xx yy zz yz xz xy, got {s.shape}")
         meta = {k: z[k].tolist() for k in z.files if k not in ("centres_mm", "stress_mpa", "cell_volume_mm3",
                                                                  "cell_indices", "solid_mask") and z[k].size < 64}
-        return cls(np.asarray(z["centres_mm"], float), s, np.asarray(z["cell_volume_mm3"], float), meta=meta)
+        receipt = Path(path).with_suffix(".json")       # the export's receipt, when it sits next to the NPZ
+        frame = "installed"
+        if receipt.is_file():
+            r = json.loads(receipt.read_text(encoding="utf-8"))
+            frame = r.get("frame", frame)
+            mat = r.get("material", {})
+            meta.setdefault("model", f"{mat.get('model', '?')} E={mat.get('E_MPa', '?')} MPa nu={mat.get('nu', '?')}; "
+                                     f"{r.get('establishes', '')}; {r.get('restraint_model', '')}")
+            meta["receipt"] = receipt.name
+        return cls(np.asarray(z["centres_mm"], float), s, np.asarray(z["cell_volume_mm3"], float), frame=frame,
+                   meta=meta)
 
 
 def tensor(voigt) -> np.ndarray:

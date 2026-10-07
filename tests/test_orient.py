@@ -141,3 +141,41 @@ def test_sample_table_honours_the_ui_contract():
         assert c["kind"] in ("stable_facet", "axis", "sphere", "user")
     best = t["candidates"][0]
     assert best["rank"] == 0 and best["build_dir_design"] == [0.0, 0.0, 1.0]      # the existing flat-on-side pose
+
+
+def test_stress_receipt_feeds_the_fidelity_label(tmp_path):
+    import json
+    p = tmp_path / "s.npz"
+    np.savez(p, centres_mm=np.zeros((1, 3)), stress_mpa=np.zeros((1, 6)), cell_volume_mm3=np.ones(1))
+    (tmp_path / "s.json").write_text(json.dumps({"frame": "installed", "material": {"model": "isotropic", "E_MPa": 1000,
+                                                 "nu": 0.3}, "establishes": "prescreen", "restraint_model": "clamped"}))
+    sf = StressField.load(p)
+    assert sf.frame == "installed" and sf.meta["receipt"] == "s.json" and "isotropic E=1000" in sf.meta["model"]
+
+
+def test_sample_table_carries_fl_from_the_stress_export():
+    import json
+    t = json.loads(FIXTURE.read_text())
+    best = t["candidates"][0]["columns"]
+    assert t["generated"]["stress"]["path"].endswith(".npz")
+    assert best["F_L_max"]["verdict"] == "PASS" and best["F_L_max"]["value"] < 0.25        # SF 4 on the design corner
+    assert "isotropic" in best["F_L_max"]["fidelity"]
+    edge = [c for c in t["candidates"] if abs(c["build_dir_design"][2]) < 1e-9]
+    assert min(c["columns"]["F_L_max"]["value"] for c in edge) > 2 * best["F_L_max"]["value"]   # measured 2.1..3.8x
+
+
+def test_candidate_pose_is_complete_spin_and_bed_centring_included():
+    v, f = box_mesh(100, 10, 10)
+    t = build_table(v, f)
+    for c in t["candidates"]:
+        R, tt = np.array(c["R_design_to_print"]), np.array(c["t_mm"])
+        assert np.allclose(R @ R.T, np.eye(3), atol=1e-9) and np.isclose(np.linalg.det(R), 1.0)
+        assert np.allclose(R @ np.array(c["build_dir_design"]), [0, 0, 1], atol=1e-9)
+        P = v @ R.T + tt
+        lo, hi = P.min(axis=0), P.max(axis=0)
+        assert lo[2] == pytest.approx(0.0, abs=1e-9)
+        assert np.allclose((lo[:2] + hi[:2]) / 2, [t["bed"]["x_mm"] / 2, t["bed"]["y_mm"] / 2], atol=1e-9)
+    lying = next(c for c in t["candidates"] if c["feasible"])
+    P = v @ np.array(lying["R_design_to_print"]).T + np.array(lying["t_mm"])
+    assert lying["spin_deg"] == 0.0 and max(np.ptp(P[:, :2], axis=0)) == pytest.approx(100.0, abs=1e-6)  # fits: no spin
+    assert "feasible_scope" in t and "pose_convention" in t
