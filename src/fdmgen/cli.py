@@ -305,6 +305,46 @@ def _cmd_massing_seed(a) -> int:
     return 0
 
 
+def _cmd_gcode_occupancy(a) -> int:
+    import hashlib
+
+    import numpy as np
+
+    from .gcode import extruder_offset, read_gcode
+    from .gcode.occupancy import occupancy, plate_to_grid
+    table = json.loads(a.table.read_text(encoding="utf-8"))
+    cand = next((c for c in table["candidates"] if c["id"] == a.pose), None)
+    if cand is None:
+        print(f"ERROR   pose {a.pose!r} is not in the table")
+        return 1
+    rec = json.loads(a.grid_receipt.read_text(encoding="utf-8"))
+    g, i2p = rec["grid"], rec["installed_to_print"]
+    if rec.get("frame") != "installed" or table["mesh"]["frame"] != "design":
+        print("ERROR   the grid receipt must map the installed (= design) frame to its print grid")
+        return 1
+    M, c = plate_to_grid(cand["R_design_to_print"], cand["t_mm"], i2p["R"], i2p["t_mm"])
+    raw = a.gcode.read_bytes()
+    text = raw.decode("utf-8")
+    tp = read_gcode(text)
+    out = occupancy(tp, extruder_offset(text), M, c, np.asarray(g["origin_print_mm"]), np.asarray(g["h_mm"]),
+                    tuple(g["shape"]), threshold=a.threshold)
+    acct = out.pop("accounting")
+    prov = {"schema": "fdmgen/occupancy@0.1", "gcode_sha256": hashlib.sha256(raw).hexdigest(),
+            "table_sha256": hashlib.sha256(a.table.read_bytes()).hexdigest(), "pose": a.pose,
+            "grid_receipt": a.grid_receipt.name, "grid_receipt_sha256": hashlib.sha256(a.grid_receipt.read_bytes()).hexdigest(),
+            "grid_frame": "solver print grid of the receipt (installed -> print by installed_to_print)",
+            "grid": g, "installed_to_print": i2p, "pose_R_design_to_print": cand["R_design_to_print"],
+            "pose_t_mm": cand["t_mm"], "indexing": "C order, axes x y z", "accounting": acct,
+            "note": "approximate bead raster of the slicer's credited roads; not a measured print"}
+    a.out.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(a.out, **{k: v for k, v in out.items()}, provenance=np.array(json.dumps(prov)))
+    a.out.with_suffix(".json").write_text(json.dumps(prov, indent=1), encoding="utf-8")
+    print(f"wrote {a.out}: credited {acct['credited_input_mm3']:.1f} mm3, inside grid {acct['deposited_inside_grid_mm3']:.1f}, "
+          f"clipped {acct['clipped_outside_grid_mm3']:.3f}, saturation excess {acct['saturation_excess_mm3']:.1f}, "
+          f"solid cells {acct['solid_cells']} (density >= {a.threshold})")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fdmgen", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -381,6 +421,14 @@ def main(argv: list[str] | None = None) -> int:
     sd.add_argument("--clearance", type=float, default=0.5, help="keep-clear clearance written for every interface (mm)")
     sd.add_argument("--out", type=Path, default=Path("out/massing/seed-draft.json"))
     sd.set_defaults(fn=_cmd_massing_seed)
+    go = sub.add_parser("gcode-occupancy", help="credited roads of a slice -> density grid on a solver grid (NPZ)")
+    go.add_argument("gcode", type=Path)
+    go.add_argument("--table", type=Path, required=True, help="orientation table holding the sliced pose")
+    go.add_argument("--pose", required=True)
+    go.add_argument("--grid-receipt", type=Path, required=True, help="solver receipt with grid + installed_to_print")
+    go.add_argument("--threshold", type=float, default=0.5)
+    go.add_argument("--out", type=Path, required=True)
+    go.set_defaults(fn=_cmd_gcode_occupancy)
     a = ap.parse_args(argv)
     return a.fn(a)
 
