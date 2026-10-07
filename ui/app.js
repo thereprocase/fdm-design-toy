@@ -52,7 +52,7 @@ function renderBridge(candidate) {
     text('p',valid?`${c.verdict} · ${c.value.toLocaleString(undefined,{maximumFractionDigits:3})} mm longest unsupported strand run; recorded limit ${c.limit_mm.toLocaleString()} mm · T${c.provisional?' · provisional':''}`:'Not checked',section);
     if(valid)text('p',c.fidelity||'Method and slice scope not supplied.',section);
     if(valid){
-      text('p',`Ceiling span: ${Number.isFinite(c.ceiling_span_mm)&&c.ceiling_span_mm>=0?c.ceiling_span_mm.toLocaleString(undefined,{maximumFractionDigits:3})+' mm':'not recorded'}. This supplementary model is twice the distance to the nearest support below; the recorded verdict uses the strand span. The maxima may occur on different roads. Physical behaviour needs testing.`,section);
+      text('p',`Ceiling span maximum: ${Number.isFinite(c.ceiling_span_mm)&&c.ceiling_span_mm>=0?c.ceiling_span_mm.toLocaleString(undefined,{maximumFractionDigits:3})+' mm':'not recorded'}. This supplementary model is twice the distance to the nearest support below; the recorded verdict uses the strand span. These are independent per-measure maxima over all evaluated roads of this type, not two measurements of one road. Physical behaviour needs testing.`,section);
       const cov=c.coverage,kind=key.includes('external')?'external_roads':'internal_roads';
       const complete=cov&&['bridge_roads','external_roads','internal_roads'].every(k=>Number.isInteger(cov[k])&&cov[k]>=0)&&cov.external_roads+cov.internal_roads===cov.bridge_roads&&Number.isFinite(cov.cell_mm)&&cov.cell_mm>0&&Number.isFinite(cov.max_cantilever_mm)&&cov.max_cantilever_mm>=0;
       text('p',complete?`${cov[kind].toLocaleString()} ${label.toLowerCase()} evaluated (${cov.bridge_roads.toLocaleString()} bridge roads total). Raster cell ${cov.cell_mm} mm; longest cantilever across all bridge roads ${cov.max_cantilever_mm} mm (reported, not judged).${cov[kind]===0?' No roads of this type were evaluated; a zero span is not a successful bridge trial.':''}`:'Bridge-road coverage is not established by this column.',section);
@@ -310,6 +310,7 @@ function invalidDraftField(){
  const walls=byId('walls'),skin=byId('skin'),w=Number(walls.value),s=Number(skin.value);
  if(!Number.isInteger(w)||w<1||w>20)return walls;
  if(!Number.isFinite(s)||s<.1||s>20)return skin;
+ const rationale=byId('rationale');if(!rationale.value.trim())return rationale;
  if(byId('shell-only').checked)return null;
  const boxes=[...byId('helper-regions').children];
  if(!boxes.length)return byId('add-helper');

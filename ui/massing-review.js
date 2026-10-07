@@ -192,10 +192,10 @@ el('review-bundle').onchange=async e=>{
   for(const [kind,r]of Object.entries(bundle.bridges)){
    const row=add('article','',el('bundle-bridges')),m=r.result.metrics,num=v=>v.toLocaleString(undefined,{maximumFractionDigits:3});
    add('h3',`${kind==='project'?'Project':'Shell-only baseline'} bridges · T ${r.result.verdict}${r.result.provisional?' · provisional':''}`,row);
-   add('p',`External: ${num(m.max_span_external_mm)} mm (limit ${num(r.method.max_span_external_mm)} mm); internal: ${num(m.max_span_internal_mm)} mm (limit ${num(r.method.max_span_internal_mm)} mm). ${m.external_roads} external and ${m.internal_roads} internal roads evaluated.`,row);
+   add('p',`Strand maxima — external: ${num(m.max_span_external_mm)} mm (limit ${num(r.method.max_span_external_mm)} mm); internal: ${num(m.max_span_internal_mm)} mm (limit ${num(r.method.max_span_internal_mm)} mm). ${m.external_roads} external and ${m.internal_roads} internal roads evaluated.`,row);
    add('p','The recorded verdict uses strand spans along individual roads between their anchors.',row);
    const ceiling=key=>Number.isFinite(m[key])?num(m[key])+' mm':'not recorded';
-   add('p',`Ceiling model: external ${ceiling('max_ceiling_span_external_mm')}; internal ${ceiling('max_ceiling_span_internal_mm')}. This is twice the distance to the nearest support below, not the strand length. A smaller ceiling span does not override the recorded strand verdict; physical behaviour needs testing.`,row);
+   add('p',`Ceiling model maxima: external ${ceiling('max_ceiling_span_external_mm')}; internal ${ceiling('max_ceiling_span_internal_mm')}. This is twice the distance to the nearest support below, not the strand length. Each value is a separate maximum over the evaluated roads of that type; the maxima need not occur on the same road. A smaller ceiling span does not override the recorded strand verdict; physical behaviour needs testing.`,row);
    add('p',`Raster cell ${num(r.method.cell_mm)} mm; maximum cantilever ${num(m.max_cantilever_mm)} mm, reported without a cantilever verdict.`,row);
    if(m.bridge_roads===0)add('p','No bridge roads evaluated; zero span is not a measured bridge success.',row);
    add('p',r.result.does_not_establish,row);

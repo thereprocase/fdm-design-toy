@@ -576,3 +576,8 @@ since the last open/download checkpoint. Cancel preserves the current form,
 including incomplete numeric fields. Invalid incoming files leave it intact
 without a discard prompt. Browsers that support departure warnings also warn
 before leaving an edited plan. This is not autosave: export the draft to keep it.
+
+Both bridge views label the figures as independent maxima over evaluated roads
+of each type; adjacent values need not describe the same road. Draft export also
+focuses a missing choice rationale, marks it invalid, and clears that marker on
+edit, including for shell-only plans.

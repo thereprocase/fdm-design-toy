@@ -78,28 +78,29 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
 
  await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 53.95 mm/);
  assert.match(await page.locator('#failed-checks').innerText(),/External bridge span · BRG-001 · T/);
- assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span: not recorded/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: not recorded/);
  await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.equal(await page.locator('#pose-bridges details').count(),0);
  // Synthetic additive column coverage; no legacy receipt is changed.
  const ceilingTable=JSON.parse(fs.readFileSync(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json')));
  ceilingTable.candidates.find(c=>c.id==='facet-00').columns.t_bridge_span_internal_mm.ceiling_span_mm=15.7;
  await page.locator('#table-file').setInputFiles({name:'synthetic-ceiling-table.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(ceilingTable))});
  await page.getByRole('button',{name:'facet-00',exact:true}).click();
- assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span: 15.7 mm/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: 15.7 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122.1 mm longest unsupported strand run/);
  assert.match(await page.locator('#pose-bridges').innerText(),/recorded verdict uses the strand span/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/independent per-measure maxima/);
  // Fresh measured receipt enrichment, kept separately from the original pinned tables.
  const realCeilingPath=path.join(__dirname,'fixtures/ceiling/orientation-table.json');
  assert.equal(require('node:crypto').createHash('sha256').update(fs.readFileSync(realCeilingPath)).digest('hex'),'d1f365b2bc64142789f7dc4073ec0582348382e8be4945cc8fd4c05dcab373d1');
  await page.locator('#table-file').setInputFiles(realCeilingPath);
  await page.getByRole('button',{name:'facet-00',exact:true}).click();
- assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span: 2 mm/);
- assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span: 15.678 mm/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: 2 mm/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: 15.678 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122.1 mm/);
  assert.equal(JSON.parse(await page.locator('#pose-bridges pre').first().textContent()).receipt.sha256,'3dda4f12515dc2969f64e3270af297e22ac2b46ec04cc3698f49fa443787a237');
  await page.getByRole('button',{name:'facet-01',exact:true}).click();
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);
- assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span: 52.2 mm/);
+ assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: 52.2 mm/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

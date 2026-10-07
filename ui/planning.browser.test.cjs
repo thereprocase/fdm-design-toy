@@ -12,7 +12,12 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert(await page.locator('#workspace').isHidden());
   await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
   await page.getByRole('button',{name:'facet-00',exact:true}).click();
+  await page.locator('#export').click();
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'rationale');
+  assert.equal(await page.locator('#rationale').getAttribute('aria-invalid'),'true');
+  assert.match(await page.locator('#export-status').innerText(),/Choice rationale/);
   await page.locator('#rationale').fill('Keep the seat load in the layer plane.');
+  assert.equal(await page.locator('#rationale').getAttribute('aria-invalid'),null);
   await page.locator('#export').click();
   assert.equal(await page.evaluate(()=>document.activeElement.dataset.key),'name');
   assert.equal(await page.locator('.helper-region [data-key="name"]').getAttribute('aria-invalid'),'true');
