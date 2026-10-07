@@ -512,7 +512,7 @@ def _cmd_shell_check(a) -> int:
     tp = read_gcode(text)
     from .catalog.checks.toolpath import verify_pose
     try:
-        verify_pose(tp, V, body.faces, extruder_offset(text))
+        placed = verify_pose(tp, V, body.faces, extruder_offset(text))
     except ValueError as e:
         print(f"ERROR   this slice is not pose {a.pose}: {e}")
         return 1
@@ -521,8 +521,8 @@ def _cmd_shell_check(a) -> int:
     vgrid, outside = deposit(tp, extruder_offset(text), np.eye(3), np.zeros(3), origin, a.cell, shape, step_frac=0.5,
                              caps=True)
     r = check_shell(vgrid / a.cell ** 3, origin, a.cell, V, body.faces, n_samples=a.samples)
-    out = {"schema": "fdmgen/shell-check@0.2", "result": r.to_dict(),
-           **_shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, outside)}
+    out = {"schema": "fdmgen/shell-check@0.3", "result": r.to_dict(),
+           **_shell_check_provenance(a, text, tp, table, cand, mesh_path, origin, shape, outside), "placement": placed}
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(r.message)

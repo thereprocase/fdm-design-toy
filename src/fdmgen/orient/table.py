@@ -171,7 +171,8 @@ def add_toolpath_columns(table: dict, vertices, gcode_by_id: dict) -> dict:
 
 
 SLICE_KINDS = ("shell-only", "project")
-MIN_POSE_BANDS = 3          # heights at which a bridge receipt's slice must have been checked against the pose
+MIN_POSE_BANDS = 3          # heights at which a receipt's slice must have been checked against the pose
+SHELL_SCHEMAS = ("fdmgen/shell-check@0.2", "fdmgen/shell-check@0.3")   # 0.2: legacy, records no pose check
 SHELL_KINDS = SLICE_KINDS
 
 
@@ -241,7 +242,16 @@ def add_shell_columns(table: dict, table_sha256: str, receipts: list[tuple[dict,
     by_id = {c["id"]: c for c in out["candidates"]}
     used = []
     for rec, rec_sha, kind in receipts:
-        c = _pair(table, root, by_id, rec, rec_sha, kind, "fdmgen/shell-check@0.2", "SHELL-001", "t_shell_thin_fraction")
+        schema = rec.get("schema")
+        if schema not in SHELL_SCHEMAS:
+            raise ValueError(f"receipt {rec_sha[:12]}: schema {schema!r}, need one of {SHELL_SCHEMAS}")
+        c = _pair(table, root, by_id, rec, rec_sha, kind, schema, "SHELL-001", "t_shell_thin_fraction")
+        placement = rec.get("placement")
+        if schema != "fdmgen/shell-check@0.2":
+            bands = (placement or {}).get("bands") or []
+            if len(bands) < MIN_POSE_BANDS:
+                raise ValueError(f"receipt {rec_sha[:12]}: its slice was checked against the pose at {len(bands)} "
+                                 f"heights, fewer than {MIN_POSE_BANDS}; a truncated or few-layer slice is not pose evidence")
         res, g, m = rec["result"], rec["gcode"], rec["method"]
         frac = res["metrics"]["thin_fraction"]
         if not (isinstance(frac, (int, float)) and 0.0 <= frac <= 1.0):
@@ -256,6 +266,8 @@ def add_shell_columns(table: dict, table_sha256: str, receipts: list[tuple[dict,
         col["coverage"] = {"samples_requested": m["surface_samples"], "measured": res["metrics"]["samples"],
                            "unmeasured": res["metrics"]["unmeasured"],
                            "clipped_outside_grid_mm3": rec["grid"]["clipped_outside_grid_mm3"]}
+        if placement is not None:                 # 0.3 and later; a 0.2 column has no pose_evidence (not recorded)
+            col["pose_evidence"] = {"verified": placement["verified"], "bands": placement["bands"]}
         c["columns"]["t_shell_thin_fraction"] = col
         used.append({"pose": c["id"], "receipt_sha256": rec_sha, "slice_kind": kind})
     _enrich(out, root, ["t_shell_thin_fraction"], "shell_receipts", used,

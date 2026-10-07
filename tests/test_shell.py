@@ -85,7 +85,8 @@ def test_convex_corners_without_road_end_caps_do_not_read_as_zero():
 
 
 def test_cli_receipt_pins_slice_part_pose_grid_and_method(tmp_path, monkeypatch):
-    """shell-check@0.2: a receipt names everything it measured, with relative paths only."""
+    """shell-check@0.3: a receipt names everything it measured, with relative paths only, and how far the slice
+    was checked against the pose (here a one-layer slice: footprint only, which orient-shell refuses)."""
     import json
 
     from fdmgen.cli import main
@@ -106,7 +107,8 @@ def test_cli_receipt_pins_slice_part_pose_grid_and_method(tmp_path, monkeypatch)
     main(["shell-check", str(tmp_path / "s.gcode"), "--table", str(tmp_path / "table.json"), "--pose", "p0",
           "--cell", "0.5", "--samples", "200", "--out", str(out)])
     r = json.loads(out.read_text(encoding="utf-8"))
-    assert r["schema"] == "fdmgen/shell-check@0.2" and r["pose"]["id"] == "p0"
+    assert r["schema"] == "fdmgen/shell-check@0.3" and r["pose"]["id"] == "p0"
+    assert r["placement"]["bands"] == [] and r["placement"]["verified"].startswith("footprint only")   # one layer
     assert len(r["gcode"]["gcode_sha256"]) == 64 and r["gcode"]["generator"] == "OrcaSlicer"
     assert len(r["table"]["sha256"]) == 64 and len(r["mesh"]["sha256"]) == 64 and r["mesh"]["path"] == "box.stl"
     assert r["method"]["deposit"]["caps"] is True and r["method"]["seed"] == 0 and r["method"]["surface_samples"] == 200

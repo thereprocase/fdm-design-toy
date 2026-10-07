@@ -370,3 +370,27 @@ def test_bridge_receipts_need_pose_evidence_and_are_never_relabelled():
     shell = json.loads((SHELL_FIX / "facet-00-shell-only.shell-check.json").read_text(encoding="utf-8"))
     with pytest.raises(ValueError, match="schema"):
         add_bridge_columns(table, sha, [(shell, "s" * 64, "shell-only")])
+
+
+def test_shell_check_0p3_carries_pose_evidence_and_needs_enough_heights():
+    import copy
+    import hashlib
+
+    from fdmgen.orient.table import add_shell_columns
+    raw = KEEP_OUT_TABLE.read_bytes()
+    table, sha = json.loads(raw), hashlib.sha256(raw).hexdigest()
+    legacy = _shell_receipts()[0][0]
+    bands = [{"z_mm": z, "inside_fraction": 1.0, "points": 12000} for z in (2.4, 7.2, 12.0, 16.8, 21.6)]
+    rec = copy.deepcopy(legacy)
+    rec["schema"] = "fdmgen/shell-check@0.3"
+    rec["placement"] = {"shift_xy_mm": [0.0, 0.0], "bands": bands, "tol_mm": 0.5, "min_inside": 0.99,
+                        "verified": "consistent with this pose: ... at 5 heights"}
+    out = add_shell_columns(table, sha, [(rec, "a" * 64, "shell-only")])
+    col = next(c for c in out["candidates"] if c["id"] == "facet-00")["columns"]["t_shell_thin_fraction"]
+    assert col["pose_evidence"]["bands"] == bands and col["value"] == 0.0022
+    few = copy.deepcopy(rec)
+    few["placement"]["bands"] = bands[:2]
+    with pytest.raises(ValueError, match="fewer than 3"):
+        add_shell_columns(table, sha, [(few, "b" * 64, "shell-only")])
+    old = add_shell_columns(table, sha, [(legacy, "c" * 64, "shell-only")])        # 0.2: accepted, nothing invented
+    assert "pose_evidence" not in next(c for c in old["candidates"] if c["id"] == "facet-00")["columns"]["t_shell_thin_fraction"]
