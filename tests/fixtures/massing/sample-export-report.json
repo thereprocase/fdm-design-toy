@@ -172,6 +172,62 @@
    "fixes": [],
    "establishes": "The helper box stays outside the modelled interface cylinder plus clearance.",
    "does_not_establish": "Printed fit, washer/driver access, or anything the cylinder model leaves out."
+  },
+  {
+   "rule": "KEEP-OUT",
+   "level": "M",
+   "verdict": "PASS",
+   "message": "KEEP-OUT PASS: helper 34d4f9dc-e1d8-470f-938d-591a419ecb37 stays out of crown_moulding.",
+   "provisional": true,
+   "metrics": {
+    "helper_id": "34d4f9dc-e1d8-470f-938d-591a419ecb37",
+    "keep_out_id": "crown_moulding"
+   },
+   "fixes": [],
+   "establishes": "",
+   "does_not_establish": ""
+  },
+  {
+   "rule": "KEEP-OUT",
+   "level": "M",
+   "verdict": "NOT_CHECKED",
+   "message": "KEEP-OUT NOT_CHECKED: helper 34d4f9dc-e1d8-470f-938d-591a419ecb37 vs spool_slide: no keep-out geometry.",
+   "provisional": true,
+   "metrics": {
+    "helper_id": "34d4f9dc-e1d8-470f-938d-591a419ecb37",
+    "keep_out_id": "spool_slide"
+   },
+   "fixes": [],
+   "establishes": "",
+   "does_not_establish": ""
+  },
+  {
+   "rule": "KEEP-OUT",
+   "level": "M",
+   "verdict": "PASS",
+   "message": "KEEP-OUT PASS: helper 64440f04-4cdc-4e5a-af33-565e7fe9a19d stays out of crown_moulding.",
+   "provisional": true,
+   "metrics": {
+    "helper_id": "64440f04-4cdc-4e5a-af33-565e7fe9a19d",
+    "keep_out_id": "crown_moulding"
+   },
+   "fixes": [],
+   "establishes": "",
+   "does_not_establish": ""
+  },
+  {
+   "rule": "KEEP-OUT",
+   "level": "M",
+   "verdict": "NOT_CHECKED",
+   "message": "KEEP-OUT NOT_CHECKED: helper 64440f04-4cdc-4e5a-af33-565e7fe9a19d vs spool_slide: no keep-out geometry.",
+   "provisional": true,
+   "metrics": {
+    "helper_id": "64440f04-4cdc-4e5a-af33-565e7fe9a19d",
+    "keep_out_id": "spool_slide"
+   },
+   "fixes": [],
+   "establishes": "",
+   "does_not_establish": ""
   }
  ],
  "establishes": "A sliceable project carrying the plan's pose, shell and helper intent, with MOD-001 geometry checks.",

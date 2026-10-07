@@ -138,6 +138,34 @@ def _check_sources(p: dict, out: list[Finding]) -> None:
                 "generated. Regenerate the problem and review what changed."))
 
 
+def _check_keep_outs(p: dict, out: list[Finding]) -> None:
+    kos = p.get("keep_outs") or []
+    ids = [k.get("id") for k in kos]
+    if len(set(ids)) != len(ids):
+        out.append(Finding("error", "keep_outs", "keep-out ids must be unique"))
+    for n, k in enumerate(kos):
+        if k.get("type") == "box":
+            lo, hi = k.get("min_mm"), k.get("max_mm")
+            if not (isinstance(lo, list) and isinstance(hi, list) and len(lo) == 3 and len(hi) == 3):
+                out.append(Finding("error", f"keep_outs[{n}] ({k.get('id')})", "a box needs min_mm and max_mm with 3 values (null = unbounded)"))
+                return
+            if any(a is not None and b is not None and a >= b for a, b in zip(lo, hi)):
+                out.append(Finding("error", f"keep_outs[{n}] ({k.get('id')})", "min_mm must be below max_mm on every bounded axis"))
+    root = _source_root(p)
+    body = (p.get("geometry") or {}).get("body") or {}
+    if not kos or root is None or not body.get("path"):
+        return
+    import trimesh
+
+    from ..catalog.checks.keepout import check_body
+    mesh = trimesh.load(root / body["path"], force="mesh", process=False)
+    for r in check_body(mesh.vertices, mesh.faces, kos, frame=body.get("frame", "installed")):
+        if r.verdict.value == "FAIL":
+            out.append(Finding("error", f"keep_outs ({r.metrics['keep_out_id']})", r.message))
+        elif r.verdict.value == "NOT_CHECKED":
+            out.append(Finding("warning", f"keep_outs ({r.metrics['keep_out_id']})", r.message))
+
+
 def _check_refs(p: dict, out: list[Finding]) -> None:
     from ..catalog import load_rules
     from ..catalog.rules import catalog_root
@@ -205,6 +233,7 @@ def lint_problem(p: dict) -> list[Finding]:
     _check_refs(p, out)
     _check_regeneration(p, out)
     _check_sources(p, out)
+    _check_keep_outs(p, out)
     return out
 
 

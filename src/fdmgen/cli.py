@@ -192,8 +192,11 @@ def _cmd_massing(a) -> int:
     template = (zipfile.ZipFile(a.template).read("audit.3mf") if a.template.suffix == ".zip" else a.template.read_bytes())
     body = trimesh.load(mesh_path, force="mesh", process=False)      # raw STL order: no version-dependent merging
     try:
+        import yaml
+        prob_file = Path(__file__).resolve().parents[2] / "problems" / str(table.get("problem")) / "problem.yaml"
+        keep_outs = yaml.safe_load(prob_file.read_text(encoding="utf-8")).get("keep_outs") if prob_file.is_file() else None
         data, report = export_plan(plan, body.vertices, body.faces, template, load_capabilities(a.capabilities),
-                                   interfaces=table.get("interfaces"))
+                                   interfaces=table.get("interfaces"), keep_outs=keep_outs)
     except ValueError as e:
         print(f"ERROR   {e}")
         return 1

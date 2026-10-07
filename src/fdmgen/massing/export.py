@@ -109,7 +109,8 @@ def check_helpers(helpers, body_vertices=None, body_faces=None, *, gap_min_mm=No
 
 
 def export_plan(plan, body_vertices, body_faces, template: bytes, capabilities: dict, *, layer_height_mm=0.2,
-                helper_settings=None, allow_unmeasured_values: bool = False, interfaces=None) -> tuple[bytes, dict]:
+                helper_settings=None, allow_unmeasured_values: bool = False, interfaces=None,
+                keep_outs=None) -> tuple[bytes, dict]:
     """Orca 3MF bytes and a report for a validated plan; raises ValueError on a refused setting."""
     settings = dict(helper_settings or HELPER_SETTINGS)
     t_sha = hashlib.sha256(template).hexdigest()
@@ -146,6 +147,11 @@ def export_plan(plan, body_vertices, body_faces, template: bytes, capabilities: 
     checks = [] if plan.shell_only else check_helpers(plan.helpers, body_vertices, body_faces, shell_band_mm=band)
     if not plan.shell_only:
         checks += check_keep_clear(plan.helpers, interfaces)
+        if keep_outs:
+            from ..catalog.checks.keepout import check_boxes
+            bv = np.asarray(body_vertices, float)
+            boxes = {h.id: (h.center_mm - h.size_mm / 2, h.center_mm + h.size_mm / 2) for h in plan.helpers}
+            checks += check_boxes(boxes, keep_outs, bv.min(axis=0), bv.max(axis=0))
     report = {
         "schema": "fdmgen/massing-export@0.1",
         "plan": {"draft_sha256": plan.draft_sha256, "table_sha256": plan.table_sha256, "mesh_sha256": plan.mesh_sha256,

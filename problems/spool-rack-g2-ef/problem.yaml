@@ -17,6 +17,8 @@ generated_by:
       sha256: a83ba8b5b71d8ca05b67e74ad2e421cbd5998603927fa61ff408f7b68d9b1877
     - path: designs/rev-g2/print-controls/ef-core-asa-4w-1p6/selected-layout.json
       sha256: f1fa723a0e94cde4cb6a39de005f69178cb10b3286f0cfc70ccadcee67fd5bfc
+    - path: designs/rev-g2/shape-seeds/moulding-clearance.json
+      sha256: 7b44f312743f6f9b84ffeef4c0deb67d1ca316397d6dab84b50236ea43207a5a
     - path: designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl
       sha256: bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e
     - path: designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-only.stl
@@ -84,6 +86,29 @@ interfaces:
   washer_plane_x_mm: 3.6
   role: interface
   support: forbidden
+keep_outs:
+- id: crown_moulding
+  type: box
+  frame: installed
+  min_mm:
+  - 0.0
+  - null
+  - null
+  max_mm:
+  - 25.4
+  - -32.0
+  - null
+  rule: For X from 0 to 25.4 mm, no bracket material may extend below Y=-32 mm. Farther out, downward design space
+    is free of this moulding constraint.
+  structural_support: none
+  source: designs/rev-g2/shape-seeds/moulding-clearance.json
+- id: spool_slide
+  type: not_derived
+  frame: installed
+  rule: "Preserve axial flange sliding for 180\u2013220 mm spools, with at least 3.5 mm nominal clearance over the\
+    \ effective rail-radius interval 12.4\u201312.7 mm."
+  source: designs/rev-g2/INTERFACE-CONTRACT.md
+  note: the flange sweep envelope is not derived from the contract text yet; checks report NOT_CHECKED
 load_cases:
 - id: full
   frame: installed

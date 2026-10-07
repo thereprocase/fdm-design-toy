@@ -20,8 +20,26 @@ ROOT_ENV = "SPOOL_RACK_ROOT"
 G = sb.TOTAL_LOAD_N / 12.0           # 117.72 N is 12 kg, so the brief's g is 9.81 m/s^2
 ONE_SPOOL_KG = 1.25                  # G2-BRIEF.md: "one 1.25 kg spool"
 LAYOUT = f"{sb.HANDOFF}/selected-layout.json"
-PINNED = ("G2-BRIEF.md", "designs/rev-g2/INTERFACE-CONTRACT.md", LAYOUT,
+MOULDING = "designs/rev-g2/shape-seeds/moulding-clearance.json"
+CONTRACT = "designs/rev-g2/INTERFACE-CONTRACT.md"
+PINNED = ("G2-BRIEF.md", CONTRACT, LAYOUT, MOULDING,
           f"{sb.HANDOFF}/body-mounted.stl", f"{sb.HANDOFF}/body-only.stl")
+
+
+def keep_outs(root: Path) -> list[dict]:
+    """Keep-outs from the pinned sources: geometry only where the source gives it as data."""
+    import re
+    m = json.loads((root / MOULDING).read_text(encoding="utf-8"))
+    x0, x1 = m["minimum_locating_underside_X_interval_mm"]
+    spool = re.search(r"^\| Spool clearance \| (.+?) \|\s*$", (root / CONTRACT).read_text(encoding="utf-8"), re.MULTILINE)
+    return [
+        {"id": "crown_moulding", "type": "box", "frame": "installed",
+         "min_mm": [float(x0), None, None], "max_mm": [float(x1), float(m["locating_underside_Y_mm"]), None],
+         "rule": m["below_moulding_top_rule"], "structural_support": "none", "source": MOULDING},
+        {"id": "spool_slide", "type": "not_derived", "frame": "installed",
+         "rule": spool.group(1).strip() if spool else None, "source": CONTRACT,
+         "note": "the flange sweep envelope is not derived from the contract text yet; checks report NOT_CHECKED"},
+    ]
 
 
 def _forces(total_N: float) -> list[dict]:
@@ -71,6 +89,7 @@ def build(root: str | Path) -> dict:
         "geometry": {"body": {"path": f"{sb.HANDOFF}/body-mounted.stl", "frame": "installed", "role": "fixed body (P2)"},
                      "helpers": list(sb.HELPERS)},
         "interfaces": seats + mounts,
+        "keep_outs": keep_outs(root),
         "load_cases": load_cases(),
         "supports": [
             {"id": "wall", "type": "unilateral_contact", "face": "X=0",

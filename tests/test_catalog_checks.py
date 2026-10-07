@@ -270,3 +270,31 @@ def test_wall002_taper_crosses_edges_briefly():
         occ[i, 100 - half:100 + half, 0] = True
     assert layers.check_bead_bands(occ, px).verdict is Verdict.PASS
     assert layers.bead_band_edges()[:4] == pytest.approx([1.70, 2.85, 3.70, 4.85])
+
+
+def test_keepout_triangle_box_known_answers():
+    from fdmgen.catalog.checks.keepout import triangles_overlap_box
+    lo, hi = np.array([0.0, 0, 0]), np.array([1.0, 1, 1])
+    tri = np.array([
+        [[0.2, 0.2, 0.2], [0.3, 0.2, 0.2], [0.2, 0.3, 0.2]],          # fully inside
+        [[-1, 0.5, 0.5], [2, 0.5, 0.5], [0.5, 0.5, 3]],               # crosses the box, no vertex inside
+        [[1.5, -0.4, 0.5], [-0.4, 1.5, 0.5], [1.6, 1.6, 0.5]],         # bbox overlaps, triangle clear of the corner? (crosses)
+        [[1.2, 0.0, 0.5], [2.0, 0.0, 0.5], [2.0, -0.9, 0.5]],          # outside
+        [[0.9, 1.9, 0.5], [1.9, 0.9, 0.5], [1.9, 1.9, 0.5]],           # bbox overlaps the box, triangle does not
+    ])
+    assert triangles_overlap_box(tri, lo, hi).tolist() == [True, True, True, False, False]
+
+
+def test_keepout_body_contact_is_not_intrusion():
+    from fdmgen.catalog.checks.keepout import check_body, check_boxes
+    v = np.array([[x, y, z] for x in (0, 10) for y in (0, 10) for z in (0, 10)], float)
+    f = np.array([[0, 1, 3], [0, 3, 2], [4, 6, 7], [4, 7, 5], [0, 4, 5], [0, 5, 1], [2, 3, 7], [2, 7, 6],
+                  [0, 2, 6], [0, 6, 4], [1, 5, 7], [1, 7, 3]])
+    touching = {"id": "below", "type": "box", "frame": "installed", "min_mm": [None, None, None], "max_mm": [None, None, 0.0]}
+    entering = {"id": "corner", "type": "box", "frame": "installed", "min_mm": [8.0, None, None], "max_mm": [None, 2.0, None]}
+    unknown = {"id": "sweep", "type": "not_derived", "frame": "installed"}
+    r = {x.metrics["keep_out_id"]: x.verdict for x in check_body(v, f, [touching, entering, unknown])}
+    assert r == {"below": Verdict.PASS, "corner": Verdict.FAIL, "sweep": Verdict.NOT_CHECKED}
+    b = check_boxes({"h1": (np.array([9.0, 0, 0]), np.array([12.0, 3, 5])), "h2": (np.array([0.0, 5, 0]), np.array([2.0, 7, 5]))},
+                    [entering], v.min(axis=0), v.max(axis=0))
+    assert {x.metrics["helper_id"]: x.verdict for x in b} == {"h1": Verdict.FAIL, "h2": Verdict.PASS}
