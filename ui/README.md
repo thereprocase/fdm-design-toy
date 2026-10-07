@@ -137,3 +137,17 @@ It requires the real mesh fixture and runs all Node checks plus the planning,
 pose-toolpath, coupon, spatial-editing and mesh-import browser checks sequentially.
 A missing fixture or browser is an error, not a silently skipped check. Run the
 Python suite separately; the UI runner does not establish solver correctness.
+
+## Modifier capability evidence
+
+The massing form includes the measured per-modifier requests from the slicer
+capability catalog, with profile/template context, side effects and recorded
+G-code/build provenance. Each request remains separate: a density probe does not
+establish all density/pattern combinations. Honoured is a slicer observation,
+not a strength or print qualification. No automatic profile match is claimed.
+Whole-body walls/skins remain editable; modifier-only results do not govern them.
+
+The static bundle supports opening the workspace offline without a YAML parser.
+After a catalog change, run `python ui/build-capabilities.py` (requires PyYAML).
+The remote browser check rejects a stale source fingerprint and checks that
+ignored settings, side effects and positive-control receipts remain visible.
