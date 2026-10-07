@@ -155,10 +155,19 @@ def _check_keep_outs(p: dict, out: list[Finding]) -> None:
     body = (p.get("geometry") or {}).get("body") or {}
     if not kos or root is None or not body.get("path"):
         return
+    path = root / body["path"]
+    if not path.is_file():
+        return                                     # _check_sources already reports the missing file
     import trimesh
 
     from ..catalog.checks.keepout import check_body
-    mesh = trimesh.load(root / body["path"], force="mesh", process=False)
+    try:
+        mesh = trimesh.load(path, force="mesh", process=False)
+        if len(getattr(mesh, "faces", ())) == 0:
+            raise ValueError("no triangles")
+    except Exception as e:  # noqa: BLE001 - any corrupt source file is reported as a finding, never a crash
+        out.append(Finding("warning", "keep_outs", f"the body mesh {body['path']} could not be read ({e}); keep-outs were NOT checked"))
+        return
     for r in check_body(mesh.vertices, mesh.faces, kos, frame=body.get("frame", "installed")):
         if r.verdict.value == "FAIL":
             out.append(Finding("error", f"keep_outs ({r.metrics['keep_out_id']})", r.message))
