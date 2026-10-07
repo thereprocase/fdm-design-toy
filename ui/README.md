@@ -493,3 +493,11 @@ the verifier source hash and the deposition offset after measured placement
 correction. The browser imports these exact bytes and reports 0.22% thin samples.
 It does not pair this newer receipt with a legacy baseline's weaker pose evidence.
 Earlier receipt files remain unchanged.
+
+The matching fresh baseline is
+[`seed-baseline-shell-check-v03.json`](fixtures/seed-baseline-shell-check-v03.json)
+(SHA-256 `fa03534d…`, same producer). Both receipts use the same grid, method,
+source hashes, pose and placement correction. Their sampled thin fractions are
+both 0.22%, a difference of zero percentage points; this does not establish
+pointwise shell equality or printed strength. The browser checks the real pair
+and retains it if a project receipt is mistakenly loaded as the baseline.

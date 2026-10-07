@@ -57,6 +57,17 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.deepEqual(real.placement.deposit_offset_mm,[.0005,1.995,0]);assert.equal(real.source_sha256['fdmgen/catalog/checks/toolpath.py'],'621a6b7715d18d3fec10d8ea1048dabf9076eea331151f499a3c61b915fed366');
  assert.match(await page.locator('#shell-summary').innerText(),/0.22%/);
  assert.match(await page.locator('#shell-comparison-status').innerText(),/pose-check provenance differs/);
+ await page.locator('#review-shell-baseline').setInputFiles(fixture('baseline-shell-check-v03'));
+ await page.waitForFunction(()=>document.querySelector('#shell-comparison-status').textContent.startsWith('Matched sampled-screen comparison'));
+ const baseline=JSON.parse(await page.locator('#shell-baseline-provenance').textContent());
+ assert.equal(baseline.schema,'fdmgen/shell-check@0.3');assert.equal(baseline.placement.bands.length,5);
+ assert.deepEqual(baseline.placement.deposit_offset_mm,real.placement.deposit_offset_mm);
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/does not establish unchanged thickness everywhere/);
+ assert.match(await page.locator('#shell-comparison-summary').innerText(),/Baseline: 0.22%.*Project: 0.22%/);
+ await page.locator('#review-shell-baseline').setInputFiles(fixture('project-shell-check-v03'));
+ await page.waitForFunction(()=>document.querySelector('#shell-baseline-status').textContent.includes('G-code differs'));
+ assert.deepEqual(JSON.parse(await page.locator('#shell-baseline-provenance').textContent()),baseline);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-slice').setInputFiles([]);await page.locator('#review-slice').setInputFiles(fixture('slice-evidence'));
  await page.waitForFunction(()=>document.querySelector('#shell-results').hidden);
