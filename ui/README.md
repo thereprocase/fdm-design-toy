@@ -570,3 +570,9 @@ internal maxima 122.1/15.678 mm; facet-01 external is 52.2 mm under both models.
 These are separate maxima, not necessarily measurements of the same road. All
 recorded strand verdicts remain unchanged; the smaller ceiling measurement does
 not establish physical performance. Existing pinned tables and drafts are untouched.
+
+The workspace asks before a valid replacement table or saved draft discards edits
+since the last open/download checkpoint. Cancel preserves the current form,
+including incomplete numeric fields. Invalid incoming files leave it intact
+without a discard prompt. Browsers that support departure warnings also warn
+before leaving an edited plan. This is not autosave: export the draft to keep it.

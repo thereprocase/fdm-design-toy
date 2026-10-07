@@ -4,7 +4,8 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  try{
   const page=await browser.newPage({viewport:{width:1300,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+  page.on('dialog',dialog=>dialog.accept());
+ await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
   await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
   await page.getByRole('button',{name:'facet-00',exact:true}).click();
   await page.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);

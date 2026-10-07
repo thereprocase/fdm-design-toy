@@ -7,7 +7,8 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
  try {
   const page=await browser.newPage({viewport:{width:1300,height:1000}}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+  page.on('dialog',dialog=>dialog.accept());
+ await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
   await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
   const panel=page.locator('#modifier-evidence');
   assert.match(await panel.innerText(),/no verified slicer\/template match/);

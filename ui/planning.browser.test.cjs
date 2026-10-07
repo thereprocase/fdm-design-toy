@@ -5,7 +5,8 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  try {
   const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+  page.on('dialog',dialog=>dialog.accept());
+ await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
   await page.locator('#table-file').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('null')});
   await page.waitForFunction(()=>document.querySelector('#status').textContent.startsWith('Could not load table'));
   assert(await page.locator('#workspace').isHidden());

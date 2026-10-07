@@ -164,6 +164,7 @@ byId('table-file').onchange=async event=>{
     for(const c of data.candidates){if(!c||typeof c.id!=='string'||!c.id||ids.has(c.id)||!c.columns||typeof c.columns!=='object'||Array.isArray(c.columns)||!Array.isArray(c.build_dir_design)||c.build_dir_design.length!==3||!c.build_dir_design.every(Number.isFinite))throw Error('Each candidate needs a unique id, columns and a finite build direction.');ids.add(c.id);}
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
+    if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';event.target.value='';return;}
     fingerprint=nextFingerprint;analysis=data;selected=null;meshRequest++;mesh=null;meshHash=null;viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
@@ -253,7 +254,7 @@ function draftFormState(){
    fields:[...box.querySelectorAll('input,textarea')].map(field=>field.type==='checkbox'?field.checked:field.value)}))});
 }
 function updateDraftState(){
- const changed=draftCheckpoint!==null&&draftFormState()!==draftCheckpoint;
+ const changed=hasDraftEdits();
  const label=byId('draft-edit-state');label.className=changed?'warning':'hint';
  label.textContent=draftCheckpointKind==='new'
   ?(changed?'Draft edited. Download it to keep these changes.':'No draft downloaded in this session.')
@@ -261,6 +262,9 @@ function updateDraftState(){
   :`No edits since ${draftCheckpointKind==='opened'?'reopening this draft':'the last draft download'}.`;
 }
 function checkpointDraft(kind){draftCheckpointKind=kind;draftCheckpoint=draftFormState();updateDraftState();}
+function hasDraftEdits(){return draftCheckpoint!==null&&draftFormState()!==draftCheckpoint;}
+function allowDraftReplacement(action){return !hasDraftEdits()||confirm(`Discard current draft edits and ${action}? Cancel to export your current draft first.`);}
+window.addEventListener('beforeunload',event=>{if(hasDraftEdits()){event.preventDefault();event.returnValue='';}});
 document.addEventListener('input',event=>{
  if(event.target.matches('#rationale,#walls,#skin,#shell-only,.helper-region input,.helper-region textarea'))updateDraftState();
 });
@@ -297,6 +301,8 @@ byId('draft-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=tableRequest,openRequest=++draftRequest;
   try{
     const raw=JSON.parse(await file.text());if(openRequest!==draftRequest)return;if(request!==tableRequest)throw Error('The analysis changed while opening the draft. Open it again.');
+    Plan.restore(raw,analysis,fingerprint); // Reject an incompatible file before asking to discard edits.
+    if(!allowDraftReplacement('open this saved draft')){byId('draft-status').textContent='Draft replacement cancelled. Current edits are unchanged.';event.target.value='';return;}
     restoreDraft(raw);
   }catch(error){if(openRequest!==draftRequest)return;byId('draft-status').textContent='Could not reopen draft: '+error.message;}
 };

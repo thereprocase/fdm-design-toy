@@ -4,6 +4,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const tablePath=path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json');
  const draftPath=path.join(__dirname,'../tests/fixtures/massing/sample-draft.json'),draft=JSON.parse(await fs.readFile(draftPath,'utf8'));
  const tiny=draft.massing.helper_regions.find(h=>h.name==='Deliberately tiny box');
+ page.on('dialog',dialog=>dialog.accept());
  await page.goto(pathToFileURL(path.join(__dirname,'massing-review.html')).href);
  await page.locator('#review-draft').setInputFiles(draftPath);await page.locator('#review-receipt').setInputFiles(path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json'));
  await page.locator('#review-helpers').getByRole('button',{name:'Edit Deliberately tiny box',exact:true}).click();
