@@ -83,7 +83,7 @@ byId('table-file').onchange=async event=>{
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
-    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();
+    byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
   }catch(error){if(request!==tableRequest)return;analysis=null;selected=null;byId('workspace').hidden=true;byId('status').textContent=`Could not load table: ${error.message}`;}
 };
 byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};
@@ -153,12 +153,7 @@ byId('draft-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=tableRequest,openRequest=++draftRequest;
   try{
     const raw=JSON.parse(await file.text());if(openRequest!==draftRequest)return;if(request!==tableRequest)throw Error('The analysis changed while opening the draft. Open it again.');
-    const restored=Plan.restore(raw,analysis,fingerprint),input=restored.input;
-    choose(restored.candidate);byId('rationale').value=input.rationale;decisions.set(restored.candidate.id,input.rationale);
-    byId('walls').value=input.walls;byId('skin').value=input.skin_mm;byId('shell-only').checked=input.shell_only;byId('helper-panel').hidden=input.shell_only;
-    byId('helper-regions').replaceChildren();input.helper_regions.forEach(addHelper);
-    byId('draft-status').textContent=restored.migrated?'Legacy notes restored. Complete each helper location and interface constraint before exporting.':'Draft restored against its original analysis. You can revise it and export again.';
-    byId('export-status').textContent='';updateRegions();
+    restoreDraft(raw);
   }catch(error){if(openRequest!==draftRequest)return;byId('draft-status').textContent='Could not reopen draft: '+error.message;}
 };
 byId('export').onclick=()=>{
@@ -172,3 +167,37 @@ byId('export').onclick=()=>{
     byId('handoff').open=true;
   }catch(error){byId('export-status').textContent=error.message;}
 };
+
+function restoreDraft(raw){
+    const restored=Plan.restore(raw,analysis,fingerprint),input=restored.input;
+    choose(restored.candidate);byId('rationale').value=input.rationale;decisions.set(restored.candidate.id,input.rationale);
+    byId('walls').value=input.walls;byId('skin').value=input.skin_mm;byId('shell-only').checked=input.shell_only;byId('helper-panel').hidden=input.shell_only;
+    byId('helper-regions').replaceChildren();input.helper_regions.forEach(addHelper);
+    byId('draft-status').textContent=restored.migrated?'Legacy notes restored. Complete each helper location and interface constraint before exporting.':'Draft restored against its original analysis. You can revise it and export again.';
+    byId('export-status').textContent='';updateRegions();
+}
+
+let pendingReview=null;
+function clearReviewTransfer(){
+ pendingReview=null;try{sessionStorage.removeItem('fdmgen-review-edit');}catch(error){}
+ byId('review-transfer').hidden=true;
+ if(location.hash==='#review-edit')history.replaceState(null,'',location.pathname+location.search);
+}
+byId('cancel-review-transfer').onclick=clearReviewTransfer;
+function resumeReviewDraft(){
+ if(!pendingReview)return;
+ try{
+  restoreDraft(pendingReview.draft);
+  const target=[...document.querySelectorAll('.helper-region')].find(box=>box.dataset.id===pendingReview.helper_id);
+  if(target){target.scrollIntoView({block:'center'});target.querySelector('[data-key="name"]').focus({preventScroll:true});}
+  clearReviewTransfer();
+ }catch(error){byId('review-transfer-status').textContent='Draft retained for review: '+error.message;}
+}
+if(location.hash==='#review-edit'){
+ byId('review-transfer').hidden=false;
+ try{
+  pendingReview=JSON.parse(sessionStorage.getItem('fdmgen-review-edit'));
+  if(!pendingReview?.draft||typeof pendingReview.helper_id!=='string')throw Error('No transferable draft was found.');
+  byId('review-transfer-status').textContent='Load the original orientation table to restore the reviewed draft and focus its helper. Its exact fingerprint must match. The saved draft and review results remain unchanged.';
+ }catch(error){pendingReview=null;byId('review-transfer-status').textContent=error.message+' Load the original table and reopen the saved draft manually.';}
+}

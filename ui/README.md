@@ -215,3 +215,16 @@ When recorded, project and baseline slicer settings and G-code fingerprints are
 shown together. Differences in the recorded settings are flagged even if the
 producer omitted its mismatch list. Such differences are not attributed to
 helpers alone. Recorded hashes are provenance, not verification of G-code files.
+
+## Return directly to a reviewed helper
+
+**Edit [helper name]** in export or slice review opens the workspace in the
+current review tab. Load the exact original orientation table; the reviewed
+draft is then restored and its helper's name field receives focus. A wrong
+table retains the pending draft and explains the mismatch. The other workspace
+tab, saved files and receipt remain unchanged.
+
+The handoff uses session storage in that tab and is removed after restoration
+or cancellation. Browsers that block this storage show manual reopen
+instructions. Only draft intent is transferred; previous check results do not
+become evidence for edited geometry. Save and check the revised draft again.

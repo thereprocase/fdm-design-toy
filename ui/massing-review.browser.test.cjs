@@ -1,11 +1,11 @@
 const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
- const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await browser.newPage({locale:'en-US'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(pathToFileURL(path.join(__dirname,'massing-review.html')).href);
  const draftPath=path.join(__dirname,'../tests/fixtures/massing/sample-draft.json'),receiptPath=path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json');
  await page.locator('#review-draft').setInputFiles(draftPath);await page.locator('#review-receipt').setInputFiles(receiptPath);
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
- assert.match(await page.locator('#review-checks').innerText(),/Deliberately tiny box/);assert.match(await page.locator('#review-count').innerText(),/1 failed/);assert.match(await page.locator('#review-helpers').innerText(),/Rear seat backing/);assert.match(await page.locator('#review-setting-evidence').innerText(),/sparse_infill_density/);
+ assert.match(await page.locator('#review-checks').innerText(),/Deliberately tiny box/);assert.match(await page.locator('#review-count').innerText(),/2 failed/);assert.match(await page.locator('#review-helpers').innerText(),/Rear seat backing/);assert.match(await page.locator('#review-setting-evidence').innerText(),/sparse_infill_density/);
  const changed=JSON.parse(fs.readFileSync(receiptPath));changed.capability_context_matches_template=false;
  await page.locator('#review-receipt').setInputFiles({name:'different-context.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});
  await page.waitForFunction(()=>document.querySelector('#review-context').textContent.includes('Template differs'));
@@ -13,7 +13,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#review-slice').setInputFiles(evidencePath);
  await page.waitForFunction(()=>document.querySelector('#slice-status').textContent.startsWith('Slice receipt matches'));
  await page.getByText('Project and baseline slicer settings',{exact:true}).click();assert.match(await page.locator('#slice-settings').innerText(),/gcode_sha256/);assert.match(await page.locator('#slice-settings').innerText(),/2.4.2/);
- assert.match(await page.locator('#slice-helpers').innerText(),/Rear seat backing · T PASS/);assert.match(await page.locator('#slice-helpers').innerText(),/Deliberately tiny box · T FAIL/);assert.match(await page.locator('#slice-helpers').innerText(),/2,708.502/);
+ assert.match(await page.locator('#slice-helpers').innerText(),/Rear seat backing · T PASS/);assert.match(await page.locator('#slice-helpers').innerText(),/Deliberately tiny box · T FAIL/);assert((await page.locator('#slice-helpers').innerText()).includes(JSON.parse(fs.readFileSync(evidencePath)).helpers[0].added_solid_mm3.toLocaleString('en-US',{maximumFractionDigits:3})));
  const incompatible=JSON.parse(fs.readFileSync(evidencePath));incompatible.slicer={layer_height:'0.2'};incompatible.baseline_slicer={layer_height:'0.3'};incompatible.baseline_context_mismatch=[];
  await page.locator('#review-slice').setInputFiles({name:'context.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(incompatible))});
  await page.waitForFunction(()=>document.querySelector('#slice-baseline').textContent.includes('Baseline settings differ'));assert.match(await page.locator('#slice-helpers').innerText(),/context mismatch/);

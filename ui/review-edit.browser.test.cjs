@@ -1,0 +1,26 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs/promises'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const tablePath=path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json');
+ const draftPath=path.join(__dirname,'../tests/fixtures/massing/sample-draft.json'),draft=JSON.parse(await fs.readFile(draftPath,'utf8'));
+ const tiny=draft.massing.helper_regions.find(h=>h.name==='Deliberately tiny box');
+ await page.goto(pathToFileURL(path.join(__dirname,'massing-review.html')).href);
+ await page.locator('#review-draft').setInputFiles(draftPath);await page.locator('#review-receipt').setInputFiles(path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json'));
+ await page.locator('#review-helpers').getByRole('button',{name:'Edit Deliberately tiny box',exact:true}).click();
+ await page.waitForURL('**/index.html#review-edit');assert(await page.locator('#review-transfer').isVisible());
+ const raw=await fs.readFile(tablePath);await page.locator('#table-file').setInputFiles({name:'changed-table.json',mimeType:'application/json',buffer:Buffer.concat([raw,Buffer.from(' ')])});
+ await page.waitForFunction(()=>document.querySelector('#review-transfer-status').textContent.includes('different orientation table'));
+ assert.equal(await page.locator('#pose-name').innerText(),'Choose a candidate');
+ await page.locator('#table-file').setInputFiles(tablePath);
+ await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
+ assert(await page.locator('#review-transfer').isHidden());
+ const target=page.locator('.helper-region').filter({has:page.locator('[data-key="name"]')}).nth(draft.massing.helper_regions.indexOf(tiny));
+ assert.equal(await target.locator('[data-key="name"]').inputValue(),tiny.name);
+ assert(await target.locator('[data-key="name"]').evaluate(e=>e===document.activeElement));
+ const download=page.waitForEvent('download');await page.locator('#export').click();const exported=JSON.parse(await fs.readFile(await(await download).path(),'utf8'));
+ assert.deepEqual(exported.massing,draft.massing);assert.equal(exported.source.orientation_table_sha256,draft.source.orientation_table_sha256);
+ assert.equal(await page.evaluate(()=>sessionStorage.getItem('fdmgen-review-edit')),null);
+ await page.goto('about:blank');await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href+'#review-edit');
+ assert.match(await page.locator('#review-transfer-status').innerText(),/manually/);await page.locator('#cancel-review-transfer').click();assert(await page.locator('#review-transfer').isHidden());
+ assert.deepEqual(errors,[]);console.log('PASS review-to-edit file-URL handoff, wrong table retained, exact table restore, helper focus, preserved massing, consumed transfer, missing-transfer fallback');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

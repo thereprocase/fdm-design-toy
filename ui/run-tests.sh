@@ -14,7 +14,7 @@ if [[ ! -x "$CHROMIUM_PATH" ]]; then
   exit 2
 fi
 node --test ui/plan.test.cjs ui/viewer.test.cjs ui/coupon-evidence.test.cjs ui/massing-review-model.test.cjs
-for check in planning toolpath coupons spatial capabilities massing-review; do
+for check in planning toolpath coupons spatial capabilities massing-review review-edit; do
   node "ui/$check.browser.test.cjs"
 done
 node ui/browser.test.cjs
