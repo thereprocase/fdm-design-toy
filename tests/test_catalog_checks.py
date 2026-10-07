@@ -403,3 +403,39 @@ def test_verify_pose_tells_a_flip_from_the_right_pose():
     assert np.allclose(flipped.min(axis=0), V.min(axis=0)) and np.allclose(flipped.max(axis=0), V.max(axis=0))
     with pytest.raises(ValueError, match="not that pose"):
         verify_pose(tp, flipped, F[:, ::-1])                                           # the mirror flips winding
+
+
+def _channel(role="Bridge"):
+    """Layer 1: a U of support, two 5 mm strips 3 mm apart (x 0..5 and 8..13, y 0..30) joined by end caps.
+    Layer 2: bridge strands laid ALONG the 3 mm channel (x 5.5, 6.5, 7.5), anchored only at the caps."""
+    import math
+
+    from fdmgen.gcode import read_gcode
+    area = math.pi * 1.75 ** 2 / 4
+
+    def road(x0, y0, x1, y1):
+        return [f"G1 X{x0:.3f} Y{y0:.3f}", f"G1 X{x1:.3f} Y{y1:.3f} E{0.42 * 0.2 * math.hypot(x1 - x0, y1 - y0) / area:.6f}"]
+    g = ["; filament_diameter: 1.75", "M83", "G90", "; printing object part", ";WIDTH:0.42", ";HEIGHT:0.2",
+         ";Z:0.2", "G1 Z0.2", ";TYPE:Internal solid infill"]
+    for x in np.arange(0.21, 5.0, 0.4):
+        g += road(x, 0.21, x, 29.79) + road(x + 8.0, 0.21, x + 8.0, 29.79)
+    for y in (0.21, 0.61, 1.01, 1.41, 1.79, 28.21, 28.61, 29.01, 29.41, 29.79):
+        g += road(5.0, y, 8.0, y)
+    g += [";Z:0.4", "G1 Z0.4", f";TYPE:{role}"]
+    for x in (5.5, 6.5, 7.5):
+        g += road(x, 0.6, x, 29.4)
+    g.append("; stop printing object part")
+    return read_gcode("\n".join(g) + "\n", footer_rel_tol=None)
+
+
+def test_brg001_t_reports_strand_and_ceiling_spans_for_strands_along_a_channel():
+    """The strand hangs 26 mm between the end caps; as a ceiling the channel is only 3 mm wide."""
+    from fdmgen.catalog.checks.toolpath import bridge_spans, check_bridge_toolpath
+    tp = _channel()
+    rows = bridge_spans(tp)
+    assert len(rows) == 3 and all(abs(r["span_mm"] - 26.0) <= 0.2 for r in rows)
+    mid = next(r for r in rows if abs(tp.start[r["road_index"], 0] - 6.5) < 1e-6)
+    assert mid["ceiling_span_mm"] == pytest.approx(3.0, abs=0.25)          # 1.5 mm to either strip
+    r = check_bridge_toolpath(tp)
+    assert r.verdict.value == "FAIL"                                        # the verdict uses the strand model
+    assert r.metrics["max_ceiling_span_external_mm"] < 3.3

@@ -76,7 +76,10 @@ def bridge_spans(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), cell_mm: float = 0.1, 
     The layer below is every object road (support included: a road over support is not bridging) whose
     top is the highest top below the bridge layer, rasterised on an XY grid of cell_mm with road caps.
     A point is supported where that layer's density is at least support_density. A run bounded by support
-    at both ends is a bridge span; a run that reaches a road end is reported as a cantilever instead.
+    at both ends is a bridge span (the strand model: the road hangs between its own anchors); a run that
+    reaches a road end is reported as a cantilever instead. ceiling_span_mm is twice the largest distance from
+    an unsupported point of the road to any support below (the ceiling model of the M-level check: a skin
+    anchored all round). The two differ when the slicer lays strands along a narrow channel.
     """
     from ...gcode.occupancy import deposit
     off = np.asarray(offset, float)
@@ -99,6 +102,8 @@ def bridge_spans(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), cell_mm: float = 0.1, 
         shape = (int(np.ceil((hi[0] - lo[0]) / cell_mm)), int(np.ceil((hi[1] - lo[1]) / cell_mm)), 1)
         g, _ = deposit(tp, off, np.eye(3), np.zeros(3), lo, h, shape, mask=below, caps=True)
         supported = (g[:, :, 0] / np.prod(h)) >= support_density
+        from scipy import ndimage as ndi
+        to_support = ndi.distance_transform_edt(~supported) * cell_mm if supported.any() else np.full(supported.shape, np.inf)
         for i in np.flatnonzero(here):
             a, b = tp.start[i, :2] + off[:2], tp.end[i, :2] + off[:2]
             L = float(np.linalg.norm(b - a))
@@ -119,10 +124,12 @@ def bridge_spans(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), cell_mm: float = 0.1, 
                     k = j + 1
                 else:
                     k += 1
+            d = to_support[idx[:, 0], idx[:, 1]]
+            anchor = float(d[~sup].max()) if (~sup).any() else 0.0   # farthest unsupported point from any support
             span = max(((j - k + 1) * step for k, j in runs if k > 0 and j < len(sup) - 1), default=0.0)
             cant = max(((j - k + 1) * step for k, j in runs if k == 0 or j == len(sup) - 1), default=0.0)
-            out.append({"role": str(tp.role[i]), "z_mm": float(z), "length_mm": L, "span_mm": span,
-                        "cantilever_mm": cant, "supported_fraction": float(sup.mean())})
+            out.append({"road_index": int(i), "role": str(tp.role[i]), "z_mm": float(z), "length_mm": L, "span_mm": span,
+                        "cantilever_mm": cant, "supported_fraction": float(sup.mean()), "ceiling_span_mm": 2 * anchor})
     return out
 
 
@@ -137,13 +144,21 @@ def check_bridge_toolpath(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), max_span_exte
     def worst(sel):
         return float(spans[sel].max()) if sel.any() else 0.0
     ext, inn = worst(~internal), worst(internal)
+    ceil = np.array([r["ceiling_span_mm"] for r in rows]) if rows else np.zeros(0)
+
+    def worst_ceiling(sel):
+        return float(ceil[sel].max()) if sel.any() else 0.0
     metrics = {"bridge_roads": len(rows), "external_roads": int((~internal).sum()), "internal_roads": int(internal.sum()),
                "max_span_external_mm": round(ext, 3), "max_span_internal_mm": round(inn, 3),
+               "max_ceiling_span_external_mm": round(worst_ceiling(~internal), 3),
+               "max_ceiling_span_internal_mm": round(worst_ceiling(internal), 3),
                "max_cantilever_mm": round(max((r["cantilever_mm"] for r in rows), default=0.0), 3),
                "limits_mm": {"external": max_span_external_mm, "internal": max_span_internal_mm}, "cell_mm": cell_mm,
                "bridge_layers_z_mm": sorted({r["z_mm"] for r in rows})}
     does_not = ("Sag or anchor quality in print (P level); spans are measured on a cell_mm raster of the layer below, "
-                "so they carry about one cell of error; cantilevers (runs reaching a road end) are reported, not judged.")
+                "so they carry about one cell of error; cantilevers (runs reaching a road end) are reported, not judged. "
+                "The verdict uses the strand span along each road; the ceiling span (twice the distance to the nearest "
+                "support) is reported beside it and is much smaller where strands run along a narrow channel.")
     over = [f"external {ext:.1f} mm > {max_span_external_mm:g}" if ext > max_span_external_mm else None,
             f"internal {inn:.1f} mm > {max_span_internal_mm:g}" if inn > max_span_internal_mm else None]
     over = [o for o in over if o]
