@@ -604,3 +604,8 @@ Draft downloads use the part and pose identifiers, for example
 letters, digits and hyphens, limited to 64 characters each, with `part`/`pose`
 fallbacks. Names help identify files; exact content hashes still control receipt
 pairing. Repeated downloads can have the same suggested name.
+
+Surface placement can be stopped with **Cancel placement** beside the preview
+or **Escape**, leaving helper coordinates and draft edits unchanged. A completed
+pick closes the mode. Changing pose, replacing the mesh or draft, removing a
+helper, turning off its box or choosing shell-only also closes pending placement.

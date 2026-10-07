@@ -25,6 +25,26 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert(await region.locator('[data-geometry="center_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));
   assert(await page.evaluate(()=>{const v=document.querySelector('#part-view').getBoundingClientRect(),p=document.querySelector('.preview').getBoundingClientRect(),e=document.querySelector('.editor').getBoundingClientRect();return v.top>=0&&v.bottom<=innerHeight&&p.right<=e.left;}));
   const centers=await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value));
+  assert(await page.locator('#cancel-placement').isHidden());
+  const beforeCancel=await page.evaluate(()=>draftFormState());
+  for(const action of ['button','escape']){
+   await region.getByRole('button',{name:'Place centre on part'}).click();
+   assert(await page.locator('#cancel-placement').isVisible());
+   if(action==='button')await page.locator('#cancel-placement').click();else await page.keyboard.press('Escape');
+   assert(await page.evaluate(()=>viewer.onPick===null&&viewer.canvas.style.cursor===''));
+   assert(await page.locator('#cancel-placement').isHidden());
+   assert.match(await page.locator('#placement-status').innerText(),/cancelled/);
+   assert.equal(await page.evaluate(()=>draftFormState()),beforeCancel);
+   assert(await page.locator('#part-view').evaluate(e=>e===document.activeElement));
+  }
+  for(const selector of ['[data-spatial]','#shell-only']){
+   await region.getByRole('button',{name:'Place centre on part'}).click();
+   const control=page.locator(selector),wasChecked=await control.isChecked();
+   await control.setChecked(!wasChecked);
+   assert(await page.evaluate(()=>viewer.onPick===null));assert(await page.locator('#cancel-placement').isHidden());
+   await control.setChecked(wasChecked);
+   assert.equal(await page.evaluate(()=>draftFormState()),beforeCancel);
+  }
   await region.locator('[data-nudge-step]').selectOption('0.4');
   const sizes=await region.locator('[data-geometry="size_mm"]').evaluateAll(fields=>fields.map(f=>f.value));
   await region.getByRole('button',{name:'Place centre on part'}).click();assert(await page.evaluate(()=>!!viewer.onPick));
@@ -43,7 +63,8 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await region.getByRole('button',{name:'Move X +',exact:true}).click();
   assert.equal(await cy.inputValue(),'');assert.match(await region.locator('[data-nudge-status]').innerText(),/Complete all three/);
   await cy.fill(centers[1]);assert(await region.getByRole('button',{name:'Undo last centre move'}).isDisabled());
-  await page.getByRole('button',{name:'facet-01',exact:true}).click();await page.locator('#rationale').fill('Alternative pose for the same reinforcement.');
+  await region.getByRole('button',{name:'Place centre on part'}).click();
+  await page.getByRole('button',{name:'facet-01',exact:true}).click();assert(await page.evaluate(()=>viewer.onPick===null));assert(await page.locator('#cancel-placement').isHidden());await page.locator('#rationale').fill('Alternative pose for the same reinforcement.');
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),centers);
   await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('0.5');await page.waitForFunction(()=>document.querySelector('#region-warnings').textContent.includes('0.84'));
   await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('10');

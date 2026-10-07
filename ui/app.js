@@ -11,18 +11,18 @@ const viewer = new PartViewer(byId('part-view'));
 let mesh=null,meshHash=null,meshRequest=0,meshBounds=null,activeHelper=null;
 byId('return-helper').onclick=()=>{if(activeHelper?.isConnected){activeHelper.scrollIntoView({block:'center'});activeHelper.querySelector('[data-geometry="center_mm"]')?.focus({preventScroll:true});}};
 function updatePreview(){
- if(!analysis || !selected || !mesh || meshHash!==analysis.mesh?.sha256){viewer.clear();return;}
+ if(!analysis || !selected || !mesh || meshHash!==analysis.mesh?.sha256){cancelSurfacePlacement();viewer.clear();return;}
  try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();}
- catch(e){viewer.clear();byId('mesh-status').textContent=e.message;}
+ catch(e){cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent=e.message;}
 }
 byId('zoom-in').onclick=()=>viewer.zoomBy(1.4);byId('zoom-out').onclick=()=>viewer.zoomBy(1/1.4);
 byId('view-iso').onclick=()=>viewer.view('iso');byId('view-top').onclick=()=>viewer.view('top');
 byId('mesh-file').onchange=async event=>{
- const file=event.target.files[0];if(!file)return;const request=++meshRequest;
+ const file=event.target.files[0];if(!file)return;cancelSurfacePlacement();const request=++meshRequest;
  try{if(file.size>100*1024*1024)throw Error('Preview supports STL files up to 100 MB.');const raw=await file.arrayBuffer(), hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',raw)),b=>b.toString(16).padStart(2,'0')).join('');
  if(request!==meshRequest)return;if(hash!==analysis?.mesh?.sha256)throw Error('STL fingerprint does not match this analysis. Load the referenced mesh.');
  mesh=parseSTL(raw);meshBounds={min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};for(let i=0;i<mesh.length;i++){meshBounds.min[i%3]=Math.min(meshBounds.min[i%3],mesh[i]);meshBounds.max[i%3]=Math.max(meshBounds.max[i%3],mesh[i]);}meshHash=hash;byId('mesh-options').open=false;byId('mesh-status').textContent='Mesh matched. Choose a pose to preview it.';updatePreview();
- }catch(e){if(request!==meshRequest)return;mesh=null;meshHash=null;viewer.clear();byId('mesh-status').textContent=e.message;}
+ }catch(e){if(request!==meshRequest)return;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent=e.message;}
 };
 const metricNames = {F_L_max:'Layer failure index · conservative corner',F_L_max_vendor_corner:'Layer failure index · vendor-ratio corner',F_L_max_at_mm:'Peak sample location (design frame)',F_L_p99:'99th percentile layer failure index',ovh_fail_mm2:'Overhang area',bridge_candidate_mm2:'Potential bridge area',v_unsupported_mm2:'Voxel unsupported area',brg_worst_span_mm:'Longest bridge span',contact_mm2:'Bed contact',com_margin_mm:'Centre-of-mass margin',base_min_width_mm:'Minimum base width',height_mm:'Height'};
 function text(tag, value, parent) {const node=document.createElement(tag);node.textContent=value;parent.append(node);return node;}
@@ -74,7 +74,7 @@ function renderFailedChecks(candidate) {
 }
 function remember() {if(selected) decisions.set(selected.id,byId('rationale').value);}
 function choose(candidate) {
-  remember();selected=candidate;byId('pose-name').textContent=candidate.id;
+  cancelSurfacePlacement();remember();selected=candidate;byId('pose-name').textContent=candidate.id;
   byId('direction').textContent=`Build direction (design frame): ${(candidate.build_dir_design || []).join(', ')}`;
   const design=candidate.columns?.F_L_max,vendor=candidate.columns?.F_L_max_vendor_corner;
   byId('strength-range').textContent=Number.isFinite(design?.value)&&Number.isFinite(vendor?.value)?`Material-corner range: ${Math.min(design.value,vendor.value).toFixed(3)}–${Math.max(design.value,vendor.value).toFixed(3)}. Conservative design corner: ${design.value.toFixed(3)}. ${design.fidelity||'FE prescreen; provisional.'}`:'Strength comparison is not checked for both material corners.';
@@ -165,7 +165,7 @@ byId('table-file').onchange=async event=>{
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';event.target.value='';return;}
-    fingerprint=nextFingerprint;analysis=data;selected=null;meshRequest++;mesh=null;meshHash=null;viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    fingerprint=nextFingerprint;analysis=data;selected=null;meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
@@ -220,12 +220,12 @@ function addHelper(region={}) {
   const place=text('button','Place centre on part',spatial);place.type='button';place.className='secondary';
   place.onclick=()=>{
     if(!mesh||!selected){byId('placement-status').textContent='Load a matching mesh and choose a pose first.';byId('part-view').scrollIntoView({block:'center'});return;}
-    setActiveHelper(box);byId('return-helper').hidden=false;
-    byId('placement-status').textContent='Click a surface to place the region centre. Orbit first if needed.';byId('part-view').style.cursor='crosshair';byId('part-view').scrollIntoView({block:'center'});
-    viewer.onPick=point=>{if(!point){byId('placement-status').textContent='No surface at that point. Click the part.';return;}lastMove=null;undo.disabled=true;for(let a=0;a<3;a++)box.querySelector(`[data-geometry="center_mm"][data-axis="${a}"]`).value=point[a].toFixed(3);viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='Region centre placed on the surface; edit its size or move the centre inward as needed.';updateRegions();};
+    setActiveHelper(box);byId('return-helper').hidden=false;byId('cancel-placement').hidden=false;
+    byId('placement-status').textContent='Click a surface to place the region centre. Orbit first if needed. Press Escape or Cancel placement to stop.';byId('part-view').style.cursor='crosshair';byId('part-view').scrollIntoView({block:'center'});
+    viewer.onPick=point=>{if(!point){byId('placement-status').textContent='No surface at that point. Click the part.';return;}lastMove=null;undo.disabled=true;for(let a=0;a<3;a++)box.querySelector(`[data-geometry="center_mm"][data-axis="${a}"]`).value=point[a].toFixed(3);cancelSurfacePlacement();byId('placement-status').textContent='Region centre placed on the surface; edit its size or move the centre inward as needed.';updateRegions();};
   };
   const z=text('p','',spatial);z.className='hint';z.dataset.printZ='';
-  toggle.onchange=()=>{spatial.hidden=!toggle.checked;updateRegions();};
+  toggle.onchange=()=>{if(!toggle.checked)cancelSurfacePlacement();spatial.hidden=!toggle.checked;updateRegions();};
   box.addEventListener('input',updateRegions);
   box.addEventListener('focusin',()=>setActiveHelper(box,false));
   const duplicate=text('button','Duplicate region',box);duplicate.type='button';duplicate.className='secondary';
@@ -244,7 +244,7 @@ function addHelper(region={}) {
     removedHelpers.push({box,index:[...byId('helper-regions').children].indexOf(box)});
     if(removedHelpers.length>20)removedHelpers.shift();
     box.remove();if(activeHelper===box)activeHelper=null;
-    viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='';
+    cancelSurfacePlacement();
     byId('undo-remove').disabled=false;
     byId('remove-status').textContent=`Removed ${name}. Undo remove restores its fields and position. Up to 20 removals are kept until another draft or table is loaded.`;
     updateRegions();byId('undo-remove').focus({preventScroll:true});
@@ -255,7 +255,7 @@ function addHelper(region={}) {
   box.append(editor);byId('helper-regions').append(box);updateRegions();return box;
 }
 function resetPlan(){
-  clearDraftError();
+  cancelSurfacePlacement();clearDraftError();
   clearRemovalHistory();
   proposalOrigin=null;renderProposal();
   activeHelper=null;byId('return-helper').hidden=true;byId('mesh-options').open=true;
@@ -320,7 +320,7 @@ byId('undo-remove').onclick=()=>{
  byId('remove-status').textContent=`Restored ${name.value.trim()||'unnamed helper'}. ${removedHelpers.length} earlier removal(s) can still be undone.`;
 };
 byId('add-helper').onclick=()=>addHelper();
-byId('shell-only').onchange=()=>{byId('helper-panel').hidden=byId('shell-only').checked;updateRegions();};
+byId('shell-only').onchange=()=>{cancelSurfacePlacement();byId('helper-panel').hidden=byId('shell-only').checked;updateRegions();};
 byId('draft-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=tableRequest,openRequest=++draftRequest;
   try{
@@ -405,7 +405,14 @@ if(location.hash==='#review-edit'){
  }catch(error){pendingReview=null;byId('review-transfer-status').textContent=error.message+' Load the original table and reopen the saved draft manually.';}
 }
 
-function cancelSurfacePlacement(){viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='';}
+function cancelSurfacePlacement(){viewer.onPick=null;byId('part-view').style.cursor='';byId('placement-status').textContent='';byId('cancel-placement').hidden=true;}
+function stopSurfacePlacement(){
+ if(!viewer.onPick)return;
+ cancelSurfacePlacement();byId('placement-status').textContent='Placement cancelled. Helper coordinates are unchanged.';
+ byId('part-view').focus({preventScroll:true});
+}
+byId('cancel-placement').onclick=stopSurfacePlacement;
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&viewer.onPick){event.preventDefault();stopSurfacePlacement();}});
 function setActiveHelper(box,expand=true){
  if(activeHelper!==box)cancelSurfacePlacement();
  if(box&&expand)box.querySelector('.helper-editor').open=true;
