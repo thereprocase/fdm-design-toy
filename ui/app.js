@@ -360,6 +360,7 @@ function resumeReviewDraft(){
   restoreDraft(pendingReview.draft);
   const target=[...document.querySelectorAll('.helper-region')].find(box=>box.dataset.id===pendingReview.helper_id);
   if(target){target.scrollIntoView({block:'center'});target.querySelector('[data-key="name"]').focus({preventScroll:true});}
+  else{byId('walls').scrollIntoView({block:'center'});byId('walls').focus({preventScroll:true});}
   clearReviewTransfer();
  }catch(error){byId('review-transfer-status').textContent='Draft retained for review: '+error.message;}
 }
@@ -367,8 +368,8 @@ if(location.hash==='#review-edit'){
  byId('review-transfer').hidden=false;
  try{
   pendingReview=JSON.parse(sessionStorage.getItem('fdmgen-review-edit'));
-  if(!pendingReview?.draft||typeof pendingReview.helper_id!=='string')throw Error('No transferable draft was found.');
-  byId('review-transfer-status').textContent='Load the original orientation table to restore the reviewed draft and focus its helper. Its exact fingerprint must match. The saved draft and review results remain unchanged.';
+  if(!pendingReview?.draft||(pendingReview.helper_id!==null&&typeof pendingReview.helper_id!=='string'))throw Error('No transferable draft was found.');
+  byId('review-transfer-status').textContent='Load the original orientation table to restore the reviewed draft and focus '+(pendingReview.helper_id===null?'its shell controls.':'its helper.')+' Its exact fingerprint must match. The saved draft and review results remain unchanged.';
  }catch(error){pendingReview=null;byId('review-transfer-status').textContent=error.message+' Load the original table and reopen the saved draft manually.';}
 }
 

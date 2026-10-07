@@ -541,3 +541,9 @@ both shell screens PASS, but both bridge checks FAIL: internal span 122.1 mm
 against the provisional 18 mm limit. The seeded helpers did not reduce this
 maximum span. Both shell screens report 0.22% thin samples; neither equal screen
 values nor successful bundle import establishes printed performance.
+
+**Revise this draft** returns any matched export to the orientation workspace,
+including shell-only plans with no helper edit buttons. Load the exact original
+table to restore the saved plan; the general action focuses wall/skin controls,
+while a helper's Edit button focuses that helper. The handoff preserves the draft
+and does not transfer old check results as evidence for subsequent edits.

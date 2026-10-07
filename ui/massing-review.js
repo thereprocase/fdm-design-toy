@@ -69,10 +69,13 @@ function renderSlice(r){
 
 function editButton(helperId,name,parent){
  const button=add('button',`Edit ${name}`,parent);button.type='button';button.className='secondary';
- button.onclick=()=>{
+ button.onclick=()=>transferDraft(helperId,name);
+}
+el('revise-draft').onclick=()=>transferDraft(null,'the shell and helper plan');
+function transferDraft(helperId,name){
+ if(!saved||!matchedReport)return;
   try{sessionStorage.setItem('fdmgen-review-edit',JSON.stringify({draft:saved,helper_id:helperId}));location.href='index.html#review-edit';}
   catch(error){el('review-status').textContent='This browser cannot transfer the draft between pages. Return to the workspace, load its original table, and reopen the saved draft to edit '+name+'.';}
- };
 }
 
 function clearMechanics(){
