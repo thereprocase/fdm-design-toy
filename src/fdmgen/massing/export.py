@@ -76,7 +76,7 @@ def check_helpers(helpers, body_vertices=None, body_faces=None, *, gap_min_mm=No
                                    "only acts inside the body, so these would print nothing.", True,
                                    {"inside_fraction": fractions}, ["move the helper into the body"]))
         else:
-            out.append(CheckResult("MOD-001", "M", Verdict.PASS if not out else Verdict.FAIL,
+            out.append(CheckResult("MOD-001", "M", Verdict.PASS,
                                    f"MOD-001 bonding: every helper reaches into the body (sampled inside fractions {fractions}).",
                                    True, {"inside_fraction": fractions}))
     if not out:
