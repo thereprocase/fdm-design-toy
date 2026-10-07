@@ -89,3 +89,22 @@ choices** connect the two steps. Mesh upload/help collapses after a matching mes
 loads. After surface placement, **Return to helper controls** restores focus to
 the region centre. Mobile uses a single column with these explicit navigation
 controls, avoiding a fixed preview that would cover the form.
+
+## Coupon slicer evidence
+
+Open `ui/coupons.html` (also linked from the workspace in a new tab), load a
+`fdmgen/coupon-plate@0.1` plate JSON, then select one or more
+`fdmgen/slice-evidence@0.1` receipts together. Each must match the exact plate
+file SHA256 and contain every rung exactly once. The footprint map is selectable
+by mouse or keyboard; support settings and measured road counts stay together.
+All settings and recorded provenance are available beside the results.
+
+The committed samples are in `tests/fixtures/coupons/`. Comparing the support45
+and nosupport receipts demonstrates why zero support roads alone is not evidence
+of an unsupported print. Orange means support roads were recorded; grey means
+none were recorded. Neither colour is a physical pass. The UI verifies the plate
+pairing, not the G-code contents; it records the receipt's G-code hash. Unassigned
+support counts and the producer's evidence limits remain visible.
+
+Checks: `node --test ui/coupon-evidence.test.cjs` and, with temporary Playwright
+exposed through `NODE_PATH`, `node ui/coupons.browser.test.cjs`.
