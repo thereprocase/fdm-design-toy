@@ -78,6 +78,33 @@ def test_toolpath_support_check_and_placement_guard():
     r = check_support(tp, {"left": ([10, 10], [18, 30]), "right": ([22, 10], [30, 30])}, design)
     assert r.verdict is Verdict.FAIL and "right" in r.message and "left" not in r.message
     assert r.metrics["per_region"]["right"]["support_segments"] == 2
+    assert r.metrics["per_region"]["_unassigned"]["support_segments"] == 0
+    r = check_support(tp, {"a": ([22, 10], [30, 30]), "b": ([20, 10], [30, 20])}, design)   # overlapping regions
+    assert r.metrics["per_region"]["_unassigned"]["support_segments"] == 0                 # never negative
     with pytest.raises(ValueError, match="does not match the design"):
         locate(tp, [10, 10], [40, 30])
     assert area > 0
+
+
+FIX = __import__("pathlib").Path(__file__).parent / "fixtures" / "coupons"
+
+
+def test_plate_fixture_matches_the_generator_and_evidence_contract():
+    import json
+    plate_json = json.loads((FIX / "ladder-plate.json").read_text())
+    _, meta = plate()
+    assert plate_json["schema"] == "fdmgen/coupon-plate@0.1" and plate_json["frame"] == "print"
+    assert [r["id"] for r in plate_json["rungs"]] == [m["id"] for m in meta]
+    for name in ("slice-evidence-support45.json", "slice-evidence-nosupport.json"):
+        ev = json.loads((FIX / name).read_text())
+        assert ev["schema"] == "fdmgen/slice-evidence@0.1" and ev["tier"] == "S"
+        assert {"plate", "gcode", "placement", "rungs", "establishes", "does_not_establish"} <= set(ev)
+        assert ev["gcode"]["version"] == "2.4.2" and "support_threshold_angle" in ev["gcode"]["settings"]
+        assert [r["id"] for r in ev["rungs"]] == [m["id"] for m in meta]
+        assert max(abs(x) for x in ev["placement"]["shift_xy_mm"]) < 0.1
+    s45 = {r["id"]: r for r in json.loads((FIX / "slice-evidence-support45.json").read_text())["rungs"]}
+    assert [s45[f"ovh-{a}"]["support_segments"] > 0 for a in (35, 40, 45, 50, 55, 60)] == [True] * 3 + [False] * 3
+    nos = json.loads((FIX / "slice-evidence-nosupport.json").read_text())["rungs"]
+    for r in nos:
+        if r["kind"] == "bridge":          # every span bridged with ~2.45 mm anchors at each end
+            assert r["longest_bridge_road_mm"] == pytest.approx(r["span_mm"] + 4.9, abs=0.2)

@@ -1,0 +1,166 @@
+{
+ "schema": "fdmgen/slice-evidence@0.1",
+ "tier": "S",
+ "plate": {
+  "name": "ladder-plate.json",
+  "sha256": "39837a1c5f41f37edb3f62ff6aab8767169e02012fc75054324f6b2fa8d5f46f",
+  "schema": "fdmgen/coupon-plate@0.1"
+ },
+ "gcode": {
+  "sha256": "396d13158b9e55707b48674b99e8a64e70d44ad3f92040b6282ed20eb894c7cf",
+  "generator": "OrcaSlicer",
+  "version": "2.4.2",
+  "settings": {
+   "enable_support": "0",
+   "support_threshold_angle": "30",
+   "support_type": "normal(auto)",
+   "bridge_no_support": "0",
+   "support_on_build_plate_only": "0",
+   "layer_height": "0.2",
+   "wall_loops": "4",
+   "filament_type": "ASA",
+   "filament_settings_id": "\"ASA print-control screen\"",
+   "print_settings_id": "Part P1S ASA 4w 8-skin screen",
+   "printer_model": "Bambu Lab P1S",
+   "filament_shrink": "100%",
+   "extruder_offset": "0x2",
+   "enable_arc_fitting": "0",
+   "thick_bridges": "0",
+   "bridge_angle": "0"
+  }
+ },
+ "placement": {
+  "shift_xy_mm": [
+   -0.029,
+   0.0
+  ],
+  "extruder_offset_mm": [
+   0.0,
+   2.0,
+   0.0
+  ]
+ },
+ "rungs": [
+  {
+   "id": "ovh-35",
+   "kind": "overhang",
+   "alpha_deg": 35.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0
+  },
+  {
+   "id": "ovh-40",
+   "kind": "overhang",
+   "alpha_deg": 40.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0
+  },
+  {
+   "id": "ovh-45",
+   "kind": "overhang",
+   "alpha_deg": 45.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0
+  },
+  {
+   "id": "ovh-50",
+   "kind": "overhang",
+   "alpha_deg": 50.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0
+  },
+  {
+   "id": "ovh-55",
+   "kind": "overhang",
+   "alpha_deg": 55.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0
+  },
+  {
+   "id": "ovh-60",
+   "kind": "overhang",
+   "alpha_deg": 60.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0
+  },
+  {
+   "id": "brg-06",
+   "kind": "bridge",
+   "span_mm": 6.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0,
+   "bridge_roads_first_deck_layer": 4,
+   "longest_bridge_road_mm": 10.918999999999997
+  },
+  {
+   "id": "brg-10",
+   "kind": "bridge",
+   "span_mm": 10.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0,
+   "bridge_roads_first_deck_layer": 4,
+   "longest_bridge_road_mm": 14.918999999999997
+  },
+  {
+   "id": "brg-14",
+   "kind": "bridge",
+   "span_mm": 14.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0,
+   "bridge_roads_first_deck_layer": 4,
+   "longest_bridge_road_mm": 18.918999999999997
+  },
+  {
+   "id": "brg-18",
+   "kind": "bridge",
+   "span_mm": 18.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0,
+   "bridge_roads_first_deck_layer": 4,
+   "longest_bridge_road_mm": 22.918999999999997
+  },
+  {
+   "id": "brg-24",
+   "kind": "bridge",
+   "span_mm": 24.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0,
+   "bridge_roads_first_deck_layer": 4,
+   "longest_bridge_road_mm": 28.918999999999997
+  },
+  {
+   "id": "brg-30",
+   "kind": "bridge",
+   "span_mm": 30.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0,
+   "bridge_roads_first_deck_layer": 4,
+   "longest_bridge_road_mm": 34.919
+  },
+  {
+   "id": "brg-40",
+   "kind": "bridge",
+   "span_mm": 40.0,
+   "support_segments": 0,
+   "support_length_mm": 0.0,
+   "support_volume_mm3": 0.0,
+   "bridge_roads_first_deck_layer": 4,
+   "longest_bridge_road_mm": 44.919
+  }
+ ],
+ "unassigned_support_segments": 0,
+ "establishes": "What the slicer generated for each rung under the recorded settings (support roads, bridge roads).",
+ "does_not_establish": "How the rungs print on the printer (P level): sag, curl, droop and bridge quality need the printed plate."
+}

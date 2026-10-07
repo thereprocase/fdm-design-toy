@@ -40,11 +40,15 @@ def support_by_region(tp: Toolpath, regions: dict, shift_xy, offset=(0.0, 0.0, 0
     length = np.linalg.norm(tp.end[sup] - tp.start[sup], axis=1)
     vol = tp.volume[sup]
     out = {}
+    anywhere = np.zeros(len(xy), bool)
     for rid, (lo, hi) in regions.items():
         inside = np.all((xy >= np.asarray(lo[:2]) - margin_mm) & (xy <= np.asarray(hi[:2]) + margin_mm), axis=1)
+        anywhere |= inside
         out[rid] = {"support_segments": int(inside.sum()), "support_length_mm": float(length[inside].sum()),
                     "support_volume_mm3": float(vol[inside].sum())}
-    out["_unassigned"] = {"support_segments": int(sup.sum()) - sum(v["support_segments"] for v in out.values())}
+    # regions may overlap, so a road can count for several regions; "_unassigned" is outside all of them
+    out["_unassigned"] = {"support_segments": int((~anywhere).sum()), "support_length_mm": float(length[~anywhere].sum()),
+                          "support_volume_mm3": float(vol[~anywhere].sum())}
     return out
 
 

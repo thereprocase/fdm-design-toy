@@ -53,7 +53,7 @@ def overhang_ladder(angles=OVERHANG_DEG, *, height=10.0, base=6.0, depth=8.0, ga
     for a in angles:
         run = height / np.tan(np.radians(a))
         shells.append(_prism_xz([(x, 0), (x + base, 0), (x + base + run, height), (x, height)], origin[1], depth))
-        meta.append({"id": f"ovh-{a:02d}", "kind": "overhang", "alpha_deg": float(a),
+        meta.append({"id": f"ovh-{a:02d}", "kind": "overhang", "alpha_deg": float(a), "base_mm": float(base),
                      "underside_area_mm2": float(depth * height / np.sin(np.radians(a))),
                      "bbox_mm": [[x, origin[1], 0.0], [x + base + run, origin[1] + depth, height]]})
         x += base + run + gap

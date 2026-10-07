@@ -117,6 +117,24 @@ def _cmd_coupons(a) -> int:
     return 0
 
 
+def _cmd_coupons_evidence(a) -> int:
+    import hashlib
+
+    from .coupons.evidence import slice_evidence
+    plate = json.loads(a.plate.read_text(encoding="utf-8"))
+    ev = slice_evidence(plate, a.gcode, a.plate.name, hashlib.sha256(a.plate.read_bytes()).hexdigest())
+    a.out.parent.mkdir(parents=True, exist_ok=True)
+    a.out.write_text(json.dumps(ev, indent=1), encoding="utf-8")
+    s = ev["gcode"]["settings"]
+    print(f"wrote {a.out} ({ev['gcode']['generator']} {ev['gcode']['version']}, support {s['enable_support']} "
+          f"threshold {s['support_threshold_angle']}, bridge_no_support {s['bridge_no_support']})")
+    for r in ev["rungs"]:
+        key = f"{r['alpha_deg']:.0f} deg" if "alpha_deg" in r else f"{r['span_mm']:.0f} mm"
+        extra = f", longest bridge road {r['longest_bridge_road_mm']:.1f} mm" if "longest_bridge_road_mm" in r else ""
+        print(f"  {r['id']:7} {key:7} support roads {r['support_segments']:5d}{extra}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fdmgen", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -145,6 +163,11 @@ def main(argv: list[str] | None = None) -> int:
     cp = sub.add_parser("coupons", help="write the overhang + bridge ladder plate (STL + rung metadata)")
     cp.add_argument("--out", type=Path, default=Path("out/coupons"))
     cp.set_defaults(fn=_cmd_coupons)
+    ce = sub.add_parser("coupons-evidence", help="pair a coupon plate with its sliced G-code (tier S receipt)")
+    ce.add_argument("plate", type=Path, help="ladder-plate.json from 'fdmgen coupons'")
+    ce.add_argument("gcode", type=Path)
+    ce.add_argument("--out", type=Path, default=Path("out/coupons/slice-evidence.json"))
+    ce.set_defaults(fn=_cmd_coupons_evidence)
     a = ap.parse_args(argv)
     return a.fn(a)
 
