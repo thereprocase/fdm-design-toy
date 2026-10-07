@@ -44,6 +44,7 @@ def test_solid_square_reads_as_solid_cells():
     dens = d["density"]
     acct = d["accounting"]
     assert acct["saturation_excess_mm3"] > 0 and acct["clipped_outside_grid_mm3"] == 0.0
+    assert d["density"].max() > 1 and d["density_capped"].max() == 1.0
     core = dens[5:24, 5:24, 1:3]                                               # z cells 0..0.8 mm: fully inside the 1 mm square
     assert core.mean() == pytest.approx(0.42 / 0.4, rel=0.05)                 # w x h beads at 0.4 mm pitch: 1.05 (overlap)
     assert d["solid_mask"][5:24, 5:24, 1:3].all() and not d["solid_mask"][:, 28:, :].any()

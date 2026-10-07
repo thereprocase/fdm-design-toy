@@ -76,7 +76,8 @@ def occupancy(tp: Toolpath, offset, M, c, origin, h, shape, *, threshold=0.5, me
                          "support_and_aux_mm3": cr["support_and_aux_volume_mm3"],
                          "nonobject_mm3": cr["nonobject_spent_volume_mm3"]},
             "threshold": threshold, "solid_cells": int(solid.sum())}
-    return {"density": density.astype(np.float32), "solid_mask": solid, "cell_indices": idx.astype(np.int32),
+    return {"density": density.astype(np.float32), "density_capped": np.minimum(density, 1.0).astype(np.float32),
+            "solid_mask": solid, "cell_indices": idx.astype(np.int32),
             "centres_grid_mm": (np.asarray(origin, float) + (idx + 0.5) * np.asarray(h, float)),
             "cell_volume_mm3": np.full(len(idx), cell_v), "accounting": acct, "M_plate_to_grid": np.asarray(M, float),
             "c_plate_to_grid": np.asarray(c, float), **(meta or {})}

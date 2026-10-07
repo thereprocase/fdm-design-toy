@@ -323,6 +323,7 @@ def _cmd_gcode_occupancy(a) -> int:
         print("ERROR   the grid receipt must map the installed (= design) frame to its print grid")
         return 1
     M, c = plate_to_grid(cand["R_design_to_print"], cand["t_mm"], i2p["R"], i2p["t_mm"])
+    rep_json = json.loads(a.report.read_text(encoding="utf-8")) if a.report else None
     raw = a.gcode.read_bytes()
     text = raw.decode("utf-8")
     tp = read_gcode(text)
@@ -335,6 +336,9 @@ def _cmd_gcode_occupancy(a) -> int:
             "grid_frame": "solver print grid of the receipt (installed -> print by installed_to_print)",
             "grid": g, "installed_to_print": i2p, "pose_R_design_to_print": cand["R_design_to_print"],
             "pose_t_mm": cand["t_mm"], "indexing": "C order, axes x y z", "accounting": acct,
+            "density_kind": {"density": "raw: deposited volume / cell volume, exceeds 1 where beads overlap",
+                             "density_capped": "min(raw, 1)", "solid_mask": f"raw density >= {a.threshold}"},
+            **({"project_3mf_sha256": rep_json["project_3mf_sha256"], "plan": rep_json.get("plan")} if rep_json else {}),
             "note": "approximate bead raster of the slicer's credited roads; not a measured print"}
     a.out.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(a.out, **{k: v for k, v in out.items()}, provenance=np.array(json.dumps(prov)))
@@ -427,6 +431,7 @@ def main(argv: list[str] | None = None) -> int:
     go.add_argument("--pose", required=True)
     go.add_argument("--grid-receipt", type=Path, required=True, help="solver receipt with grid + installed_to_print")
     go.add_argument("--threshold", type=float, default=0.5)
+    go.add_argument("--report", type=Path, help="fdmgen massing report of the sliced project (adds project sha + plan)")
     go.add_argument("--out", type=Path, required=True)
     go.set_defaults(fn=_cmd_gcode_occupancy)
     a = ap.parse_args(argv)
