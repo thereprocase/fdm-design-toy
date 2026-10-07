@@ -72,6 +72,7 @@ class Helper:
     interface_ids: tuple[str, ...]
     clearance_mm: float | None
     keep_clear_note: str
+    keep_out_ids: tuple[str, ...] = ()
 
     def corners_design_mm(self) -> np.ndarray:
         return self.center_mm + np.array(list(itertools.product([-0.5, 0.5], repeat=3))) * self.size_mm
@@ -162,6 +163,12 @@ def load_draft(draft_bytes: bytes, table_bytes: bytes, mesh_bytes: bytes) -> Pla
     allowed = {i['id'] for i in interfaces}
     if len(allowed) != len(interfaces):
         raise ValueError('Ambiguous table interface identifiers')
+    keep_outs = table.get('keep_outs', [])
+    if not isinstance(keep_outs, list) or not all(isinstance(k, dict) and isinstance(k.get('id'), str) for k in keep_outs):
+        raise ValueError('Invalid table keep-out declarations')
+    allowed_keep_outs = {k['id'] for k in keep_outs}
+    if len(allowed_keep_outs) != len(keep_outs):
+        raise ValueError('Ambiguous table keep-out identifiers')
     helpers, seen = [], set()
     for region in regions:
         region = _object(region, 'Helper')
@@ -180,15 +187,16 @@ def load_draft(draft_bytes: bytes, table_bytes: bytes, mesh_bytes: bytes) -> Pla
         refs = clear.get('interface_ids')
         if not isinstance(refs, list) or not all(isinstance(i, str) and i in allowed for i in refs) or len(set(refs)) != len(refs):
             raise ValueError('Unknown or duplicate interface reference')
-        if clear.get('keep_out_ids') != []:
-            raise ValueError('Keep-out geometry references are not supported yet')
+        keep_out_refs = clear.get('keep_out_ids')
+        if not isinstance(keep_out_refs, list) or not all(isinstance(k, str) and k in allowed_keep_outs for k in keep_out_refs) or len(set(keep_out_refs)) != len(keep_out_refs):
+            raise ValueError('Unknown or duplicate keep-out reference')
         clearance = clear.get('clearance_mm')
         if clearance is not None and _number(clearance, 'Clearance') < 0:
             raise ValueError('Clearance must be nonnegative')
         helpers.append(Helper(ident, _text(region.get('name'), 'Helper name'),
                               _text(region.get('location'), 'Helper location'),
                               _text(region.get('purpose'), 'Helper purpose'), center, size,
-                              tuple(refs), clearance, _text(clear.get('note'), 'Keep-clear note')))
+                              tuple(refs), clearance, _text(clear.get('note'), 'Keep-clear note'), tuple(keep_out_refs)))
     return PlanningDraft(hashlib.sha256(draft_bytes).hexdigest(), table_hash, mesh_hash,
                          problem, candidate['id'], rationale, R, t, walls, skin,
                          shell_only, tuple(helpers))

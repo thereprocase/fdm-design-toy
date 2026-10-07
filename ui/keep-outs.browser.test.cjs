@@ -1,0 +1,26 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs/promises'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+ await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));await page.getByRole('button',{name:'facet-00',exact:true}).click();
+ assert.equal(await page.locator('[data-keep-out-id]').count(),0);
+ await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));await page.getByRole('button',{name:'facet-00',exact:true}).click();
+ await page.locator('#rationale').fill('Track assembly clearance while planning rear-seat reinforcement.');
+ const box=page.locator('.helper-region').first();
+ for(const [key,value]of Object.entries({name:'Rear seat backing',location:'Below rear seat',purpose:'Transfer seat load',keep_clear:'Retain moulding and spool-slide clearance; validate with backend'}))await box.locator(`[data-key="${key}"]`).fill(value);
+ await box.locator('[data-spatial]').check();
+ for(let i=0;i<3;i++){await box.locator(`[data-geometry="center_mm"][data-axis="${i}"]`).fill(String([90,-18,12][i]));await box.locator(`[data-geometry="size_mm"][data-axis="${i}"]`).fill(String([16,10,20][i]));}
+ await box.locator('[data-keep-out-id="crown_moulding"]').check();await box.locator('[data-keep-out-id="spool_slide"]').check();
+ await box.getByText('crown_moulding constraint',{exact:true}).click();assert.match(await box.innerText(),/Declared frame: installed/);assert.match(await box.innerText(),/global constraints still apply/);
+ const wait=page.waitForEvent('download');await page.locator('#export').click();const download=await wait,raw=await fs.readFile(await download.path()),draft=JSON.parse(raw);
+ assert.deepEqual(draft.massing.helper_regions[0].keep_clear.keep_out_ids,['crown_moulding','spool_slide']);
+ if(process.env.FDM_KEEP_OUT_DRAFT)await fs.writeFile(process.env.FDM_KEEP_OUT_DRAFT,raw);
+ await box.locator('[data-keep-out-id="spool_slide"]').uncheck();
+ await page.locator('#draft-file').setInputFiles({name:'saved.json',mimeType:'application/json',buffer:raw});await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
+ assert(await box.locator('[data-keep-out-id="spool_slide"]').isChecked());
+ draft.massing.helper_regions[0].keep_clear.keep_out_ids.push('unknown');
+ await page.locator('#draft-file').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(draft))});await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.includes('Unknown keep-out'));
+ assert(await box.locator('[data-keep-out-id="spool_slide"]').isChecked());
+ await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ console.log('PASS historical/new table keep-out declarations, selection/export/reopen, unknown ref rejected without replacing draft, mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

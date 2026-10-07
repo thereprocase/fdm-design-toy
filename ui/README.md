@@ -234,3 +234,17 @@ any helper field highlights that box with a solid blue outline and an
 “Editing” label; other boxes remain dashed orange. Switching helpers cancels
 an unfinished surface-placement action so a later click cannot move the old
 region. These are still unclipped planning boxes, not credited material.
+
+## Keep-out references
+
+Tables with a top-level `keep_outs` list expose those declarations in each
+helper form. Select the regions to track and inspect their rule and frame.
+These selections record review intent; global keep-outs remain applicable
+regardless of selection. Selection alone does not establish clearance.
+References survive export/reopen and are validated against the exact table by
+both the browser and Python ingestion. Unknown identifiers are rejected.
+
+The original example table and its historical receipts remain unchanged. Use
+`tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json`
+for a new draft with the crown-moulding and spool-slide declarations. Existing
+drafts still require their original table; they are not silently migrated.

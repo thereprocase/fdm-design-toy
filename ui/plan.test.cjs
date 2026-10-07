@@ -47,3 +47,10 @@ test('nominal overlap-or-gap screen flags touching/sliver boxes only',()=>{
  assert.equal(Plan.boxSeparation(box(0),box(1.5)).needs_review,true); // .5 mm overlap
  assert.equal(Plan.boxSeparation(box(0),box(1)).needs_review,false); // 1 mm overlap
 });
+test('declared keep-out references round-trip and unknown ids are rejected',()=>{
+ const table={...analysis,keep_outs:[{id:'moulding'},{id:'slide'}]};
+ const helper={...input.helper_regions[0],keep_clear:{note:'Retain assembly access',interface_ids:[],keep_out_ids:['moulding','slide']}};
+ const draft=Plan.create(table,hash,candidate,{...input,helper_regions:[helper]});
+ assert.deepEqual(Plan.restore(draft,table,hash).input.helper_regions[0].keep_clear.keep_out_ids,['moulding','slide']);
+ assert.throws(()=>Plan.restore(draft,analysis,hash),/Unknown keep-out/);
+});

@@ -98,6 +98,9 @@ function addHelper(region={}) {
   }
   const refs=text('div','',box);refs.className='interface-refs';text('p','Keep these interfaces clear:',refs);
   for(const item of analysis?.interfaces||[]){const label=text('label','',refs),check=document.createElement('input');check.type='checkbox';check.dataset.interfaceId=item.id;check.checked=region.keep_clear?.interface_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));}
+  const keepOutRefs=text('div','',box);keepOutRefs.className='interface-refs';
+  text('p',analysis?.keep_outs?.length?'Keep-outs to track for this helper (global constraints still apply):':'This table has no keep-out declarations. Use a newer table to record keep-out references.',keepOutRefs);
+  for(const item of analysis?.keep_outs||[]){const label=text('label','',keepOutRefs),check=document.createElement('input');check.type='checkbox';check.dataset.keepOutId=item.id;check.checked=region.keep_clear?.keep_out_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));const info=text('details','',keepOutRefs);text('summary',item.id+' constraint',info);text('p',item.rule||'No rule description supplied.',info);if(item.derivation)text('p',item.derivation,info);text('p',`Declared frame: ${item.frame||'unspecified'}. Model: ${item.type||'unspecified'}. Selection records intent; geometry checks run in the exporter.`,info);}
   const clearanceLabel=text('label','Required clearance, mm (leave blank until known)',box),clearance=document.createElement('input');clearance.type='number';clearance.min='0';clearance.step='0.1';clearance.dataset.clearance='';clearance.value=region.keep_clear?.clearance_mm??'';clearanceLabel.append(clearance);
   const toggleLabel=text('label','',box),toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.spatial='';toggle.checked=!!region.geometry;toggleLabel.append(toggle,document.createTextNode(' Place a box-shaped planning region'));
   const spatial=text('div','',box);spatial.className='spatial';spatial.hidden=!toggle.checked;
@@ -128,7 +131,7 @@ function resetPlan(){
 }
 function regionInput(box){
  const r={id:box.dataset.id,...Object.fromEntries(Array.from(box.querySelectorAll('[data-key]'),field=>[field.dataset.key,field.value]))};
- r.keep_clear={note:r.keep_clear,interface_ids:Array.from(box.querySelectorAll('[data-interface-id]:checked'),f=>f.dataset.interfaceId),keep_out_ids:[],clearance_mm:box.querySelector('[data-clearance]').value===''?null:Number(box.querySelector('[data-clearance]').value)};
+ r.keep_clear={note:r.keep_clear,interface_ids:Array.from(box.querySelectorAll('[data-interface-id]:checked'),f=>f.dataset.interfaceId),keep_out_ids:Array.from(box.querySelectorAll('[data-keep-out-id]:checked'),f=>f.dataset.keepOutId),clearance_mm:box.querySelector('[data-clearance]').value===''?null:Number(box.querySelector('[data-clearance]').value)};
  r.geometry=box.querySelector('[data-spatial]').checked?{type:'box',frame:'design',...Object.fromEntries(['center_mm','size_mm'].map(key=>[key,Array.from(box.querySelectorAll(`[data-geometry="${key}"]`),field=>field.value===''?NaN:Number(field.value))]))}:null;
  return r;
 }

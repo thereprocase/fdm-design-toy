@@ -104,3 +104,22 @@ def test_nonrigid_table_and_duplicate_json_rejected():
     draft['orientation']['designer_decision']['table_sha256'] = digest
     with pytest.raises(ValueError, match='proper rigid rotation'):
         load_draft(json.dumps(draft).encode(), table, body)
+
+
+def test_keep_out_references_are_pinned_and_preserved():
+    draft, table, body = inputs()
+    t = json.loads(table)
+    t['keep_outs'] = [{'id': 'moulding', 'type': 'box'}, {'id': 'slide', 'type': 'not_derived'}]
+    table = json.dumps(t).encode()
+    digest = hashlib.sha256(table).hexdigest()
+    draft['source']['orientation_table_sha256'] = digest
+    draft['orientation']['designer_decision']['table_sha256'] = digest
+    refs = draft['massing']['helper_regions'][0]['keep_clear']
+    refs['keep_out_ids'] = ['moulding', 'slide']
+    plan = load_draft(json.dumps(draft).encode(), table, body)
+    assert plan.helpers[0].keep_out_ids == ('moulding', 'slide')
+    # A reference is not a clearance verdict; geometry remains downstream.
+    for ids in [['unknown'], ['slide', 'slide'], [True]]:
+        refs['keep_out_ids'] = ids
+        with pytest.raises(ValueError, match='keep-out reference'):
+            load_draft(json.dumps(draft).encode(), table, body)
