@@ -547,3 +547,8 @@ including shell-only plans with no helper edit buttons. Load the exact original
 table to restore the saved plan; the general action focuses wall/skin controls,
 while a helper's Edit button focuses that helper. The handoff preserves the draft
 and does not transfer old check results as evidence for subsequent edits.
+
+Review section buttons jump directly to export checks, helpers, slice evidence,
+bundle/bridge results, shell results, mechanics and next steps. Unloaded sections
+are disabled and labelled; replacing an export disables its old evidence links.
+Navigation places keyboard focus on the section heading.

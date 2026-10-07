@@ -41,7 +41,7 @@ function renderChecks(){
  for(const c of visible){const row=add('article','',el('review-checks'));add('h3',`${c.rule} · ${c.level} · ${c.verdict}${c.provisional?' · provisional':''}`,row);let message=c.message;for(const [id,name]of names)message=message.split(id).join(`${name} [${id}]`);add('p',message,row);if(names.has(c.metrics?.helper_id))editButton(c.metrics.helper_id,names.get(c.metrics.helper_id),row);const fixes=add('ul','',row);for(const fix of c.fixes)add('li',fix,fixes);if(c.establishes)add('p',c.establishes,row);if(c.does_not_establish)add('p','Does not establish: '+c.does_not_establish,row);const details=add('details','',row);add('summary','Measurements',details);add('pre',JSON.stringify(c.metrics||{},null,2),details);}
 }
 
-function clearSlice(){clearBundle();clearShell();clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;el('slice-results').hidden=true;el('slice-status').textContent='No slice evidence loaded.';}
+function clearSlice(){clearBundle();clearShell();clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;showReviewSection('slice-results',!(true));el('slice-status').textContent='No slice evidence loaded.';}
 el('review-slice').onchange=async e=>{
  const file=e.target.files[0];if(!file||!matchedReport)return;const request=++sliceGeneration,report=matchedReport;
  try{const receipt=MassingReview.slice(report,JSON.parse(await file.text()));if(request!==sliceGeneration||report!==matchedReport)return;renderSlice(receipt);el('slice-status').textContent='Slice receipt matches the exported project and saved plan.';}
@@ -50,7 +50,7 @@ el('review-slice').onchange=async e=>{
 function renderSlice(r){
  clearBundle();clearShell();clearMechanics();matchedSlice=r;el('review-shell').disabled=false;el('review-shell-baseline').disabled=r.baseline!=='shell-only slice';el('review-mechanics').disabled=false;
  const baseline=r.baseline!==null,mismatch=MassingReview.contextMismatch(r),number=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
- el('slice-results').hidden=false;
+ showReviewSection('slice-results',!(false));
  el('slice-baseline').textContent=baseline?'Compared with a shell-only slice. Differences describe solid infill in each helper box; overlapping boxes may count the same roads.':'No shell-only baseline supplied. Absolute fill includes existing body material; helper contribution is not established.';
  if(mismatch.length)el('slice-baseline').textContent='Baseline settings differ: '+mismatch.join(', ')+'. Reported differences cannot be attributed to helpers alone; re-slice with matching settings.';
  el('slice-settings').textContent=JSON.stringify({project:r.slicer||'Not recorded',baseline:r.baseline_slicer||'Not recorded'},null,2);
@@ -80,7 +80,7 @@ function transferDraft(helperId,name){
 
 function clearMechanics(){
  ++mechanicsGeneration;el('review-mechanics').value='';el('review-mechanics').disabled=true;
- el('mechanics-results').hidden=true;el('mechanics-status').textContent='Load paired slice evidence before mechanics.';
+ showReviewSection('mechanics-results',!(true));el('mechanics-status').textContent='Load paired slice evidence before mechanics.';
 }
 el('review-mechanics').onchange=async e=>{
  const file=e.target.files[0];if(!file||!matchedReport||!matchedSlice)return;
@@ -93,7 +93,7 @@ el('review-mechanics').onchange=async e=>{
 };
 function renderMechanics(r){
  const comparable=MassingReview.mechanicsComparable(r),num=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
- el('mechanics-results').hidden=false;
+ showReviewSection('mechanics-results',!(false));
  el('mechanics-policy').textContent=`FE pilot · provisional. Domain policy: ${r.domain_policy}; density threshold ${r.threshold}. ${r.domain_policy==='largest-face-component sensitivity'?'Fragments were explicitly removed. This is not the unmodified raster result.':'Original thresholded domains; inspect connectivity failures below.'}`;
  el('mechanics-comparison').textContent=comparable?`Project compliance change versus shell-only: ${num(100*(r.solves.project.compliance_N_mm/r.solves.baseline.compliance_N_mm-1))}%. Applies only to this domain and load policy; not a strength rating.`:'No supported compliance comparison: an audit, conservation or convergence check is missing or failed.';
  el('mechanics-model').textContent=`Load method: ${r.method}. ${r.context_note||''} Material constants are not recorded in this pilot receipt; consult its reproducible benchmark. Linear model outputs do not establish physical movement.`;
@@ -124,8 +124,8 @@ function renderMechanics(r){
 }
 
 function clearShell(){
- ++shellBaselineGeneration;matchedShell=null;matchedShellBaseline=null;el('review-shell-baseline').value='';el('review-shell-baseline').disabled=true;el('shell-comparison').hidden=true;el('shell-baseline-status').textContent='No baseline shell check loaded.';
- ++shellGeneration;el('review-shell').value='';el('review-shell').disabled=true;el('shell-results').hidden=true;
+ ++shellBaselineGeneration;matchedShell=null;matchedShellBaseline=null;el('review-shell-baseline').value='';el('review-shell-baseline').disabled=true;showReviewSection('shell-comparison',!(true));el('shell-baseline-status').textContent='No baseline shell check loaded.';
+ ++shellGeneration;el('review-shell').value='';el('review-shell').disabled=true;showReviewSection('shell-results',!(true));
  el('shell-status').textContent='Load the project slice evidence before its shell check.';
 }
 el('review-shell').onchange=async e=>{
@@ -140,7 +140,7 @@ el('review-shell').onchange=async e=>{
 
 function renderShell(r){
   const m=r.result.metrics,num=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
-  el('shell-results').hidden=false;
+  showReviewSection('shell-results',!(false));
   el('shell-status').textContent='Shell receipt matches the loaded project G-code hash and pose.';
   el('shell-pairing').textContent=r.table_sha256&&r.mesh_sha256?'Recorded table and mesh hashes also match the export. The browser does not rerun the checker.':'Table and mesh hashes are not both recorded: geometry pairing is not established. Only G-code and pose are matched.';
   const placement=r._receipt?.schema==='fdmgen/shell-check@0.3'?r.placement:null;
@@ -154,7 +154,7 @@ function renderShell(r){
 }
 
 function renderShellComparison(){
- el('shell-comparison').hidden=!matchedShellBaseline;
+ showReviewSection('shell-comparison',!(!matchedShellBaseline));
  if(!matchedShellBaseline)return;
  const b=matchedShellBaseline.result.metrics,p=matchedShell?.result.metrics,num=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
  el('shell-comparison-summary').textContent=`Baseline: ${num(100*b.thin_fraction)}% thin among ${b.samples} measured samples (${b.unmeasured} unmeasured).`+(p?` Project: ${num(100*p.thin_fraction)}% among ${p.samples} (${p.unmeasured} unmeasured).`:' Load the project shell check to compare.');
@@ -173,7 +173,7 @@ el('review-shell-baseline').onchange=async e=>{
 };
 
 function clearBundle(){
- ++bundleGeneration;el('review-bundle').value='';el('bundle-results').hidden=true;
+ ++bundleGeneration;el('review-bundle').value='';showReviewSection('bundle-results',!(true));
  el('bundle-status').textContent='No evidence bundle loaded. Select its manifest and all five receipt files together.';
 }
 el('review-bundle').onchange=async e=>{
@@ -186,7 +186,7 @@ el('review-bundle').onchange=async e=>{
   renderSlice(bundle.slice);renderShell(bundle.project);matchedShellBaseline=bundle.baseline;renderShellComparison();
   el('slice-status').textContent='Bundle slice receipt matches the exported project and saved plan.';
   el('shell-baseline-status').textContent='Bundle baseline shell check matches the shell-only G-code and pose.';
-  el('bundle-results').hidden=false;el('bundle-status').textContent='All five receipt fingerprints verified; bundle matched this export.';
+  showReviewSection('bundle-results',!(false));el('bundle-status').textContent='All five receipt fingerprints verified; bundle matched this export.';
   el('bundle-summary').textContent='Loaded helper evidence, project shell check and baseline shell check together. Both bridge receipts are shown below.';
   el('bundle-bridges').replaceChildren();
   for(const [kind,r]of Object.entries(bundle.bridges)){
@@ -201,3 +201,16 @@ el('review-bundle').onchange=async e=>{
   el('bundle-provenance').textContent=JSON.stringify(bundle.manifest,null,2);
  }catch(error){if(request===bundleGeneration)el('bundle-status').textContent=error.message+' Previous matched evidence, if any, remains below.';}
 };
+
+function refreshReviewNav(){
+ for(const button of document.querySelectorAll('#review-nav button')){
+  const missing=el(button.dataset.reviewTarget).hidden;
+  button.disabled=missing;button.textContent=button.dataset.label+(missing?' · not loaded':'');
+ }
+}
+function showReviewSection(id,visible){el(id).hidden=!visible;refreshReviewNav();}
+for(const button of document.querySelectorAll('#review-nav button'))button.onclick=()=>{
+ const section=el(button.dataset.reviewTarget);if(section.hidden)return;
+ const heading=section.querySelector('h2');heading.tabIndex=-1;heading.scrollIntoView({block:'start'});heading.focus({preventScroll:true});
+};
+refreshReviewNav();

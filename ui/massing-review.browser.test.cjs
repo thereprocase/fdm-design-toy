@@ -5,6 +5,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const draftPath=path.join(__dirname,'../tests/fixtures/massing/sample-draft.json'),receiptPath=path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json');
  await page.locator('#review-draft').setInputFiles(draftPath);await page.locator('#review-receipt').setInputFiles(receiptPath);
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
+ const sliceNav=page.locator('[data-review-target="slice-results"]');
+ assert(await sliceNav.isDisabled());assert.match(await sliceNav.innerText(),/not loaded/);
+ await page.locator('[data-review-target="helper-results"]').click();
+ assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Helpers in this export');
  const checks=JSON.parse(fs.readFileSync(receiptPath)).checks;
  assert.equal(await page.locator('#review-checks article').count(),checks.filter(c=>c.verdict!=='PASS').length);
  await page.locator('#check-filter').selectOption('all');assert.equal(await page.locator('#review-checks article').count(),checks.length);
@@ -17,6 +21,8 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const evidencePath=path.join(__dirname,'../tests/fixtures/massing/sample-slice-evidence.json');
  await page.locator('#review-slice').setInputFiles(evidencePath);
  await page.waitForFunction(()=>document.querySelector('#slice-status').textContent.startsWith('Slice receipt matches'));
+ assert(await sliceNav.isEnabled());await sliceNav.click();
+ assert.equal(await page.evaluate(()=>document.activeElement.textContent),'What changed in the slice');
  await page.getByText('Project and baseline slicer settings',{exact:true}).click();assert.match(await page.locator('#slice-settings').innerText(),/gcode_sha256/);assert.match(await page.locator('#slice-settings').innerText(),/2.4.2/);
  assert.match(await page.locator('#slice-helpers').innerText(),/Rear seat backing · T PASS/);assert.match(await page.locator('#slice-helpers').innerText(),/Deliberately tiny box · T FAIL/);assert((await page.locator('#slice-helpers').innerText()).includes(JSON.parse(fs.readFileSync(evidencePath)).helpers[0].added_solid_mm3.toLocaleString('en-US',{maximumFractionDigits:3})));
  const incompatible=JSON.parse(fs.readFileSync(evidencePath));incompatible.slicer={layer_height:'0.2'};incompatible.baseline_slicer={layer_height:'0.3'};incompatible.baseline_context_mismatch=[];
@@ -30,6 +36,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#review-slice').setInputFiles({name:'wrong-slice.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(noBaseline))});
  await page.waitForFunction(()=>document.querySelector('#slice-status').textContent.includes('different exported project'));assert(await page.locator('#slice-results').isVisible());
  await page.locator('#review-receipt').setInputFiles(receiptPath);await page.waitForFunction(()=>document.querySelector('#slice-results').hidden);assert.match(await page.locator('#slice-status').innerText(),/No slice evidence loaded/);
+ assert(await sliceNav.isDisabled());
  changed.plan.draft_sha256='0'.repeat(64);
  await page.locator('#review-receipt').setInputFiles({name:'wrong.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.includes('does not match'));
