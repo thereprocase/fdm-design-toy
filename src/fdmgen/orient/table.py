@@ -216,6 +216,8 @@ def _enrich(out: dict, root_sha: str, columns: list[str], key: str, used: list[d
         return
     prev["columns_added"] = prev["columns_added"] + [c for c in columns if c not in prev["columns_added"]]
     prev[key] = used
+    prev["does_not_establish"] = ("anything about poses without a receipt, or about a different slice of the same "
+                                  "pose; each column is one slice's measurement")
 
 
 def _slice_fidelity(kind, g):

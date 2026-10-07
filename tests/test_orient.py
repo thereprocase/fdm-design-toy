@@ -308,3 +308,65 @@ def test_shell_receipts_are_never_relabelled():
         add_shell_columns(table, sha, [(bad, "w" * 64, "shell-only")])
     with pytest.raises(ValueError, match="slice kind"):
         add_shell_columns(table, sha, [(rec[0][0], rec[0][1], "baseline")])
+
+
+BRIDGE_FIX = Path(__file__).parent / "fixtures" / "bridge"
+SHELL_TABLE = KEEP_OUT_TABLE.with_name("spool-rack-g2-ef.with-keep-outs.shell.orientation-table.json")
+
+
+def _bridge_receipts():
+    import hashlib
+    out = []
+    for pose in ("facet-00", "facet-01"):
+        raw = (BRIDGE_FIX / f"{pose}-shell-only.bridge-check.json").read_bytes()
+        out.append((json.loads(raw), hashlib.sha256(raw).hexdigest(), "shell-only"))
+    return out
+
+
+def test_bridge_columns_chain_onto_the_shell_table_and_reproduce_the_fixture():
+    import hashlib
+
+    from fdmgen.orient.table import add_bridge_columns
+    raw = SHELL_TABLE.read_bytes()
+    out = add_bridge_columns(json.loads(raw), hashlib.sha256(raw).hexdigest(), _bridge_receipts())
+    fixture = KEEP_OUT_TABLE.with_name("spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json")
+    assert json.loads(fixture.read_text(encoding="utf-8")) == out
+    root = hashlib.sha256(KEEP_OUT_TABLE.read_bytes()).hexdigest()
+    assert out["enriched"]["from_table_sha256"] == root                       # pinned to the root table, not the shell one
+    assert out["enriched"]["columns_added"] == ["t_shell_thin_fraction", "t_bridge_span_external_mm",
+                                                "t_bridge_span_internal_mm"]
+    col = {c["id"]: c["columns"] for c in out["candidates"]}
+    assert col["facet-00"]["t_bridge_span_external_mm"]["verdict"] == "PASS"   # 3.15 mm vs 10
+    assert col["facet-00"]["t_bridge_span_internal_mm"]["verdict"] == "FAIL"   # 122.1 mm vs 18
+    assert col["facet-01"]["t_bridge_span_external_mm"]["verdict"] == "FAIL"   # 52.2 mm vs 10
+    assert col["facet-00"]["t_bridge_span_internal_mm"]["limit_mm"] == 18.0
+    assert col["facet-00"]["t_shell_thin_fraction"]["value"] == 0.0022        # shell column carried over
+    assert "t_bridge_span_external_mm" not in col["facet-02"]
+
+
+def test_bridge_receipts_need_pose_evidence_and_are_never_relabelled():
+    import copy
+    import hashlib
+
+    from fdmgen.orient.table import add_bridge_columns
+    raw = KEEP_OUT_TABLE.read_bytes()
+    table, sha = json.loads(raw), hashlib.sha256(raw).hexdigest()
+    rec = _bridge_receipts()
+    few = copy.deepcopy(rec[0][0])
+    few["placement"]["bands"] = few["placement"]["bands"][:2]                 # a truncated slice
+    with pytest.raises(ValueError, match="fewer than 3"):
+        add_bridge_columns(table, sha, [(few, "f" * 64, "shell-only")])
+    bare = copy.deepcopy(rec[0][0])
+    for k in ("table", "mesh", "pose", "placement"):
+        bare.pop(k)                                                           # bridge-check without --table/--pose
+    with pytest.raises(ValueError, match="cannot be paired"):
+        add_bridge_columns(table, sha, [(bare, "b" * 64, "shell-only")])
+    with pytest.raises(ValueError, match="measured against table"):
+        add_bridge_columns(table, "0" * 64, rec)
+    neg = copy.deepcopy(rec[0][0])
+    neg["result"]["metrics"]["max_span_internal_mm"] = -1.0
+    with pytest.raises(ValueError, match="non-negative"):
+        add_bridge_columns(table, sha, [(neg, "n" * 64, "shell-only")])
+    shell = json.loads((SHELL_FIX / "facet-00-shell-only.shell-check.json").read_text(encoding="utf-8"))
+    with pytest.raises(ValueError, match="schema"):
+        add_bridge_columns(table, sha, [(shell, "s" * 64, "shell-only")])
