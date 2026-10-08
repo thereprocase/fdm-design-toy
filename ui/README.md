@@ -677,3 +677,8 @@ The helper-planning entry repeats the selected pose and its design-frame build
 direction, recorded fit/stability status and failed-check count. It identifies the
 pose that will be saved, independently of any pinned comparison reference. The
 recorded checks still describe the source analysis, not subsequent helper edits.
+
+Planning warnings include **Edit** buttons for their affected helper(s). These open
+the editor, highlight its box and focus its centre controls; a thin-edge warning
+focuses the undersized dimension instead. Navigation preserves all draft values
+and does not rerun geometry or sliced-evidence checks.

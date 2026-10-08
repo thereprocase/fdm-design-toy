@@ -339,17 +339,27 @@ document.addEventListener('input',event=>{
 });
 function updateRegions(){
  const valid=[],warnings=byId('region-warnings');warnings.replaceChildren();
+ const editors=new Map([...byId('helper-regions').children].map(box=>[box.dataset.id,box]));
+ const warn=(message,ids,field='[data-geometry="center_mm"]')=>{
+   const item=text('li',message,warnings);
+   for(const id of ids){const box=editors.get(id);if(!box)continue;
+     const name=box.querySelector('[data-key="name"]').value.trim()||'unnamed helper';
+     const button=text('button',`Edit ${name}`,item);button.type='button';button.className='secondary';button.dataset.helperId=id;
+     button.onclick=()=>{setActiveHelper(box);const target=box.querySelector(field);target?.focus({preventScroll:true});target?.scrollIntoView({block:'center'});};
+   }
+ };
+
  refreshHelperSelector();
  if(!byId('shell-only').checked)for(const box of byId('helper-regions').children){const r=regionInput(box),z=box.querySelector('[data-print-z]');z.textContent='';if(!r.geometry)continue;
   try{Plan.geometry(r.geometry);r.active=box===activeHelper;valid.push(r);
-    if(mesh&&meshBounds&&[0,1,2].some(k=>r.geometry.center_mm[k]+r.geometry.size_mm[k]/2<meshBounds.min[k]||r.geometry.center_mm[k]-r.geometry.size_mm[k]/2>meshBounds.max[k]))text('li',`${r.name||'Region'}: box lies outside the part bounds and cannot bond to the body.`,warnings);
-    if(r.geometry.size_mm.some(x=>x<.84))text('li',`${r.name||'Region'}: an edge is below the 0.84 mm planning screen (2 × assumed 0.42 mm line width).`,warnings);
+    if(mesh&&meshBounds&&[0,1,2].some(k=>r.geometry.center_mm[k]+r.geometry.size_mm[k]/2<meshBounds.min[k]||r.geometry.center_mm[k]-r.geometry.size_mm[k]/2>meshBounds.max[k]))warn(`${r.name||'Region'}: box lies outside the part bounds and cannot bond to the body.`,[r.id]);
+    if(r.geometry.size_mm.some(x=>x<.84))warn(`${r.name||'Region'}: an edge is below the 0.84 mm planning screen (2 × assumed 0.42 mm line width).`,[r.id],`[data-geometry="size_mm"][data-axis="${r.geometry.size_mm.findIndex(x=>x<.84)}"]`);
     if(selected){const corners=transformMesh(boxCorners(r.geometry),selected.R_design_to_print,selected.t_mm),zs=Array.from(corners).filter((_,i)=>i%3===2);z.textContent=`Print Z extent: ${Math.min(...zs).toFixed(3)}–${Math.max(...zs).toFixed(3)} mm. Layer snapping and body bonding remain unchecked.`;}
-  }catch(e){text('li',`${r.name||'Region'}: ${e.message}`,warnings);}
+  }catch(e){warn(`${r.name||'Region'}: ${e.message}`,[r.id]);}
  }
  for(let i=0;i<valid.length;i++)for(let j=i+1;j<valid.length;j++){
-  if(['center_mm','size_mm'].every(key=>valid[i].geometry[key].every((v,k)=>v===valid[j].geometry[key][k])))text('li',`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: identical planning boxes. Move, resize or remove the redundant copy as needed.`,warnings);
-  if(Plan.boxSeparation(valid[i].geometry,valid[j].geometry).needs_review)text('li',`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: overlap or separation is below the nominal 0.84 mm screen. Review sliver modifiers.`,warnings);
+  if(['center_mm','size_mm'].every(key=>valid[i].geometry[key].every((v,k)=>v===valid[j].geometry[key][k])))warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: identical planning boxes. Move, resize or remove the redundant copy as needed.`,[valid[i].id,valid[j].id]);
+  if(Plan.boxSeparation(valid[i].geometry,valid[j].geometry).needs_review)warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: overlap or separation is below the nominal 0.84 mm screen. Review sliver modifiers.`,[valid[i].id,valid[j].id]);
  }
  viewer.setRegions(valid);updateDraftState();
 }

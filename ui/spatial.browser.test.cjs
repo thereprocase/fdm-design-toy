@@ -110,6 +110,13 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await page.getByRole('button',{name:'facet-01',exact:true}).click();assert(await page.evaluate(()=>viewer.onPick===null));assert(await page.locator('#cancel-placement').isHidden());await page.locator('#rationale').fill('Alternative pose for the same reinforcement.');
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),centers);
   await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('0.5');await page.waitForFunction(()=>document.querySelector('#region-warnings').textContent.includes('0.84'));
+  const warningState=await page.evaluate(()=>draftFormState());
+  await region.locator('.helper-editor').evaluate(e=>e.open=false);
+  await page.locator('#region-warnings li').filter({hasText:'an edge is below'}).getByRole('button',{name:'Edit Seat backing',exact:true}).click();
+  assert(await region.locator('.helper-editor').evaluate(e=>e.open));
+  assert(await region.locator('[data-geometry="size_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));
+  assert.equal(await page.evaluate(()=>draftFormState()),warningState);
+
   await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('10');
   const pending=page.waitForEvent('download');await page.locator('#export').click();const draft=JSON.parse(await fs.readFile(await(await pending).path(),'utf8'));
   assert.equal(draft.massing.helper_regions[0].geometry.frame,'design');assert.equal(draft.massing.helper_regions[0].geometry_status,'sketch');assert.deepEqual(draft.massing.helper_regions[0].keep_clear.interface_ids,['rear_seat']);
@@ -131,6 +138,15 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.deepEqual(await copy.locator('[data-geometry]').evaluateAll(fields=>fields.map(f=>f.value)),await region.locator('[data-geometry]').evaluateAll(fields=>fields.map(f=>f.value)));
   assert(await copy.locator('[data-interface-id="rear_seat"]').isChecked());
   assert.match(await page.locator('#region-warnings').innerText(),/identical planning boxes/);
+  const duplicateWarning=page.locator('#region-warnings li').filter({hasText:'identical planning boxes'});
+  assert.equal(await duplicateWarning.getByRole('button').count(),2);
+  const beforeWarningNavigation=await page.evaluate(()=>draftFormState());
+  await duplicateWarning.getByRole('button',{name:'Edit Seat backing',exact:true}).click();
+  assert(await region.evaluate(e=>e.classList.contains('active-helper')));
+  await duplicateWarning.getByRole('button',{name:'Edit Seat backing copy',exact:true}).click();
+  assert(await copy.evaluate(e=>e.classList.contains('active-helper')));
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeWarningNavigation);
+
   const copyDownload=page.waitForEvent('download');await page.locator('#export').click();
   const copied=JSON.parse(await fs.readFile(await(await copyDownload).path(),'utf8'));
   const [a,b]=copied.massing.helper_regions;assert.notEqual(a.id,b.id);
