@@ -322,7 +322,7 @@ async function loadOrientationTable(file,request,bundle=null){
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';return false;}
     if(!bundle)byId('orientation-bundle-files').value='';
-    clearOrientationBundle();clearKeepouts();fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    clearOrientationBundle();clearKeepouts();fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('download-work-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
@@ -802,11 +802,13 @@ function renderEvidenceHandoff(draft){
  byId('handoff-placeholders').hidden=!handoff.placeholders;
 }
 
-byId('download-table').onclick=()=>{
+function downloadSourceTable(statusId){
  if(!sourceTableBytes||!fingerprint)return;
  downloadFile(sourceTableBytes,sourceTableFilename());
- byId('table-download-status').textContent=`Original table bytes downloaded as ${sourceTableFilename()}. SHA-256: ${fingerprint}.`;
-};
+ byId(statusId).textContent=`Original table bytes downloaded as ${sourceTableFilename()}. SHA-256: ${fingerprint}.`+(statusId==='work-status'?' Keep this file with your work snapshot; downloading the table does not save current form edits.':'');
+}
+byId('download-table').onclick=()=>downloadSourceTable('table-download-status');
+byId('download-work-table').onclick=()=>downloadSourceTable('work-status');
 byId('export').onclick=()=>{
   clearDraftError();
   try{

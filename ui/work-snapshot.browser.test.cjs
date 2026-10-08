@@ -27,6 +27,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await upload(raw);assert.equal(await p.evaluate(()=>hasDraftEdits()),false);
  await p.locator('#export').click();assert.match(await p.locator('#export-status').innerText(),/walls/i);assert.equal(await p.evaluate(()=>draftFormState()),before);
  await p.locator('#walls').fill('5');const edited=await p.evaluate(()=>draftFormState());
+ // Source bytes are available here without opening the exporter instructions.
+ assert.equal(await p.locator('#handoff').evaluate(e=>e.open),false);
+ const sourceEvent=p.waitForEvent('download');await p.locator('#download-work-table').click();const sourceDownload=await sourceEvent;
+ assert.equal(sourceDownload.suggestedFilename(),`orientation-table-${raw.orientation_table_sha256.slice(0,12)}.json`);
+ assert.deepEqual(require('node:fs').readFileSync(await sourceDownload.path()),require('node:fs').readFileSync(table));
+ assert.equal(await p.evaluate(()=>draftFormState()),edited);assert(await p.evaluate(()=>hasDraftEdits()));
+ assert.match(await p.locator('#work-status').innerText(),/does not save current form edits/);
+ assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  accept=false;await upload(raw);assert.match(await p.locator('#work-status').innerText(),/cancelled/);assert.equal(await p.evaluate(()=>draftFormState()),edited);accept=true;
  const count=dialogs;
  for(const bad of [{...raw,reference_pose:'absent'},{...raw,reference_pose:42},{...raw,proposal:{generator:'malformed',label:{toString:null}}},{...raw,pose_notes:{'absent':'note'}},{...raw,pose_notes:{[raw.pose]:42}},{...raw,pose_notes:{[raw.pose]:'mismatched'}},{...raw,orientation_table_sha256:'0'.repeat(64)},{...raw,pose:'absent'},{...raw,helpers:[raw.helpers[0],raw.helpers[0]]},{...raw,helpers:[{...raw.helpers[0],fields:{...raw.helpers[0].fields,'size_mm:0':null}}]}]){

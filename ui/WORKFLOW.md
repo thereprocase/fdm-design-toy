@@ -400,7 +400,9 @@ open those inputs or rerun the checks.
 ## Pause with incomplete helper inputs
 
 Use **Save unfinished work → Download work snapshot** if dimensions or required
-notes are still incomplete. Also download the exact source table. To resume,
+notes are still incomplete. Beside that button, use **Download matching source
+table** and keep both files together. This downloads the original table bytes;
+it does not save current form edits. To resume,
 open that table first, then **Reopen work snapshot**. The snapshot preserves raw
 inputs for the selected pose and all helpers, including original proposal metadata.
 Comparison rationale notes for other poses are saved too (older snapshots may
