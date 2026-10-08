@@ -158,6 +158,15 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
     assert(await page.locator('#workspace').isVisible());assert(await page.locator('#undo-remove').isEnabled());
     assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   }
+
+  const beforeBadPose=await page.evaluate(()=>draftFormState());
+  for(const change of [{R_design_to_print:[[1,0,0],[0,1,0],[0,0,-1]]},{t_mm:[0,0]},{build_dir_design:[0,0,2]}]){
+    const bad=JSON.parse(plain);Object.assign(bad.candidates[0],change);
+    await page.locator('#table-file').setInputFiles({name:'bad-pose.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(bad))});
+    await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Candidate facet-00:'));
+    assert.equal(await page.evaluate(()=>draftFormState()),beforeBadPose);
+    assert(await page.locator('#undo-remove').isEnabled());
+  }
   await page.locator('#undo-remove').click();assert.equal(await page.locator('.helper-region').first().locator('[data-key="name"]').inputValue(),'Recoverable helper');
   const recovered=await download();assert.equal(recovered.source.orientation_table_sha256,exact.source.orientation_table_sha256);
   assert.equal(recovered.massing.helper_regions[0].name,'Recoverable helper');assert.deepEqual(errors,[]);

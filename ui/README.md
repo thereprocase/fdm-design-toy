@@ -699,3 +699,10 @@ and a helper list. A shell-only draft containing helpers is rejected rather than
 silently discarding them. The current form remains available after rejection.
 Deliberately choosing Shell only in the editor still exports an empty helper list;
 legacy free-text-note migration retains its separate behavior.
+
+Orientation imports validate each candidate's finite rotation/translation and
+build direction before replacing the current session. Rotations must be proper
+(no scaling, shear or reflection), and must lift the build direction to print +Z,
+using the planning backend's 1e-8 tolerance. Invalid tables report the candidate
+and preserve the existing draft. This checks the pose contract, not mesh fit or
+physical printability.

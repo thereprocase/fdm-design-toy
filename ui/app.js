@@ -194,7 +194,7 @@ byId('table-file').onchange=async event=>{
       }
     }
     const ids=new Set();
-    for(const c of data.candidates){if(!c||typeof c.id!=='string'||!c.id||ids.has(c.id)||!c.columns||typeof c.columns!=='object'||Array.isArray(c.columns)||!Array.isArray(c.build_dir_design)||c.build_dir_design.length!==3||!c.build_dir_design.every(Number.isFinite))throw Error('Each candidate needs a unique id, columns and a finite build direction.');ids.add(c.id);}
+    for(const c of data.candidates){if(!c||typeof c.id!=='string'||!c.id||ids.has(c.id)||!c.columns||typeof c.columns!=='object'||Array.isArray(c.columns)||!Array.isArray(c.build_dir_design)||c.build_dir_design.length!==3||!c.build_dir_design.every(Number.isFinite))throw Error('Each candidate needs a unique id, columns and a finite build direction.');ids.add(c.id);try{Plan.validatePose(c);}catch(error){throw Error(`Candidate ${c.id}: ${error.message}`);}}
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';event.target.value='';return;}

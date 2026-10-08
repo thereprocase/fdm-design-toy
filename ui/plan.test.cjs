@@ -119,3 +119,13 @@ test('current draft imports reject contradictory shell intent instead of discard
   assert.throws(()=>Plan.restore(draft,analysis,hash),/helper list/);
  }
 });
+
+test('pose import matches rigid rotation and build-direction contract',()=>{
+ const pose={R_design_to_print:[[1,0,0],[0,1,0],[0,0,1]],t_mm:[10,-2,0],build_dir_design:[0,0,1]};
+ assert.doesNotThrow(()=>Plan.validatePose(pose));
+ assert.doesNotThrow(()=>Plan.validatePose({...pose,R_design_to_print:[[1,0,0],[0,0,-1],[0,1,0]],build_dir_design:[0,1,0]}));
+ for(const change of [{R_design_to_print:[[1,0],[0,1]]},{t_mm:[0,0,Infinity]},{build_dir_design:[0,NaN,1]}])assert.throws(()=>Plan.validatePose({...pose,...change}),/finite/);
+ for(const R of [[[2,0,0],[0,1,0],[0,0,1]],[[-1,0,0],[0,1,0],[0,0,1]],[[1,.1,0],[0,1,0],[0,0,1]]])assert.throws(()=>Plan.validatePose({...pose,R_design_to_print:R}),/proper rigid/);
+ assert.throws(()=>Plan.validatePose({...pose,build_dir_design:[0,1,0]}),/lift/);
+ assert.throws(()=>Plan.validatePose({...pose,build_dir_design:[0,0,2]}),/lift/);
+});

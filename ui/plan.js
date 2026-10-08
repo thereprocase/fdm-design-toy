@@ -78,6 +78,16 @@ const Plan = (() => {
     }
     return {candidate,input:{walls:m.walls,skin_mm:m.skin_mm,rationale:requireText(draft.orientation?.designer_decision?.rationale,'Choice rationale'),shell_only:m.shell_only===true,helper_regions:helperRegions,...(draft.proposal?{proposal:proposal(draft.proposal)}:{})},migrated};
   }
+  function validatePose(candidate){
+    const R=candidate?.R_design_to_print,t=candidate?.t_mm,d=candidate?.build_dir_design;
+    const vector=v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite);
+    if(!Array.isArray(R)||R.length!==3||!R.every(vector)||!vector(t)||!vector(d))throw Error('Pose needs a finite 3×3 rotation, translation and build direction.');
+    const close=(a,b)=>Math.abs(a-b)<=1e-8;
+    for(let i=0;i<3;i++)for(let j=0;j<3;j++)if(!close(R.reduce((sum,row)=>sum+row[i]*row[j],0),i===j?1:0))throw Error('Pose must be a proper rigid rotation.');
+    const det=R[0][0]*(R[1][1]*R[2][2]-R[1][2]*R[2][1])-R[0][1]*(R[1][0]*R[2][2]-R[1][2]*R[2][0])+R[0][2]*(R[1][0]*R[2][1]-R[1][1]*R[2][0]);
+    if(!close(det,1))throw Error('Pose must be a proper rigid rotation.');
+    if(!R.every((row,i)=>close(row.reduce((sum,x,j)=>sum+x*d[j],0),i===2?1:0)))throw Error('Pose must lift its build direction to print +Z.');
+  }
   function filename(draft) {
     const slug=(value,fallback)=>typeof value==='string'
       ?value.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,64).replace(/^-+|-+$/g,'')||fallback:fallback;
@@ -93,6 +103,6 @@ const Plan = (() => {
       command:`fdmgen evidence out/massing/${stem}.json project.gcode shell-only.gcode --table ${table} --pose ${safe(pose)?pose:'POSE_ID'} --out out/evidence`,
       placeholders:!known};
   }
-  return {schema,create,restore,geometry,boxSeparation,filename,evidenceHandoff};
+  return {schema,create,restore,geometry,boxSeparation,filename,evidenceHandoff,validatePose};
 })();
 if(typeof module!=='undefined')module.exports=Plan;
