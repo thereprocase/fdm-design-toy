@@ -1083,3 +1083,39 @@ in both precisions, reproducing the earlier CPU nominal-TI comparison. Both
 domains retain all original loads and 7,216 fixed DOFs. This extends the numerical
 transfer check to the helper-bearing slice; it adds no calibration, strength or
 physical qualification evidence and does not meet the solver gate.
+
+The experimental consumer also accepts `--sweeps N` (1–32, default 1) for equal
+residual-Jacobi pre/post sweeps and `--rtol R` (default 1e-9) for CG stopping.
+Changing sweeps recomputes the CPU FP64 cycle probes using the same sweep count;
+it does not change the physical operator, coarse hierarchy or stored CPU solve.
+The one-sweep default retains the pack's original probe reference.
+
+For a bounded sensitivity on an already exported pack:
+
+```bash
+python bench/amg_transfer_gpu.py --pack out/transfer/bracket.npz --sha256 PACK_SHA256 \
+  --cycle-precision fp32 --sweeps 5 --rtol 1e-6 --maxiter 40 \
+  --experimental-warp-118 --out out/transfer/bracket-sweeps5-tol6.json
+```
+
+Receipts record both controls. `requested_tolerance_met` reports only whether
+the independently recomputed physical residual is at most the requested rtol.
+`accepted` and exit status still require the original stricter residual below
+1e-8, metric agreement and reuse controls. Thus a run can meet the requested
+1e-6 tolerance and still exit 2. Neither field establishes the full solver gate;
+setup costs, required material/floor cases and the production version boundary
+remain separate. Existing receipts and default numerical settings are unchanged.
+
+Measured replays of this control on the same nominal-TI shell-only and helper
+project packs are retained as
+[`bracket five-sweep receipt`](receipts/amg-transfer-bracket-gpu-fp32-sweeps5-tol6.json)
+and [`project five-sweep receipt`](receipts/amg-transfer-project-gpu-fp32-sweeps5-tol6.json).
+Both stop at 38 iterations for requested rtol 1e-6. Independently recomputed
+physical residuals are 6.724e-7 and 7.739e-7 respectively; all three load-scale
+controls agree. Both explicitly retain `accepted: false` under the stricter
+1e-8 acceptance. These are nominal occupancy-domain cases on experimental
+Warp 1.18, not the required floor/material sweep or production-version parity.
+The repeated solve segments are about 1.66/1.67 s, excluding setup; they do not
+establish the optimiser's iteration budget. Unit known answers and actual cube
+replays in both cycle precisions cover the controls: default 35 iterations,
+five sweeps 19, with independent direct-solution checks.

@@ -36,3 +36,37 @@ def test_acceptance_uses_true_operator_residual_and_load_scaling():
         assert not pilot.assess_solution(A, load, bad, reference, 1.)['accepted']
     with pytest.raises(ValueError, match='scale'):
         pilot.assess_solution(A, load, u, reference, 0)
+
+
+@pytest.mark.parametrize('sweeps', [1, 2, 5, 6])
+def test_cpu_cycle_known_constant_and_antisymmetric_modes(sweeps):
+    # A has eigenvalues 1 (constant) and 3 (antisymmetric). Coarse correction
+    # solves the constant mode exactly; each Jacobi sweep shrinks the other
+    # error by 1/4. Equal pre/post counts give 2*sweeps factors.
+    A = sparse.csr_matrix([[2., -1.], [-1., 2.]])
+    P = sparse.csr_matrix([[1.], [1.]])
+    cpu = {'A0': A, 'D0': sparse.eye(2)*.25, 'P0': P,
+           'R0': P.T, 'coarse': sparse.csr_matrix([[.5]])}
+    antisymmetric = (1-.25**(2*sweeps))/3
+    expected = np.array([1+antisymmetric, 1-antisymmetric])
+    np.testing.assert_allclose(pilot.cpu_cycle_reference(cpu, 2, np.array([2., 0.]), sweeps),
+                               expected, rtol=1e-14)
+    np.testing.assert_array_equal(pilot.cpu_cycle_reference(cpu, 1, np.array([2.]), sweeps), [1.])
+
+
+@pytest.mark.parametrize('sweeps,rtol', [(0, 1e-6), (33, 1e-6), (True, 1e-6), (1.5, 1e-6),
+                                        (1, 0), (1, -1), (1, 1), (1, np.nan), (1, np.inf), (1, True)])
+def test_invalid_controls_refused_before_pack_read(sweeps, rtol):
+    with pytest.raises(ValueError, match='sweeps|rtol'):
+        pilot.run('does-not-exist.npz', 'bad', precision='fp32', graph=True,
+                  maxiter=40, experimental=True, sweeps=sweeps, rtol=rtol)
+
+
+def test_requested_tolerance_does_not_relax_strict_acceptance():
+    A = sparse.eye(3); load = np.ones(3)
+    ref = dict(compliance_N_mm=3., max_displacement_mm=np.sqrt(3))
+    result = pilot.assess_solution(A, load, load+2e-7, ref, 1., requested_rtol=1e-6)
+    assert result['requested_tolerance_met']
+    assert not result['accepted']
+    assert not pilot.assess_solution(A, load, load+2e-6, ref, 1., requested_rtol=1e-6)['requested_tolerance_met']
+    assert not pilot.assess_solution(A, load, np.full(3, np.nan), ref, 1., requested_rtol=1e-6)['requested_tolerance_met']
