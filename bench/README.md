@@ -937,3 +937,54 @@ that fails the 1e-6 requirement. A recursive stopping estimate is insufficient.
 The proposal preserves the existing iteration, timing, material, precision and
 zero-ersatz requirements. Projection remains diagnostic, and no filtering or
 additional restraints have been made the default.
+
+### Nominal TI occupancy reference with an auxiliary preconditioner
+
+`ti_density_weighted.py` solves the card's transversely isotropic (TI) equations on
+all positive-density cells. It builds AMG from a separate isotropic operator
+(E = 1,000 MPa, nu = 0.3) on the same cells and uses that inverse only as the
+preconditioner. The physical stiffness, residual, compliance and displacement
+remain TI. This distinction matters: on the slice-derived 0.8 mm baseline, the
+nominal TI matrix's own AMG hierarchy stalled, while the isotropic auxiliary
+hierarchy converged without changing the physical equations.
+
+```bash
+python bench/ti_density_weighted.py --root /path/to/part-checkout \
+  --reference bench/receipts/bracket-grid-h08.json \
+  --baseline /path/to/shell-only-occupancy.npz \
+  --project /path/to/project-occupancy.npz \
+  --card catalog/materials/polymaker-polylite-asa-t0.yaml \
+  --basis sustained_effective --power 1 --solve --out out/ti-density.json
+```
+
+The material basis is mandatory. Power 1 or 3 is an **uncalibrated density law**;
+there is no stiffness floor, threshold, fragment removal or load transfer. The
+original load and restraint audit must pass before a case is solved. This bracket
+adapter declares design and installed coordinates identical. The command checks
+that the posed layer normal maps to grid Z (up to sign); it refuses other axes
+because tensor rotation is not implemented here.
+
+The new `fdmgen/ti-density-mechanics-pilot@0.1` receipt records the card hash,
+actual constants and 6x6 tensor, modulus basis, physical and auxiliary matrix
+hashes, source hashes, input provenance, solver settings and recomputed true
+residual. It is deliberately a different schema from the isotropic pilot; the
+current browser importer does not accept it. Copying these numbers into an
+isotropic receipt would misstate the material model.
+
+Without `--solve`, the command audits the domains. With it, exit 2 means the paired
+comparison was not established; inspect the case audits and solves. Completed
+cases are saved incrementally, so an interrupted file is not necessarily a paired
+result. A compliance reduction is a relative stiffness result for this nominal
+card and raster model, not anisotropic strength, a calibrated sustained-life
+prediction, an uncertainty bound, mesh convergence, or the GPU solver gate.
+
+Measured replay: [`occupancy-ti-density-p1-h08.json`](receipts/occupancy-ti-density-p1-h08.json)
+uses the same 0.8 mm, deposition-step 1/12, caps-off pair as the isotropic p1
+receipt. Full solid converged in 48 CG; baseline and helpers each took 44, with
+true residuals 6.22e-10 and 6.39e-10. Compliance changed from 384.503 to
+377.945 N mm (**−1.706 %**, versus isotropic p1 −1.798 %). Both printed domains
+retain all original loads and all 7,216 fixed DOFs. The material is the nominal
+T0 sustained-effective card, not a sweep of its uncertainty intervals. These
+CPU reference iterations target 1e-9 and do not establish the GPU iteration or
+wall-time gate. Setup includes assembling both operators; the receipt records
+the cost separately from the solve.
