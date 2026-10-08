@@ -64,6 +64,7 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await page.evaluate(()=>{window.pickCalls=0;const pick=viewer.onPick;viewer.onPick=p=>{window.pickCalls++;pick(p);};});
   await page.mouse.click(overlay.x+67,overlay.y+75);
   await page.mouse.move(overlay.x+67,overlay.y+75);await page.mouse.down();await page.mouse.move(overlay.x+180,overlay.y+150,{steps:3});await page.mouse.up();
+  await page.mouse.click(overlay.x+overlay.width-40,overlay.y+overlay.height-40);
   assert.equal(await page.evaluate(()=>window.pickCalls),0);
   assert.deepEqual(await page.evaluate(()=>({state:draftFormState(),yaw:viewer.yaw,pitch:viewer.pitch})),beforeOverlay);
   const hit=await page.evaluate(()=>{
@@ -199,9 +200,16 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.equal(await page.evaluate(()=>draftFormState()),beforeWarningNavigation);
 
 
+  const scaleLabels=()=>page.evaluate(()=>{
+    const labels=[],ctx=viewer.canvas.getContext('2d'),original=ctx.fillText;
+    ctx.fillText=function(value,...args){if(/^[\d.,]+ mm$/.test(value))labels.push(value);return original.call(this,value,...args);};
+    try{viewer.draw();}finally{ctx.fillText=original;}return labels;
+  });
+  const wholeScale=await scaleLabels();assert.equal(wholeScale.length,1);
   const beforeFrame=await page.evaluate(()=>({form:draftFormState(),pose:selected.id,vertices:Array.from(viewer.vertices)}));
   await page.locator('#focus-helper').click();await page.waitForFunction(()=>!viewer.pending);
   assert.equal(await page.evaluate(()=>viewer.focusId),await copy.getAttribute('data-id'));
+  const focusedScale=await scaleLabels();assert.equal(focusedScale.length,1);assert.notDeepEqual(focusedScale,wholeScale);
   const framing=await page.evaluate(()=>{
     const region=viewer.regions.find(r=>r.active),c=transformMesh(region.geometry.center_mm,viewer.R,viewer.t),p=viewer.project(...c);
     return {x:p[0],y:p[1],width:viewer.canvas.clientWidth,height:viewer.canvas.clientHeight};

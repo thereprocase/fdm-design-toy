@@ -753,3 +753,7 @@ available while the correct source is located.
 pose. Orbit and zoom then operate around that box. **Show whole part** restores
 part framing while keeping the viewing direction; preset views also restore it.
 Changing the active helper or disabling its box ends focused framing.
+
+The preview scale bar reports millimetres in the orthographic view plane and
+updates with zoom and helper framing. It is a viewing aid, not a surface-distance
+measurement. Its inset, like the axis compass, does not accept placement clicks.

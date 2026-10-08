@@ -44,6 +44,13 @@ function designAxesInView(R,yaw,pitch){
     return [cy*x-sy*y,sp*yy-cp*z,cp*yy+sp*z];
   });
 }
+function previewScale(pixelsPerMm,maxPixels){
+  if(!Number.isFinite(pixelsPerMm)||pixelsPerMm<=0||!Number.isFinite(maxPixels)||maxPixels<=0)return null;
+  const limit=maxPixels/pixelsPerMm,power=10**Math.floor(Math.log10(limit));
+  const mm=[5,2,1].map(n=>n*power).find(n=>n<=limit);
+  return {mm,pixels:mm*pixelsPerMm};
+}
+function scalePanel(width,height){return {x:width-Math.min(100,width*.25)-24,y:height-65,width:Math.min(100,width*.25)+16,height:44};}
 const AXIS_PANEL={x:8,y:8,width:122,height:116};
 class PartViewer {
   constructor(canvas) {
@@ -51,7 +58,7 @@ class PartViewer {
     let start=null,down=null,dragged=false,pointer=null;
     const onOverlay=e=>{
       const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-      return this.vertices&&x>=AXIS_PANEL.x&&x<=AXIS_PANEL.x+AXIS_PANEL.width&&y>=AXIS_PANEL.y&&y<=AXIS_PANEL.y+AXIS_PANEL.height;
+      return this.vertices&&[AXIS_PANEL,scalePanel(canvas.clientWidth,canvas.clientHeight)].some(p=>x>=p.x&&x<=p.x+p.width&&y>=p.y&&y<=p.y+p.height);
     };
     canvas.addEventListener('pointerdown',e=>{if(e.button!==0||!e.isPrimary||pointer!==null||onOverlay(e))return;dragged=false;pointer=e.pointerId;start=down=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId);});
     canvas.addEventListener('pointerup',e=>{
@@ -126,7 +133,15 @@ class PartViewer {
         ctx.fillText('+'+'XYZ'[i],tip[0]+(x<0?-18:4),tip[1]+(y>0?13:-4));
       }
     });
+    const panel=scalePanel(width,height),bar=previewScale(scale,panel.width-16);
+    if(bar){
+      ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(panel.x,panel.y,panel.width,panel.height);
+      ctx.fillStyle='#344d40';ctx.strokeStyle='#344d40';ctx.lineWidth=2;ctx.font='12px system-ui';
+      const x=panel.x+8,y=panel.y+32;
+      ctx.fillText(bar.mm.toLocaleString(undefined,{maximumSignificantDigits:3})+' mm',x,panel.y+16);
+      ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x,y+4);ctx.moveTo(x,y);ctx.lineTo(x+bar.pixels,y);ctx.moveTo(x+bar.pixels,y-4);ctx.lineTo(x+bar.pixels,y+4);ctx.stroke();
+    }
     ctx.fillStyle='#344d40';ctx.font='11px system-ui';ctx.fillText('Bed plane: print Z = 0 · mm',14,height-15);
   }
 }
-if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView};
+if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView,previewScale};

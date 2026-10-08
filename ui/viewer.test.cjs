@@ -40,3 +40,15 @@ test('axis indicator follows pose rotation and camera without translation',()=>{
  close(designAxesInView([[0,-1,0],[1,0,0],[0,0,1]],0,Math.PI/2),[[0,1,0],[-1,0,0],[0,0,1]]);
  close(designAxesInView(I,Math.PI/2,0),[[0,0,1],[-1,0,0],[0,-1,0]]);
 });
+
+test('preview scale gives a bounded physical length across camera zoom levels',()=>{
+ const {previewScale}=require('./viewer.js');
+ assert.deepEqual(previewScale(4,100),{mm:20,pixels:80});
+ assert.deepEqual(previewScale(40,100),{mm:2,pixels:80});
+ assert.deepEqual(previewScale(.4,100),{mm:200,pixels:80});
+ assert.deepEqual(previewScale(1000,75),{mm:.05,pixels:50});
+ for(const scale of [.1,.3,1,7,24,200]){
+   const b=previewScale(scale,75);assert(b.pixels<=75&&b.pixels>0);assert.equal(b.pixels,b.mm*scale);
+ }
+ assert.equal(previewScale(0,100),null);assert.equal(previewScale(Infinity,100),null);
+});
