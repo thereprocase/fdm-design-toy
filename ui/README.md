@@ -1047,3 +1047,9 @@ list without scrolling back to the preview. It shares selection with **Helper to
 edit** above the viewer, opens the chosen editor and focuses its name. Navigation
 does not change the saved plan; renaming, removing and restoring helpers updates
 both lists. Shell-only mode disables both pickers.
+
+Collapsed helper editors show their box dimensions and centre in design-frame
+millimetres, so several helpers can be compared without opening every editor.
+The summary updates after geometry edits and undo, distinguishes an unplaced box
+from incomplete geometry, and describes planning geometry only. Clearance,
+bonding and slice evidence still come from the backend checks.

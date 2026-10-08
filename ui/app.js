@@ -556,6 +556,13 @@ function helperLabel(box){
 function invalidGeometryField(box){
  return [...box.querySelectorAll('[data-geometry]')].find(f=>f.value===''||!Number.isFinite(Number(f.value))||f.dataset.geometry==='size_mm'&&Number(f.value)<=0);
 }
+function helperGeometrySummary(box){
+ const prefix='Edit helper settings — ';
+ if(!box.querySelector('[data-spatial]').checked)return prefix+'no box placed';
+ if(invalidGeometryField(box))return prefix+'box incomplete: enter finite centres and positive sizes';
+ const values=key=>[...box.querySelectorAll(`[data-geometry="${key}"]`)].map(f=>Number(f.value));
+ return prefix+`${values('size_mm').join(' × ')} mm; centre (${values('center_mm').join(', ')}) design mm. Planning geometry only.`;
+}
 function updateRegions(){
  const valid=[],warnings=byId('region-warnings');warnings.replaceChildren();
  const editors=new Map([...byId('helper-regions').children].map(box=>[box.dataset.id,box]));
@@ -569,6 +576,7 @@ function updateRegions(){
  };
 
  refreshHelperSelector();
+ for(const box of editors.values())box.querySelector('.helper-editor > summary').textContent=helperGeometrySummary(box);
  for(const box of editors.values())box.querySelector('[data-box-volume]').textContent=byId('shell-only').checked?'Helper omitted from this shell-only plan.':'Enter a valid box to show its unclipped volume.';
  if(!byId('shell-only').checked)for(const box of byId('helper-regions').children){const r=regionInput(box),z=box.querySelector('[data-print-z]');z.textContent='';if(!r.geometry)continue;
   try{Plan.geometry(r.geometry);
