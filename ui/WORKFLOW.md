@@ -25,6 +25,31 @@ mesh. For the 3D preview, supply the matching `body-mounted.stl` from the part
 source checkout; the JSON files do not include the STL. The workspace checks
 its fingerprint. This example does not download or generate geometry for you.
 
+### Try the sliced-pose example
+
+To inspect measured shell and bridge checks instead, open **Or open a complete
+orientation evidence bundle** and select all six JSON files in
+`ui/fixtures/orient-evidence-roads/` together. Keep the files unchanged. This is a
+separate example from the seed draft above: it opens an enriched table with a
+different fingerprint, so that older draft cannot be reopened against it.
+
+1. Choose **Review facet-01** in the verified bundle summary.
+2. Under **Recorded checks needing review**, use **Locate recorded strand** for
+   the external bridge. It opens the preview's location controls and selects the
+   recorded 52.2 mm strand maximum, with keyboard focus on that choice.
+3. Load the matching body STL to draw the road. Selecting a road before the mesh
+   is loaded retains the selection. The dashed line is the full road and the
+   solid segment is the unsupported run; both are drawn through the body.
+4. Compare **facet-00**. Changing pose clears the previous road; select that
+   pose's internal strand to inspect its recorded 122.1 mm maximum.
+5. To start a new draft from this enriched table, choose a pose and use
+   **Plan this pose**. Keep its exact table with the exported draft. To reopen
+   the older six-helper draft instead, return to its original table above.
+
+Both poses retain bridge FAIL results. These are provisional toolpath checks;
+locating a road does not establish a helper remedy or physical printability.
+The workspace does not change helper geometry when you select a road.
+
 ## Choose a pose
 
 1. Load the orientation table produced by `fdmgen orient`. Read what its evidence
