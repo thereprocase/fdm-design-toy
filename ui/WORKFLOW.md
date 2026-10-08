@@ -241,6 +241,37 @@ original inputs; they do not verify the revised plan.
 For schema details, evidence limits and test-worker instructions, see the
 [technical UI guide](README.md).
 
+### Review the mechanics example
+
+Open [Helper review](massing-review.html). This example reads an existing CPU
+analysis; it does not start a solve or qualify the draft for printing.
+
+1. In **Saved planning draft**, select `ui/fixtures/seed-draft.json`.
+2. In **Massing-export receipt**, select `ui/fixtures/seed-export-report.json`.
+3. Expand **Optional: load individual receipts or a mechanics pilot**. In
+   **Optional sliced-helper evidence**, select `ui/fixtures/seed-slice-evidence.json`.
+4. In **Optional mechanics pilot receipt**, select
+   `bench/receipts/occupancy-density-p1-h08.json`.
+5. Choose **Mechanics** in the review navigation. Check the model and its scope
+   before interpreting the reported **−1.798%** compliance change.
+
+Here, lower compliance means less load-weighted deformation in the stated model.
+It is not a strength margin. The model uses the 0.8 mm grid, all positive-density
+cells, no fragment removal, and all original loads and 7,216 fixed degrees of
+freedom (restrained displacement components). Its assumed stiffness is linear
+in capped density; that law is uncalibrated. Predicted displacements are not
+validated physical movement. The complete source receipt remains available below
+the displayed results.
+
+For a contrasting audit, select
+`bench/receipts/occupancy-connected-sensitivity-r1.json` in the same input. The
+older thresholded model retained only 1,978 of 2,071 original restrained components.
+The review now withholds its comparison even though the historical receipt says
+ready/solved. Read the specific reason and original/retained counts rather than
+treating a successful solver status as sufficient evidence. This is a different
+grid, domain and load policy; the two results are not a controlled grid-refinement
+comparison. Changing the draft requires new matching evidence.
+
 ### Locate a failing bridge on the body
 
 After loading a matched review and its evidence bundle, choose **Saved geometry**
