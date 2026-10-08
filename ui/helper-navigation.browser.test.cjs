@@ -10,6 +10,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert((await p.locator('#proposal-evidence').boundingBox()).height<140);
  await history.locator(':scope > summary').click();assert.match(await history.innerText(),/Originally proposed helpers/);
  await history.locator(':scope > summary').click();assert.deepEqual(await p.evaluate(()=>workSnapshot()),snapshotBefore);
+ const collapse=p.locator('#collapse-other-helpers');assert(await collapse.isEnabled());assert.equal(await collapse.innerText(),'Collapse all helpers');
+ const originalWork=await p.evaluate(()=>workSnapshot()),expandedHeight=(await p.locator('#helper-regions').boundingBox()).height;
+ await collapse.click();assert.equal(await p.locator('.helper-editor[open]').count(),0);
+ assert.deepEqual(await p.evaluate(()=>workSnapshot()),originalWork);assert.equal(await p.evaluate(()=>hasDraftEdits()),false);
+ assert((await p.locator('#helper-regions').boundingBox()).height<expandedHeight/2);
+ const firstId=await p.locator('.helper-region').first().getAttribute('data-id');await p.locator('#planning-helper').selectOption(firstId);
+ assert.equal(await collapse.innerText(),'Show only selected helper');assert.equal(await p.locator('.helper-editor[open]').count(),1);
+ assert.equal(await p.evaluate(()=>document.activeElement.closest('.helper-region').dataset.id),firstId);
+ assert.deepEqual(await p.evaluate(()=>workSnapshot()),originalWork);
  const first=p.locator('.helper-region').first(),summary=first.locator('.helper-editor > summary');
  const originalSummary=await summary.innerText();
  assert.match(originalSummary,/mm; centre \(.*\) design mm\. Planning geometry only/);

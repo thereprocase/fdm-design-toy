@@ -1111,3 +1111,8 @@ historical, not current verification**, so the shell and helper controls are
 reachable without scrolling through the original cluster list. Expand it to
 inspect every recorded field; disclosure does not change the draft or snapshot.
 A **No viable helpers** warning remains visible outside the collapsed history.
+
+On a newly opened draft with no active helper, **Collapse all helpers** folds the
+editors into their name and geometry summaries. Selecting a helper in the picker
+reopens it and focuses its name; the same button then becomes **Show only selected
+helper**. Folding editors changes only the view, not the draft, snapshot or checks.

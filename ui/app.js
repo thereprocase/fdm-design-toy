@@ -884,7 +884,8 @@ function refreshHelperSelector(){
  byId('return-helper').hidden=shellOnly||!activeHelper;
  select.disabled=shellOnly||!boxes.length;select.value=!shellOnly&&activeHelper?activeHelper.dataset.id:'';
  const planningSelect=byId('planning-helper');planningSelect.replaceChildren(...[...select.options].map(option=>option.cloneNode(true)));planningSelect.disabled=select.disabled;planningSelect.value=select.value;
- byId('collapse-other-helpers').disabled=shellOnly||!activeHelper;
+ byId('collapse-other-helpers').disabled=shellOnly||!boxes.length;
+ byId('collapse-other-helpers').textContent=activeHelper?'Show only selected helper':'Collapse all helpers';
  byId('expand-helpers').disabled=shellOnly||!boxes.length;
  byId('active-helper-status').textContent=shellOnly?'Shell-only draft: helper boxes are excluded.':activeHelper?`Editing ${helperLabel(activeHelper)}. ${activeHelper.querySelector('[data-spatial]').checked?'Its box has the solid blue outline; other boxes are dashed orange.':'Enable its spatial box to preview the region.'}`:'Focus a helper field to highlight its box.';
 }
