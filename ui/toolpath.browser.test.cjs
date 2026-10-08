@@ -46,6 +46,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   }
   assert.match(await row.locator('[data-bridge-summary]').innerText(),/shell-only/);
  }
+ await page.setViewportSize({width:390,height:844});await page.locator('.pose-table').evaluate(e=>e.scrollLeft=e.scrollWidth);
+ const bridgeLayout=await page.locator('#rows tr').first().evaluate(row=>{const panel=row.closest('.pose-table').getBoundingClientRect(),id=row.cells[0].getBoundingClientRect(),bridge=row.querySelector('[data-bridge-summary]').getBoundingClientRect();return {width:bridge.width,idLeft:id.left-panel.left,nowrap:getComputedStyle(row.cells[0]).whiteSpace,right:bridge.right-panel.right};});
+ assert(bridgeLayout.width>=220);assert(bridgeLayout.idLeft>=0&&bridgeLayout.idLeft<3);assert.equal(bridgeLayout.nowrap,'nowrap');assert(Math.abs(bridgeLayout.right)<2);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.setViewportSize({width:1300,height:1000});
  // Mixed slice kinds are not silently presented as controlled orientation evidence.
  const mixedKinds=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/orient-evidence/orientation-table.enriched.json')));
  mixedKinds.candidates.find(c=>c.id==='facet-01').columns.t_shell_thin_fraction.receipt.slice_kind='project';

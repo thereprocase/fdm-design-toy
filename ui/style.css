@@ -71,3 +71,6 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 #planning-helper{max-width:100%}
 
 .workbench .preview > #camera-controls{order:-1;margin:0;flex-shrink:0}
+
+.pose-table td[data-bridge-summary]{min-width:220px}
+.pose-table td:first-child{white-space:nowrap}
