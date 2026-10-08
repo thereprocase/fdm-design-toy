@@ -141,6 +141,7 @@ byId('keepout-file').onchange=async event=>{
  }catch(e){if(request===keepoutRequest)byId('keepout-status').textContent=e.message+(keepoutGeometry?' Previously matched geometry and visibility are retained.':'');}
 };
 function updatePreview(){
+ byId('save-preview').disabled=!analysis||!selected||!mesh||meshHash!==analysis.mesh?.sha256;
  updateInterfaceVisibility();
  if(!analysis || !selected || !mesh || meshHash!==analysis.mesh?.sha256){cancelSurfacePlacement();viewer.clear();return;}
  try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();viewer.setRoadWitness(orientationRoad?.source.design_mm||null);}
@@ -151,6 +152,28 @@ byId('view-whole').onclick=()=>viewer.frameAll();
 byId('zoom-in').onclick=()=>viewer.zoomBy(1.4);byId('zoom-out').onclick=()=>viewer.zoomBy(1/1.4);
 byId('view-iso').onclick=()=>viewer.view('iso');byId('view-top').onclick=()=>viewer.view('top');
 byId('view-x').onclick=()=>viewer.view('print-x');byId('view-y').onclick=()=>viewer.view('print-y');
+byId('save-preview').onclick=()=>{
+ const status=byId('preview-save-status');status.hidden=false;
+ try{
+  if(!selected||!mesh||meshHash!==analysis?.mesh?.sha256)throw Error('Load the matched mesh and select a pose first.');
+  viewer.draw();
+  const name=`preview-${selected.id.replace(/[^a-zA-Z0-9_-]/g,'_')}-${fingerprint.slice(0,12)}.png`;
+  const picture=previewImageCanvas(byId('part-view'),[
+   'PLANNING PREVIEW - not a check receipt or print qualification',
+   `Pose: ${selected.id}`,
+   `Orientation table SHA256: ${fingerprint}`,
+   `Mesh SHA256: ${meshHash}`,
+   'Current camera and visible overlays; unsaved helper edits may be shown.',
+   'Helper boxes are unclipped planning intent, not credited material.',
+   'Keep the draft or work snapshot and source receipts separately.'
+  ]);
+  picture.toBlob(blob=>{
+   if(!blob){status.textContent='Could not encode the preview image.';return;}
+   const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+   status.textContent='Preview PNG downloaded with pose and source fingerprints. This download does not save draft edits; save a draft or work snapshot separately.';
+  },'image/png');
+ }catch(error){status.textContent=error.message;}
+};
 byId('mesh-file').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;cancelSurfacePlacement();const request=++meshRequest;
  try{if(file.size>100*1024*1024)throw Error('Preview supports STL files up to 100 MB.');const raw=await file.arrayBuffer(), hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',raw)),b=>b.toString(16).padStart(2,'0')).join('');
@@ -410,7 +433,7 @@ async function loadOrientationTable(file,request,bundle=null){
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';return false;}
     if(!bundle)byId('orientation-bundle-files').value='';
-    clearOrientationBundle();clearKeepouts();clearInterfaces();fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('download-work-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    clearOrientationBundle();clearKeepouts();clearInterfaces();byId('save-preview').disabled=true;byId('preview-save-status').hidden=true;fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('download-work-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;

@@ -110,6 +110,16 @@ Filters can hide the selected pose without changing it; **Show selected pose**
 reveals it again. Bridge strand and ceiling maxima can come from different roads.
 A numerical ordering or a passed slicer check is not print qualification.
 
+### Share the current view
+
+With a selected pose and matching STL, use **Save preview image** beneath the
+canvas to download a PNG of the current camera and visible overlays. Its footer
+includes the pose, exact table and mesh fingerprints, and planning-only scope.
+It can show unsaved helper edits. The image is an illustration, not a check
+receipt, editable plan or physical result; keep the corresponding source receipts
+when discussing evidence. Save a draft or work snapshot separately to preserve
+editable work. Downloading an image does not clear the unsaved-edit warning.
+
 ## Plan the shell and helpers
 
 Set **Perimeter walls** and **Top / bottom skin**. Choose **Shell only** explicitly

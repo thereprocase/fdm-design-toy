@@ -1,0 +1,21 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const p=await browser.newPage({viewport:{width:390,height:844},acceptDownloads:true}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);assert(await p.locator('#save-preview').isDisabled());
+ await p.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));
+ await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));assert(await p.locator('#save-preview').isDisabled());
+ await p.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);await p.waitForFunction(()=>!document.getElementById('save-preview').disabled);
+ await p.locator('.helper-region').first().locator('[data-key="name"]').fill('Preview edit');await p.locator('#view-top').click();await p.waitForFunction(()=>!viewer.pending);
+ const before=await p.evaluate(()=>({work:workSnapshot(),dirty:document.getElementById('draft-edit-state').textContent,source:viewer.canvas.toDataURL(),table:fingerprint,mesh:meshHash}));
+ await p.evaluate(()=>{window.imageText=[];const original=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...args){imageText.push(String(text));return original.call(this,text,...args);};});
+ const waiting=p.waitForEvent('download');await p.locator('#save-preview').click();const download=await waiting,bytes=fs.readFileSync(await download.path());
+ assert.match(download.suggestedFilename(),/^preview-facet-00-[a-f0-9]{12}\.png$/);assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+ const painted=await p.evaluate(()=>imageText.join(''));assert(painted.includes(before.table));assert(painted.includes(before.mesh));assert((await p.evaluate(()=>imageText.join(' '))).includes('PLANNING PREVIEW - not a check receipt or print qualification'));
+ const pixelMatch=await p.evaluate(async({original,saved})=>{
+  const load=async url=>{const image=new Image();image.src=url;await image.decode();return image;},a=await load(original),b=await load(saved),c=document.createElement('canvas');c.width=b.width;c.height=b.height;const ctx=c.getContext('2d');ctx.drawImage(b,0,0);const actual=ctx.getImageData(Math.floor((b.width-a.width)/2),0,a.width,a.height).data;c.width=a.width;c.height=a.height;ctx.drawImage(a,0,0);const expected=ctx.getImageData(0,0,a.width,a.height).data;return {equal:expected.every((v,i)=>v===actual[i]),footer:b.height>a.height};
+ },{original:before.source,saved:'data:image/png;base64,'+bytes.toString('base64')});assert.deepEqual(pixelMatch,{equal:true,footer:true});
+ assert.deepEqual(await p.evaluate(()=>workSnapshot()),before.work);assert.equal(await p.locator('#draft-edit-state').innerText(),before.dirty);assert.match(await p.locator('#preview-save-status').innerText(),/does not save draft edits/);assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ if(process.env.FDM_PREVIEW_IMAGE_OUT)fs.copyFileSync(await download.path(),process.env.FDM_PREVIEW_IMAGE_OUT);
+ p.on('dialog',d=>d.accept());await p.locator('#table-file').setInputFiles([]);await p.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));await p.waitForFunction(()=>selected===null);assert(await p.locator('#save-preview').isDisabled());assert(await p.locator('#preview-save-status').isHidden());
+ console.log('PASS actual PNG download, exact view pixels, baked source hashes/scope, mesh gate and unchanged dirty draft');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
