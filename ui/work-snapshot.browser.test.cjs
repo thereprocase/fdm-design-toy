@@ -5,20 +5,21 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const open=()=>p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
  await open();await p.locator('#table-file').setInputFiles(table);await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));
  await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===6);
- await p.getByRole('button',{name:'facet-01',exact:true}).click();await p.locator('#rationale').fill('Alternative: review the external bridge');await p.getByRole('button',{name:'facet-00',exact:true}).click();
+ await p.getByRole('button',{name:'facet-01',exact:true}).click();await p.locator('#rationale').fill('Alternative: review the external bridge');await p.locator('#pin-reference').click();await p.getByRole('button',{name:'facet-00',exact:true}).click();
  const box=p.locator('.helper-region').first();await box.locator('details.helper-editor').evaluate(e=>e.open=true);
  await box.locator('[data-geometry="size_mm"]').first().fill('');await box.locator('[data-clearance]').fill('');await box.locator('[data-key="purpose"]').fill('Unfinished <note> & rationale');
  await p.locator('#walls').fill('');const before=await p.evaluate(()=>draftFormState()),proposal=await p.evaluate(()=>proposalOrigin);
  await p.locator('#work-snapshot').evaluate(e=>e.open=true);
  const downloadEvent=p.waitForEvent('download');await p.locator('#save-work').click();const download=await downloadEvent;
  const raw=JSON.parse(require('node:fs').readFileSync(await download.path(),'utf8'));
- assert.equal(raw.schema,'fdmgen.work-snapshot.v0.1');assert.equal(raw.walls,'');assert.equal(raw.helpers[0].fields['size_mm:0'],'');assert.deepEqual(raw.proposal,proposal);assert.equal(raw.pose_notes['facet-01'],'Alternative: review the external bridge');
+ assert.equal(raw.reference_pose,'facet-01');assert.equal(raw.schema,'fdmgen.work-snapshot.v0.1');assert.equal(raw.walls,'');assert.equal(raw.helpers[0].fields['size_mm:0'],'');assert.deepEqual(raw.proposal,proposal);assert.equal(raw.pose_notes['facet-01'],'Alternative: review the external bridge');
  assert.equal(await p.evaluate(()=>hasDraftEdits()),false);assert.match(await p.locator('#draft-edit-state').innerText(),/not an export-ready draft/);
  await open();await p.locator('#table-file').setInputFiles(table);
  await p.locator('#work-snapshot').evaluate(e=>e.open=true);
  const upload=async value=>{await p.locator('#work-file').setInputFiles({name:'work.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});await p.waitForFunction(()=>document.getElementById('work-file').value==='');};
  await upload(raw);await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===6);
  assert.equal(await p.evaluate(()=>draftFormState()),before);assert.deepEqual(await p.evaluate(()=>proposalOrigin),proposal);
+ assert.equal(await p.evaluate(()=>referencePose?.id),'facet-01');assert.equal(await p.evaluate(()=>selected?.id),'facet-00');assert(await p.locator('#reference-comparison').evaluate(e=>e.open));assert.match(await p.locator('[data-comparison-note="facet-01"]').innerText(),/Alternative: review the external bridge/);
  assert.match(await p.locator('#work-status').innerText(),/No checks were rerun/);assert.equal(await p.evaluate(()=>hasDraftEdits()),false);
  await p.getByRole('button',{name:'facet-01',exact:true}).click();assert.equal(await p.locator('#rationale').inputValue(),'Alternative: review the external bridge');
  await p.locator('#rationale').fill('Changed alternate rationale');await p.getByRole('button',{name:'facet-00',exact:true}).click();
@@ -28,7 +29,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await p.locator('#walls').fill('5');const edited=await p.evaluate(()=>draftFormState());
  accept=false;await upload(raw);assert.match(await p.locator('#work-status').innerText(),/cancelled/);assert.equal(await p.evaluate(()=>draftFormState()),edited);accept=true;
  const count=dialogs;
- for(const bad of [{...raw,proposal:{generator:'malformed',label:{toString:null}}},{...raw,pose_notes:{'absent':'note'}},{...raw,pose_notes:{[raw.pose]:42}},{...raw,pose_notes:{[raw.pose]:'mismatched'}},{...raw,orientation_table_sha256:'0'.repeat(64)},{...raw,pose:'absent'},{...raw,helpers:[raw.helpers[0],raw.helpers[0]]},{...raw,helpers:[{...raw.helpers[0],fields:{...raw.helpers[0].fields,'size_mm:0':null}}]}]){
+ for(const bad of [{...raw,reference_pose:'absent'},{...raw,reference_pose:42},{...raw,proposal:{generator:'malformed',label:{toString:null}}},{...raw,pose_notes:{'absent':'note'}},{...raw,pose_notes:{[raw.pose]:42}},{...raw,pose_notes:{[raw.pose]:'mismatched'}},{...raw,orientation_table_sha256:'0'.repeat(64)},{...raw,pose:'absent'},{...raw,helpers:[raw.helpers[0],raw.helpers[0]]},{...raw,helpers:[{...raw.helpers[0],fields:{...raw.helpers[0].fields,'size_mm:0':null}}]}]){
   await upload(bad);assert.match(await p.locator('#work-status').innerText(),/Could not reopen work/);assert.equal(await p.evaluate(()=>draftFormState()),edited);assert.deepEqual(await p.evaluate(()=>proposalOrigin),proposal);
  }
  // Recovery names the required bytes without replacing unsaved work or prompting.
@@ -55,7 +56,9 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const restored=p.locator('.helper-region').first();await restored.locator('details.helper-editor').evaluate(e=>e.open=true);
  const dimension=restored.locator('[data-geometry="size_mm"]').first();await dimension.fill('17');await dimension.blur();
  await restored.getByRole('button',{name:'Undo dimension edit',exact:true}).click();assert.equal(await dimension.inputValue(),'');
- const legacy={...raw};delete legacy.pose_notes;await upload(legacy);assert.match(await p.locator('#work-status').innerText(),/Legacy snapshot: only the selected pose rationale/);assert.equal(await p.evaluate(()=>decisions.has('facet-01')),false);
+ const unpinned={...raw,reference_pose:null};await upload(unpinned);assert.equal(await p.evaluate(()=>referencePose),null);assert(await p.locator('#reference-comparison').isHidden());
+ await p.locator('#pin-reference').click();
+ const legacy={...raw};delete legacy.pose_notes;delete legacy.reference_pose;await upload(legacy);assert.equal(await p.evaluate(()=>referencePose),null);assert.match(await p.locator('#work-status').innerText(),/Legacy snapshot: only the selected pose rationale/);assert.equal(await p.evaluate(()=>decisions.has('facet-01')),false);
  await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));
  await p.waitForFunction(()=>document.getElementById('draft-status').textContent.includes('Draft restored'));
  assert.equal(await p.locator('#work-status').textContent(),'');

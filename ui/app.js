@@ -687,7 +687,7 @@ function workSnapshot(){
  if(!analysis||!selected||!fingerprint)throw Error('Open an orientation table and choose a pose first.');
  return {schema:'fdmgen.work-snapshot.v0.1',orientation_table_sha256:fingerprint,pose:selected.id,
   walls:byId('walls').value,skin:byId('skin').value,rationale:byId('rationale').value,shell_only:byId('shell-only').checked,
-  proposal:proposalOrigin,pose_notes:poseNotes(),
+  proposal:proposalOrigin,pose_notes:poseNotes(),reference_pose:referencePose?.id??null,
   helpers:[...byId('helper-regions').children].map(box=>({id:box.dataset.id,fields:Object.fromEntries(
    [...box.querySelectorAll('input,textarea')].map(f=>[workFieldKey(f),f.type==='checkbox'?f.checked:f.value]))}))};
 }
@@ -698,6 +698,7 @@ function validateWorkSnapshot(raw){
  if(typeof expected!=='string'||!/^[a-f0-9]{64}$/.test(expected))fail('Invalid snapshot orientation table fingerprint.');
  if(!analysis||expected!==fingerprint)fail(`Open the exact orientation table used by this snapshot first. Required table SHA256: ${expected}. If saved with Download exact source table, look for orientation-table-${expected.slice(0,12)}.json. The full fingerprint must match; renaming a different table will not fix this.`);
  const candidate=analysis.candidates.find(c=>c.id===raw.pose);if(!candidate)fail('Snapshot pose is absent from this table.');
+ if(Object.hasOwn(raw,'reference_pose')&&raw.reference_pose!==null&&(typeof raw.reference_pose!=='string'||!analysis.candidates.some(c=>c.id===raw.reference_pose)))fail('Snapshot comparison reference is absent from this table.');
  const numeric=value=>{if(typeof value!=='string')return false;const field=document.createElement('input');field.type='number';field.value=value;return field.value===value&&(value===''||Number.isFinite(Number(value)));};
  if(!numeric(raw.walls)||!numeric(raw.skin)||typeof raw.rationale!=='string'||typeof raw.shell_only!=='boolean')fail('Invalid snapshot shell inputs or notes.');
  if(Object.hasOwn(raw,'pose_notes')){
@@ -739,6 +740,7 @@ byId('work-file').onchange=async event=>{
    for(const f of box.querySelectorAll('input,textarea')){const value=helper.fields[workFieldKey(f)];if(f.type==='checkbox')f.checked=value;else f.value=value;}
    box.querySelector('legend').textContent=helper.fields['text:name'].trim()||'Helper region';box.querySelector('.spatial').hidden=!helper.fields.spatial;
   }
+  referencePose=analysis.candidates.find(c=>c.id===raw.reference_pose)||null;renderComparison();if(referencePose)byId('reference-comparison').open=true;
   resetHandoff();byId('draft-status').textContent='';byId('export-status').textContent='';updateRegions();checkpointDraft('snapshot');
   byId('work-status').textContent='Unfinished work restored. '+(Object.hasOwn(raw,'pose_notes')?'Comparison notes restored for all recorded poses. ':'Legacy snapshot: only the selected pose rationale was saved. ')+ 'Required fields may still be incomplete; export a planning draft to validate them. No checks were rerun.';
  }catch(error){if(openRequest===draftRequest)byId('work-status').textContent='Could not reopen work: '+error.message;}
