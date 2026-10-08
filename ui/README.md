@@ -706,3 +706,8 @@ build direction before replacing the current session. Rotations must be proper
 using the planning backend's 1e-8 tolerance. Invalid tables report the candidate
 and preserve the existing draft. This checks the pose contract, not mesh fit or
 physical printability.
+
+The preview labels only the active helper by default to keep dense proposals
+readable. **Show all helper labels** restores every name when needed. All valid
+box outlines remain visible either way; this viewing preference does not change
+the draft or exclude helpers from export.

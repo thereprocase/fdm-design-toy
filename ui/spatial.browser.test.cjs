@@ -156,6 +156,19 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await duplicateWarning.getByRole('button',{name:'Edit Seat backing copy',exact:true}).click();
   assert(await copy.evaluate(e=>e.classList.contains('active-helper')));
   assert.equal(await page.evaluate(()=>draftFormState()),beforeWarningNavigation);
+  const drawnHelperLabels=()=>page.evaluate(()=>{
+    const ctx=viewer.canvas.getContext('2d'),original=ctx.fillText,labels=[];
+    ctx.fillText=function(value,...args){if(value.includes('Seat backing'))labels.push(value);return original.call(this,value,...args);};
+    try{viewer.draw();}finally{ctx.fillText=original;}return labels;
+  });
+  assert.deepEqual(await drawnHelperLabels(),['Editing: Seat backing copy']);
+  await page.locator('#all-helper-labels').check();
+  assert.deepEqual(await drawnHelperLabels(),['Seat backing','Editing: Seat backing copy']);
+  await page.locator('#all-helper-labels').uncheck();
+  assert.deepEqual(await drawnHelperLabels(),['Editing: Seat backing copy']);
+  assert.equal(await page.evaluate(()=>viewer.regions.length),2);
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeWarningNavigation);
+
 
   const copyDownload=page.waitForEvent('download');await page.locator('#export').click();
   const copied=JSON.parse(await fs.readFile(await(await copyDownload).path(),'utf8'));

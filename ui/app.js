@@ -8,6 +8,7 @@ let draftCheckpoint=null,draftCheckpointKind='new';
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
 byId('review-poses').onclick=()=>document.querySelector('.candidates').scrollIntoView({block:'start'});
 const viewer = new PartViewer(byId('part-view'));
+byId('all-helper-labels').onchange=()=>{viewer.showAllLabels=byId('all-helper-labels').checked;viewer.schedule();};
 let mesh=null,meshHash=null,meshRequest=0,meshBounds=null,activeHelper=null;
 byId('return-helper').onclick=()=>{if(activeHelper?.isConnected){activeHelper.scrollIntoView({block:'center'});activeHelper.querySelector('[data-geometry="center_mm"]')?.focus({preventScroll:true});}};
 function updatePreview(){
