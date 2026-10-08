@@ -258,6 +258,7 @@ function resetPlan(){
   cancelSurfacePlacement();clearDraftError();
   byId('handoff-command').textContent='fdmgen massing DRAFT.json --table TABLE.json --template PROFILE.3mf --out out/massing';
   byId('handoff-readiness').textContent='Save a draft to check whether its helper boxes are defined.';
+  renderEvidenceHandoff(null);
   clearRemovalHistory();
   proposalOrigin=null;renderProposal();
   activeHelper=null;byId('return-helper').hidden=true;byId('mesh-options').open=true;
@@ -357,6 +358,13 @@ function downloadFile(contents,name){
  a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function sourceTableFilename(){return `orientation-table-${fingerprint.slice(0,12)}.json`;}
+function renderEvidenceHandoff(draft){
+ const handoff=Plan.evidenceHandoff(draft,draft?sourceTableFilename():'TABLE.json');
+ byId('handoff-project').textContent=handoff.project;byId('handoff-baseline').textContent=handoff.baseline;
+ byId('evidence-command').textContent=handoff.command;
+ byId('handoff-placeholders').hidden=!handoff.placeholders;
+}
+
 byId('download-table').onclick=()=>{
  if(!sourceTableBytes||!fingerprint)return;
  downloadFile(sourceTableBytes,sourceTableFilename());
@@ -368,6 +376,7 @@ byId('export').onclick=()=>{
     remember();const draft=Plan.create(analysis,fingerprint,selected,planInput());
     downloadFile(JSON.stringify(draft,null,2)+'\n',Plan.filename(draft));checkpointDraft('downloaded');
     byId('handoff-command').textContent=`fdmgen massing ${Plan.filename(draft)} --table ${sourceTableFilename()} --template PROFILE.3mf --out out/massing`;
+    renderEvidenceHandoff(draft);
     byId('export-status').textContent='Draft exported. It includes the source fingerprint and outstanding verification steps.';
     const incomplete=draft.massing.helper_regions.filter(h=>!h.geometry);
     byId('handoff-readiness').textContent=incomplete.length?`Last exported draft: ${incomplete.length} helper(s) without a box: ${incomplete.map(h=>h.name).join(', ')}. Enable their spatial controls and set centre/size, then save again before running the exporter.`:'Last exported draft: geometry inputs needed for export are present. The command still checks source fingerprints and helper geometry.';

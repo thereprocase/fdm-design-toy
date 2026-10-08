@@ -79,6 +79,15 @@ const Plan = (() => {
     const problem=draft?.source?.problem;
     return `${slug(typeof problem==='string'?problem:problem?.id,'part')}-${slug(draft?.orientation?.id,'pose')}-massing-plan.json`;
   }
-  return {schema,create,restore,geometry,boxSeparation,filename};
+  function evidenceHandoff(draft,tableName) {
+    const safe=value=>typeof value==='string'&&/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(value);
+    const problem=draft?.source?.problem,pose=draft?.orientation?.id;
+    const known=safe(problem)&&safe(pose),stem=known?`${problem}-${pose}-massing`:'PART-POSE-massing';
+    const table=/^orientation-table-[a-f0-9]{12}\.json$/.test(tableName)?tableName:'TABLE.json';
+    return {project:`out/massing/${stem}.3mf`,baseline:`out/massing/${stem}-shell-only.3mf`,
+      command:`fdmgen evidence out/massing/${stem}.json project.gcode shell-only.gcode --table ${table} --pose ${safe(pose)?pose:'POSE_ID'} --out out/evidence`,
+      placeholders:!known};
+  }
+  return {schema,create,restore,geometry,boxSeparation,filename,evidenceHandoff};
 })();
 if(typeof module!=='undefined')module.exports=Plan;

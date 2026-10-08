@@ -618,3 +618,13 @@ CLI example uses the suggested draft and table names; adjust paths or names if
 your browser renames a repeated download, and supply your own profile template.
 The table filename includes a short fingerprint for recognition; verification
 continues to use the full SHA-256 hash.
+
+The handoff continues through both exported 3MF files: slice the helper project
+and shell-only baseline using the same Orca build and settings, with automatic
+arrangement and orientation off. Run the displayed `fdmgen evidence` command
+against those two G-codes, the exporter report and exact table. It writes a
+manifest and five receipts; select all six together in helper export review after
+loading the saved draft and report. Evidence exit 2 means recorded FAIL results;
+exit 1 means an error without a completed manifest. Toolpath checks do not replace
+physical qualification. Generated commands fill ordinary part/pose identifiers;
+unusual identifiers remain explicit placeholders to replace with exact paths.

@@ -40,6 +40,12 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since the last draft download/);
   assert.equal(await page.locator('#handoff-command').innerText(),`fdmgen massing spool-rack-g2-ef-facet-00-massing-plan.json --table orientation-table-${original.source.orientation_table_sha256.slice(0,12)}.json --template PROFILE.3mf --out out/massing`);
   await sourceDownload(await fs.readFile(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json')));
+  assert.equal(await page.locator('#handoff-project').innerText(),'out/massing/spool-rack-g2-ef-facet-00-massing.3mf');
+  assert.equal(await page.locator('#handoff-baseline').innerText(),'out/massing/spool-rack-g2-ef-facet-00-massing-shell-only.3mf');
+  assert.match(await page.locator('#evidence-command').innerText(),/spool-rack-g2-ef-facet-00-massing.json project.gcode shell-only.gcode/);
+  assert.match(await page.locator('#evidence-command').innerText(),/--pose facet-00 --out out\/evidence/);
+  assert(await page.locator('#handoff-placeholders').isHidden());
+
   await page.locator('#collapse-other-helpers').click();
   assert.equal(await page.locator('.helper-editor[open]').count(),1);
   assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since the last draft download/);
@@ -99,6 +105,7 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await page.getByRole('button',{name:'facet-00',exact:true}).click();await page.locator('#rationale').fill('Preserve exact source bytes.');await page.locator('#shell-only').check();
   assert(await page.locator('#undo-remove').isDisabled());
   assert.match(await page.locator('#handoff-command').innerText(),/massing DRAFT.json --table TABLE.json/);
+  assert.match(await page.locator('#evidence-command').innerText(),/PART-POSE-massing.json/);
   await sourceDownload(bom);
   const exact=await download();assert.equal(exact.source.orientation_table_sha256,crypto.createHash('sha256').update(bom).digest('hex'));
   await upload(exact);await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));

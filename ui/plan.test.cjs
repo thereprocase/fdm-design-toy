@@ -79,3 +79,16 @@ test('download filenames identify part and pose without changing the draft',()=>
  const long=Plan.filename({source:{problem:'x'.repeat(1000)},orientation:{id:'y'.repeat(1000)}});
  assert.equal(long,`${'x'.repeat(64)}-${'y'.repeat(64)}-massing-plan.json`);
 });
+
+test('evidence handoff uses backend names and never interpolates unsafe identifiers',()=>{
+ const table='orientation-table-abcdef123456.json';
+ const h=Plan.evidenceHandoff({source:{problem:'Bracket_A'},orientation:{id:'facet-00'}},table);
+ assert.equal(h.project,'out/massing/Bracket_A-facet-00-massing.3mf');
+ assert.equal(h.baseline,'out/massing/Bracket_A-facet-00-massing-shell-only.3mf');
+ assert.equal(h.command,`fdmgen evidence out/massing/Bracket_A-facet-00-massing.json project.gcode shell-only.gcode --table ${table} --pose facet-00 --out out/evidence`);
+ assert.equal(h.placeholders,false);
+ const unsafe=Plan.evidenceHandoff({source:{problem:'../part'},orientation:{id:'$(command)'}},'x; command');
+ assert.equal(unsafe.project,'out/massing/PART-POSE-massing.3mf');
+ assert.match(unsafe.command,/--table TABLE.json --pose POSE_ID/);assert.equal(unsafe.placeholders,true);
+ assert.equal(Plan.evidenceHandoff(null,null).placeholders,true);
+});
