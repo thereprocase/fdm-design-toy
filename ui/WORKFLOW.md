@@ -6,20 +6,23 @@ run separately on a compute worker; the browser does not run those jobs.
 
 ## Try the included example
 
-For a first walkthrough, save the [example orientation table](../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json)
-and its [six-helper planning draft](fixtures/seed-draft.json). Keep the downloaded
-bytes unchanged: the draft pins this exact table, not the later shell- or
+For a first walkthrough, use the existing [example orientation table](../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json)
+and its [six-helper planning draft](fixtures/seed-draft.json) from your checkout.
+The JSON links open the files for inspection; they are not a download/import action.
+Keep their bytes unchanged: the draft pins this exact table, not the later shell- or
 bridge-enriched tables.
 
-1. Open the table in **Orientation table**.
-2. In the planning section, use **Reopen a saved planning draft** to open the saved draft.
+1. In **Orientation table**, select
+   `tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json`.
+2. In the planning section, use **Reopen a saved planning draft** to select
+   `ui/fixtures/seed-draft.json`.
    Its pose, rationale, shell and six helper boxes are restored together.
 3. Inspect the proposal's scope and helper purposes before editing. This is a
    stress-seeded candidate, not a proven optimum or qualified print.
 
 The files let you review pose evidence and edit helper fields without loading a
 mesh. For the 3D preview, supply the matching `body-mounted.stl` from the part
-source checkout; the JSON downloads do not include the STL. The workspace checks
+source checkout; the JSON files do not include the STL. The workspace checks
 its fingerprint. This example does not download or generate geometry for you.
 
 ## Choose a pose
