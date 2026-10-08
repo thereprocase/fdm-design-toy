@@ -96,7 +96,11 @@ def test_a_refused_run_removes_an_older_output_file(tmp_path, monkeypatch):
     for cmd in (["bridge-check"], ["shell-check"]):
         stale = tmp_path / f"{cmd[0]}.json"
         stale.write_text('{"stale": true}', encoding="utf-8")
-        (tmp_path / "s.gcode").write_text("; empty\n", encoding="utf-8")
+        e = 0.42 * 0.2 * 10.0 / (3.141592653589793 * 1.75 ** 2 / 4)       # one valid road, footer to match
+        (tmp_path / "s.gcode").write_text("; filament_diameter: 1.75\nM83\nG90\n; printing object part\n;WIDTH:0.42\n"
+                                          ";HEIGHT:0.2\n;Z:0.2\nG1 Z0.2\n;TYPE:Outer wall\nG1 X0 Y0\n"
+                                          f"G1 X10 Y0 E{e:.6f}\n; stop printing object part\n"
+                                          f"; filament used [cm3] = {0.42 * 0.2 * 10.0 / 1000:.8f}\n", encoding="utf-8")
         argv = cmd + [str(tmp_path / "s.gcode"), "--table", str(tmp_path / "t.json"), "--pose", "missing-pose",
                       "--out", str(stale)]
         assert main(argv) == 1 and not stale.exists(), cmd
