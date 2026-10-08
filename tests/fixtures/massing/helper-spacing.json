@@ -1,0 +1,13 @@
+[
+  {"name":"half-mm gap","centre_b":[2.5,0,0],"minimum_mm":0.84,"fail":true},
+  {"name":"one-mm gap","centre_b":[3,0,0],"minimum_mm":0.84,"fail":false},
+  {"name":"face touching","centre_b":[2,0,0],"minimum_mm":0.84,"fail":true},
+  {"name":"edge touching","centre_b":[2,2,0],"minimum_mm":0.84,"fail":true},
+  {"name":"half-mm overlap","centre_b":[1.5,0,0],"minimum_mm":0.84,"fail":true},
+  {"name":"one-mm overlap","centre_b":[1,0,0],"minimum_mm":0.84,"fail":false},
+  {"name":"identical boxes","centre_b":[0,0,0],"minimum_mm":0.84,"fail":false},
+  {"name":"half-mm diagonal gap","centre_b":[2.3,2.4,0],"minimum_mm":0.84,"fail":true},
+  {"name":"diagonal gap over limit","centre_b":[2.6,2.6,0],"minimum_mm":0.84,"fail":false},
+  {"name":"exact configured gap limit","centre_b":[3,0,0],"minimum_mm":1,"fail":false},
+  {"name":"exact configured overlap limit","centre_b":[1,0,0],"minimum_mm":1,"fail":false}
+]
