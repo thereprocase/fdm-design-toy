@@ -19,6 +19,12 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert(await sliceNav.isDisabled());assert.match(await sliceNav.innerText(),/not loaded/);
  await page.locator('[data-review-target="helper-results"]').click();
  assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Helpers in this export');
+ const helperDetail=page.locator('#review-helpers article').first().locator('details');
+ assert.equal(await helperDetail.evaluate(e=>e.open),false);
+ await helperDetail.locator('summary').focus();await helperDetail.locator('summary').press('Enter');
+ assert(await helperDetail.locator('pre').isVisible());
+ const firstHelper=report.helpers[0],plannedHelper=JSON.parse(fs.readFileSync(draftPath)).massing.helper_regions.find(h=>h.id===firstHelper.id);
+ assert.deepEqual(JSON.parse(await helperDetail.locator('pre').textContent()),{design_box:plannedHelper.geometry,exported_settings:firstHelper.settings,print_bbox_mm:firstHelper.print_bbox_mm});
  const checks=JSON.parse(fs.readFileSync(receiptPath)).checks;
  assert.equal(await page.locator('#review-checks article').count(),checks.filter(c=>c.verdict!=='PASS').length);
  await page.locator('#check-filter').selectOption('all');assert.equal(await page.locator('#review-checks article').count(),checks.length);

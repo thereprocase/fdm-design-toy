@@ -578,6 +578,10 @@ remains separate, and manifest numeric deltas are not promoted as validated resu
 
 ## Navigate the matched review
 
+Helper names, purposes, identifiers and revision actions stay visible. Expand
+**Design box, print bounds and exported settings** on an individual helper to
+inspect its complete geometry/settings record without expanding the other helpers.
+
 When helper names collide, review headings and edit actions include the stable
 helper identifier. Stored names are unchanged, and revision actions still target
 the matching identifier.

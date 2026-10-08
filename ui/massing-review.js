@@ -29,7 +29,7 @@ function render(r,reportHash){
  el('review-count').textContent=r.checks.length?`${failed} failed checks; ${unchecked} not checked. Passing checks apply only to the stated method and evidence level.`:'No helper checks reported; this is not a checked result.';
  el('check-filter').value='attention';renderChecks();
  el('review-helpers').replaceChildren();
- for(const h of r.helpers){const planned=saved.massing.helper_regions.find(p=>p.id===h.id),row=add('article','',el('review-helpers'));add('h3',helperName(h.id),row);editButton(h.id,helperName(h.id),row);add('p',`Helper ID: ${h.id}`,row);add('p',planned.purpose||'',row);add('pre',JSON.stringify({design_box:planned.geometry,exported_settings:h.settings,print_bbox_mm:h.print_bbox_mm},null,2),row);}
+ for(const h of r.helpers){const planned=saved.massing.helper_regions.find(p=>p.id===h.id),row=add('article','',el('review-helpers'));add('h3',helperName(h.id),row);editButton(h.id,helperName(h.id),row);add('p',`Helper ID: ${h.id}`,row);add('p',planned.purpose||'',row);const details=add('details','',row);add('summary','Design box, print bounds and exported settings',details);add('pre',JSON.stringify({design_box:planned.geometry,exported_settings:h.settings,print_bbox_mm:h.print_bbox_mm},null,2),details);}
  if(!r.helpers.length)add('p','Shell-only draft; no helpers.',el('review-helpers'));
  el('review-setting-evidence').textContent=r.settings_evidence?JSON.stringify(r.settings_evidence,null,2):'Per-value setting evidence was not recorded in this receipt.';
  el('review-settings').textContent=JSON.stringify(r.object_settings,null,2);el('review-skin').textContent=r.skin_note||'';el('review-provenance').textContent=JSON.stringify(r,null,2);
