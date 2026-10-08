@@ -957,6 +957,11 @@ python bench/ti_density_weighted.py --root /path/to/part-checkout \
   --basis sustained_effective --power 1 --solve --out out/ti-density.json
 ```
 
+The baseline and project must record matching sampling methods, including any
+recorded cap policy. Missing or mismatched method provenance is refused before
+assembly; different source NPZ names and hashes are expected and allowed. This
+checks recorded provenance, not the accuracy of the deposition model.
+
 The material basis is mandatory. Power 1 or 3 is an **uncalibrated density law**;
 there is no stiffness floor, threshold, fragment removal or load transfer. The
 original load and restraint audit must pass before a case is solved. This bracket

@@ -53,3 +53,28 @@ def test_surrogate_preconditioner_solves_physical_operator(C):
     assert result['physical_CSR_sha256']['data'] == pilot.array_sha(A.data)
     if not np.array_equal(C, isotropic_C(1000, .3)):
         assert result['physical_CSR_sha256'] != result['auxiliary_CSR_sha256']
+
+
+def test_sampling_pair_preserves_source_identity_but_refuses_method_changes():
+    import copy
+    import json
+    receipt = json.loads((Path(__file__).parents[1]/'bench/receipts/occupancy-ti-density-p1-h08.json').read_text())
+    baseline, project = [receipt['cases'][k]['provenance'] for k in ('baseline', 'project')]
+    assert baseline['sampling']['source_npz_sha256'] != project['sampling']['source_npz_sha256']
+    pilot.require_matching_sampling(baseline, project)
+    reordered = copy.deepcopy(project)
+    reordered['sampling'] = dict(reversed(list(reordered['sampling'].items())))
+    pilot.require_matching_sampling(baseline, reordered)
+    for key, value in [('caps', True), ('step_frac', '1/3'), ('step_mm', .8/3),
+                       ('generator', 'different producer')]:
+        changed = copy.deepcopy(project); changed['sampling'][key] = value
+        with pytest.raises(ValueError, match='methods differ'):
+            pilot.require_matching_sampling(baseline, changed)
+    for sampling in (None, {}, dict(project['sampling'], caps=1),
+                     dict(project['sampling'], step_mm=True)):
+        with pytest.raises(ValueError, match='complete sampling'):
+            pilot.require_matching_sampling(baseline, dict(project, sampling=sampling))
+    # Legacy missing caps remains unknown, never silently equated to explicit False.
+    unknown = copy.deepcopy(project); del unknown['sampling']['caps']
+    with pytest.raises(ValueError, match='methods differ'):
+        pilot.require_matching_sampling(baseline, unknown)

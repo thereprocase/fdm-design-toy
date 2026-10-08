@@ -32,6 +32,25 @@ def layer_axis(reference, provenance):
     return axis.tolist()
 
 
+def require_matching_sampling(baseline, project):
+    """Different source files are expected; different deposition methods are not."""
+    methods = []
+    for provenance in (baseline, project):
+        sampling = provenance.get('sampling')
+        if (not isinstance(sampling, dict)
+                or not all(isinstance(sampling.get(k), str) and sampling[k]
+                           for k in ('step_frac', 'recorded_step_frac', 'generator', 'purpose'))
+                or isinstance(sampling.get('step_mm'), bool)
+                or not isinstance(sampling.get('step_mm'), (int, float))
+                or not np.isfinite(sampling['step_mm']) or sampling['step_mm'] <= 0
+                or ('caps' in sampling and not isinstance(sampling['caps'], bool))):
+            raise ValueError('paired TI comparison needs complete sampling method provenance')
+        methods.append({k: v for k, v in sampling.items()
+                        if k not in ('source_npz', 'source_npz_sha256')})
+    if methods[0] != methods[1]:
+        raise ValueError('baseline/project sampling methods differ; comparison refused')
+
+
 def material_spec(path, basis, axis, power):
     from fdmgen.materials.card import load_card
     card = load_card(path)
@@ -115,6 +134,7 @@ def main():
     for key in ('table_sha256', 'pose', 'pose_R_design_to_print', 'pose_t_mm'):
         if fields['baseline'][1].get(key) != fields['project'][1].get(key):
             raise ValueError('baseline/project pose or table differs')
+    require_matching_sampling(fields['baseline'][1], fields['project'][1])
     axes = [layer_axis(ref, fields[k][1]) for k in ('baseline', 'project')]
     if axes[0] != axes[1]:
         raise ValueError('baseline/project layer axes differ')
