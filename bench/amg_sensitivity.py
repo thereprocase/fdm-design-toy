@@ -82,7 +82,7 @@ def stiffness_field(mask, emin, pattern):
     return rho, np.where(mask, emin + rho**3 * (1 - emin), 0.)
 
 
-def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coarse_solver='splu'):
+def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coarse_solver='splu', audit=False, free_mask=None):
     if not np.isfinite(strength_threshold) or not 0 <= strength_threshold <= 1:
         raise ValueError('strength threshold must be finite in [0,1]')
     if coarse_solver not in ('splu', 'pinv'):
@@ -97,6 +97,15 @@ def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coar
         max_coarse=100, presmoother=('block_gauss_seidel', {'sweep': 'symmetric'}),
         postsmoother=('block_gauss_seidel', {'sweep': 'symmetric'}), coarse_solver=coarse_solver)
     setup_s = time.perf_counter() - start
+    audit_result = None
+    audit_s = 0.
+    if audit:
+        from amg_audit import hierarchy_structure, inverse_probes
+        start = time.perf_counter()
+        M = ml.aspreconditioner()
+        audit_result = dict(structure=hierarchy_structure(ml), full_space=inverse_probes(M),
+                            free_space=inverse_probes(M, free=free_mask) if free_mask is not None else None)
+        audit_s = time.perf_counter() - start
     history = []
     norm = np.linalg.norm(rhs)
     if not np.isfinite(norm) or norm <= 0:
@@ -113,8 +122,10 @@ def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coar
                                and np.isfinite(compliance) and compliance > 0),
                 true_relative_residual=residual, compliance=compliance,
                 setup_s=setup_s, solve_s=solve_s, history=history,
+                preconditioner_audit=audit_result, audit_s=audit_s,
                 operator_complexity=float(ml.operator_complexity()),
-                timing_scope='solve includes one diagnostic residual matvec per iteration')
+                timing_scope=('solve includes one diagnostic residual matvec per iteration; '
+                              + ('audit time includes lazy coarse factorization' if audit else 'solve time includes lazy coarse factorization')))
 
 
 def main():
@@ -134,6 +145,7 @@ def main():
     ap.add_argument('--strength-thresholds', nargs='+', type=float, default=[0.],
                     help='symmetric nodal block-strength theta values in [0,1]')
     ap.add_argument('--coarse-solver', choices=['splu', 'pinv'], default='splu')
+    ap.add_argument('--audit-preconditioner', action='store_true', help='record sampled full/free inverse behavior and hierarchy structure; not an SPD certificate')
     ap.add_argument('--maxiter', type=int, default=150)
     args = ap.parse_args()
     if not np.isfinite(args.h) or args.h <= 0 or args.maxiter < 1:
@@ -160,7 +172,7 @@ def main():
         mask_sha256=digest(mask), fixed_sha256=digest(fixed), load_sha256=digest(b),
         mesh_sha256=hashlib.sha256((args.root / HANDOFF / 'body-only.stl').read_bytes()).hexdigest(),
         source_sha256={p: hashlib.sha256((Path(__file__).parents[1] / p).read_bytes()).hexdigest()
-                       for p in ['bench/amg_sensitivity.py', 'bench/amg_bracket.py', 'bench/bracket_gate.py', 'src/fdmgen/fem/element.py']},
+                       for p in ['bench/amg_audit.py', 'bench/amg_sensitivity.py', 'bench/amg_bracket.py', 'bench/bracket_gate.py', 'src/fdmgen/fem/element.py']},
         versions=dict(python=platform.python_version(), numpy=np.__version__, scipy=scipy.__version__, pyamg=pyamg.__version__),
         maxiter=args.maxiter, relative_tolerance=1e-6, rows=[])
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -179,7 +191,8 @@ def main():
                 B = rigid_candidates(grid.node_coords()[gdofs[::3] // 3]); B[fixed[gdofs] != 0] = 0
                 for smoother in args.smoothers:
                     for theta in args.strength_thresholds:
-                        row = solve_case(A, rhs, B, smoother, args.maxiter, strength_threshold=theta, coarse_solver=args.coarse_solver)
+                        row = solve_case(A, rhs, B, smoother, args.maxiter, strength_threshold=theta, coarse_solver=args.coarse_solver,
+                                         audit=args.audit_preconditioner, free_mask=fixed[gdofs] == 0)
                         row.update(pattern=pattern, **case, axis=axis, C=C.tolist(),
                             density_sha256=digest(rho), stiffness_sha256=digest(E), rhs_sha256=digest(rhs),
                             active_dofs_sha256=digest(gdofs), body_stiffness_min=float(E[mask].min()),

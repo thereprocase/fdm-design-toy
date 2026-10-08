@@ -631,3 +631,15 @@ grid, other material cases or mixed precision. Remote suite: 263 passed,
 6 CUDA-only skips; small direct-reference controls include both coarse solvers
 at all three thresholds. Source/input hashes were verified, and all three
 residual histories exactly reproduced the preceding private diagnostic run.
+
+The optional `--audit-preconditioner` records deterministic 20-pair inverse
+probes on both the full system and free DOFs, fixed-DOF output leakage, and
+per-level `R-P.T` plus actual pre/post smoother parameters and inverse-block
+hashes. Positive sampled energies and small symmetry gaps **do not certify
+SPD**. Matching smoother parameters likewise do not prove adjointness when
+blocks are singular. Zero image norms leave a normalized gap undefined.
+The local probe RNG does not change the solver RNG. Audit time is separate and
+includes the lazy coarse factorization, so audited solve timings cannot be
+compared directly with earlier unaudited solve timings. Default solves do not
+run probes. Known-answer controls cover positive/negative energy, nonsymmetry,
+subspace leakage and mismatched transfer/smoother settings.

@@ -53,6 +53,10 @@ def test_small_ti_contrast_solve_matches_direct(theta, coarse_solver):
     exact = np.linalg.solve(A.toarray(), rhs)
     assert result['converged']
     assert result['compliance'] == pytest.approx(rhs @ exact, rel=1e-8)
+    audited = pilot.solve_case(A, rhs, B, 'energy', 100, strength_threshold=theta,
+                               coarse_solver=coarse_solver, audit=True, free_mask=fixed[ids] == 0)
+    assert audited['history'] == result['history']
+    assert audited['preconditioner_audit']['free_space']['max_output_leakage'] < 1e-12
     exhausted = pilot.solve_case(A, rhs, B, 'energy', 1)
     assert not exhausted['converged']
 
