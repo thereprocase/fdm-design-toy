@@ -898,3 +898,8 @@ matched geometry; accepting another table clears it.
 
 For the example root table, use
 `tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.keepout-render.json`.
+
+Enabled keep-out IDs remain labelled below the canvas when their import panel is
+closed. **Hide keep-outs** clears the visible overlays, keeps the geometry loaded,
+and returns keyboard focus to the preview. It does not change helper references
+or the saved draft. Re-enable individual constraints in the optional preview panel.

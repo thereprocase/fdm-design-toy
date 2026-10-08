@@ -47,3 +47,7 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 
 #keepout-options{margin:12px 0;overflow-wrap:anywhere}
 #keepout-source{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;max-height:320px;overflow:auto}
+
+.workbench .preview canvas{order:-2}
+#keepout-visibility{order:-1;border-left:3px dashed #9b2375;padding-left:10px;overflow-wrap:anywhere}
+#keepout-visible-names{margin:0 0 6px}

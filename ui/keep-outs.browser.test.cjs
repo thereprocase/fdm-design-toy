@@ -46,6 +46,20 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('[data-keepout-preview="spool_slide"]').check();
  await page.waitForFunction(()=>viewer.keepouts.length===2&&!viewer.pending);
  assert.equal(await page.evaluate(()=>draftFormState()),draftState);
+ await page.locator('#keepout-options > summary').click();
+ assert(await page.locator('#keepout-visibility').isVisible());
+ assert.match(await page.locator('#keepout-visible-names').innerText(),/crown_moulding, spool_slide/);
+ await page.locator('#hide-keepouts').focus();await page.keyboard.press('Enter');
+ assert.equal(await page.evaluate(()=>viewer.keepouts.length),0);
+ assert(await page.locator('#keepout-visibility').isHidden());
+ assert(await page.locator('#part-view').evaluate(e=>e===document.activeElement));
+ assert.equal(await page.evaluate(()=>draftFormState()),draftState);
+ await page.locator('#keepout-options > summary').click();
+ assert(!(await page.locator('[data-keepout-preview="crown_moulding"]').isChecked()));
+ assert(!(await page.locator('[data-keepout-preview="spool_slide"]').isChecked()));
+ // Geometry remains loaded and can be shown again without another file import.
+ await page.locator('[data-keepout-preview="crown_moulding"]').check();
+ await page.locator('[data-keepout-preview="spool_slide"]').check();
  const geometry=JSON.parse(await fs.readFile(geometryPath));geometry.table.sha256='0'.repeat(64);
  await page.locator('#keepout-file').setInputFiles({name:'wrong-table.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(geometry))});
  await page.waitForFunction(()=>document.querySelector('#keepout-status').textContent.includes('different table bytes'));
@@ -63,6 +77,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#keepout-status').textContent==='No keep-out geometry loaded.');
  assert.equal(await page.evaluate(()=>viewer.keepouts.length),0);
  assert.equal(await page.locator('[data-keepout-preview]').count(),0);
+ assert(await page.locator('#keepout-visibility').isHidden());
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS historical/new table keep-out declarations, selection/export/reopen, unknown ref rejected without replacing draft, mobile');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

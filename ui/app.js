@@ -17,15 +17,25 @@ byId('return-helper').onclick=()=>{
  target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
 };
 let keepoutGeometry=null,keepoutRequest=0;
+function updateKeepoutVisibility(){
+ const items=keepoutGeometry?keepoutGeometry.items.filter(x=>byId('keepout-items').querySelector(`[data-keepout-preview="${CSS.escape(x.id)}"]`)?.checked):[];
+ viewer.setKeepouts(items.map(x=>({...x,lines:KeepoutRender.segments(x)})));
+ byId('keepout-visibility').hidden=!items.length;
+ byId('keepout-visible-names').textContent=items.length?'Keep-out overlays enabled: '+items.map(x=>x.id).join(', ')+'. Magenta dashed lines · render only.':'';
+}
+byId('hide-keepouts').onclick=()=>{
+ for(const input of byId('keepout-items').querySelectorAll('input'))input.checked=false;
+ updateKeepoutVisibility();byId('part-view').focus({preventScroll:true});
+};
 function clearKeepouts(){
- keepoutRequest++;keepoutGeometry=null;viewer.setKeepouts([]);byId('keepout-file').value='';byId('keepout-items').replaceChildren();byId('keepout-source').textContent='';byId('keepout-provenance').hidden=true;byId('keepout-status').textContent='No keep-out geometry loaded.';
+ keepoutRequest++;keepoutGeometry=null;updateKeepoutVisibility();byId('keepout-file').value='';byId('keepout-items').replaceChildren();byId('keepout-source').textContent='';byId('keepout-provenance').hidden=true;byId('keepout-status').textContent='No keep-out geometry loaded.';
 }
 function renderKeepoutOptions(){
- const list=byId('keepout-items');list.replaceChildren();viewer.setKeepouts([]);
+ const list=byId('keepout-items');list.replaceChildren();updateKeepoutVisibility();
  for(const item of keepoutGeometry.items){
   const label=text('label','',list),input=document.createElement('input');input.type='checkbox';input.dataset.keepoutPreview=item.id;input.disabled=!item.rendered;label.append(input,document.createTextNode(' '+item.id));
   text('p',item.rendered?item.rule:'Not drawn: '+item.reason,list).className='hint';
-  input.onchange=()=>viewer.setKeepouts(keepoutGeometry.items.filter(x=>list.querySelector(`[data-keepout-preview="${CSS.escape(x.id)}"]`).checked).map(x=>({...x,lines:KeepoutRender.segments(x)})));
+  input.onchange=updateKeepoutVisibility;
  }
  byId('keepout-source').textContent=JSON.stringify(keepoutGeometry,null,2);byId('keepout-provenance').hidden=false;
 }
