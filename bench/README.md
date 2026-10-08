@@ -733,6 +733,32 @@ history and graph hashes reproduce the exploratory control. This remains above
 the 40-iteration gate and establishes neither higher-contrast convergence nor
 an acceptable optimiser floor. Full remote validation: 322 passed, 6 CUDA skips.
 
+### Unfiltered 0.8 mm CPU control
+
+`receipts/bracket-h08-constraint-strength.json` records the same explicit
+constraint-aware AMG configuration at the 0.8 mm gate spacing. A fresh preflight
+found one face-connected component and rank six for the restrained global rigid
+modes; no cells were removed and no nullspace projection was used. Those checks
+alone are not an SPD certificate.
+
+The artificial band case at E_min=1e-3, Ez/Ep=.85, Gpz/Ez=.20 and nominal Poisson
+inputs .38/.36 converged in **38 CG iterations**, with a recomputed relative
+residual of **7.4639e-7**. It contains 334,066 body cells and 1,143,591 active DOFs;
+all free DOFs have tentative aggregate support. One-thread CPU setup took 63.57 s
+and the instrumented solve 65.04 s, including a diagnostic residual matvec per
+iteration and lazy coarse factorization. Assembly took 9.43 s separately.
+
+This meets the iteration/residual thresholds for this one case, not the complete
+solver gate: GPU timing, mixed-precision parity, the other stiffness floors and
+material cases, and the zero-ersatz comparison remain unproven. The four-cell
+bands are 3.2 mm wide here versus 6.4 mm at 1.6 mm spacing, so comparing these
+receipts is not a pure mesh-resolution study. The band field still has no fixed
+slicer shell and cannot choose an optimiser floor.
+
+Reproduce with the command above, adding `--h .8` and a distinct output path.
+All solver source hashes and the raw mask/mesh hashes were checked against the
+preflight; the benchmark defaults and PLAN remain unchanged.
+
 ### Pending gate-domain decision
 
 The proposal linked above would retain the largest face-connected component,

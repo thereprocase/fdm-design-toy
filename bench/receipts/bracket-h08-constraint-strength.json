@@ -1,0 +1,203 @@
+{
+  "schema": "fdmgen/amg-sensitivity@0.1",
+  "machine_role": "compute box",
+  "establishes": "CPU convergence on these declared synthetic stiffness fields and gate restraints",
+  "does_not_establish": "calibrated anisotropy, printable helpers, physical response, GPU/mixed-precision gate or zero-ersatz gap",
+  "card": null,
+  "parameter_cases": [
+    {
+      "ratio": 0.85,
+      "shear_ratio": 0.2,
+      "nu_p": 0.38,
+      "nu_pz": 0.36
+    }
+  ],
+  "law": {
+    "Ep": 1.0,
+    "Ez": "ratio",
+    "Gpz": "ratio * shear_ratio; null shear_ratio means 1/2.6",
+    "frame": "grid",
+    "density_power": 3,
+    "emin": 0.001,
+    "bands": "floor(grid_i/4) modulo 2 gives rho=0 or 1"
+  },
+  "h_mm": [
+    0.8,
+    0.8,
+    0.8
+  ],
+  "grid": [
+    272,
+    304,
+    32
+  ],
+  "body_cells": 334066,
+  "bc": {
+    "seat_nodes": {
+      "rear_seat": 2912,
+      "front_seat": 2996
+    },
+    "clamped_nodes": 6436,
+    "wall_nodes": 6124
+  },
+  "mask_sha256": "d91765f7ea706fcc93b2421a09fb479b7bc5dae00f03f5da0fb8489de39d1cd5",
+  "fixed_sha256": "130f0b143f6ec3c52b2fab1fc13f5f2c67bdf446f4e62f883960fdd8bbd77a6e",
+  "load_sha256": "a6b19cfa109e0da31ceddfae25e7e18ccf7361ee083826142bebfe7ddd8f97fe",
+  "mesh_sha256": "565d0e8fb8d452e3d1b86352be97a980f85ba8a97ce2bbe915292db0fdb63843",
+  "source_sha256": {
+    "bench/amg_strength.py": "417a382a4fbfc581b734817d9453ad01dd0702e28728aaa68cbddfb8c8522be9",
+    "bench/amg_relaxation.py": "33bcc715b4ad6161d30d39a74bfdac4ce7d31d7c4a4775ed009dd6f7564f1c0d",
+    "bench/amg_audit.py": "39ddd7f40240ee5a705ec0ba2f534a1f611c68d4ac275866a4d6c1b62356cd07",
+    "bench/amg_sensitivity.py": "0134667738eb00457e45fc0ed5d2f162f09a25012129280fbbd002c45f399913",
+    "bench/amg_bracket.py": "4b9a005f47fcc0d1356814b91dda9f1a6d9e466998af3f4529f039a84b6bcd23",
+    "bench/bracket_gate.py": "a01543d9b5b9a02f3834b6d60ea70a6c7d105b21e2c43acb88f5d8a63a41fdf5",
+    "src/fdmgen/fem/element.py": "a42db7c44b79b4847a32b058c5fbfcb570f2909568a8e0cb85768dc9c635a2f6"
+  },
+  "versions": {
+    "python": "3.12.3",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pyamg": "5.3.0"
+  },
+  "maxiter": 150,
+  "relative_tolerance": 1e-06,
+  "rows": [
+    {
+      "smoother": "energy",
+      "seed": 0,
+      "coarse_solver": "pinv",
+      "relaxation": "block_gauss_seidel",
+      "strength": {
+        "method": "symmetric",
+        "theta": 0.08,
+        "blocksize": 3,
+        "constraint_policy": "zero",
+        "applies_to": "first strength graph only; physical A and later-level strength unchanged",
+        "first_graph_sha256": {
+          "data": "5d0a75feec587aa3d6d9279115b30f795e4db59fb50ee8d2e7b70ccaf2445498",
+          "indices": "e3ec97a3c26d79bc40b669c46fbd0c9ed195213a2241cbf928623766fa107b8b",
+          "indptr": "9d0595c4d72bf63f1f93fcf5c01420a3d009992ce5450d232bb2b908fed11e1d"
+        },
+        "first_aggregate_count": 19446,
+        "unassigned_free_dofs": 0,
+        "coverage_scope": "tentative aggregate coverage, not convergence or physical validation"
+      },
+      "status": 0,
+      "iterations": 38,
+      "converged": true,
+      "true_relative_residual": 7.463926207570462e-07,
+      "compliance": 36657210.973248556,
+      "setup_s": 63.57331095499103,
+      "solve_s": 65.04049405700061,
+      "history": [
+        84.42215272757863,
+        37.371722027196675,
+        32.7465216517535,
+        16.376956545551433,
+        30.46289804151425,
+        22.22121188993751,
+        22.90306317122308,
+        9.949694602544815,
+        6.9033933379934345,
+        2.848642200365981,
+        2.2465804360413437,
+        0.995278819223598,
+        0.6090721383536115,
+        0.3281695637580551,
+        0.198974886838275,
+        0.11944556269279995,
+        0.0640219638505382,
+        0.0379674221043093,
+        0.017921941220663023,
+        0.010936762098825766,
+        0.005638763423208571,
+        0.002549173782078057,
+        0.0013776261276561756,
+        0.0007507482520245218,
+        0.0005414517432348073,
+        0.000364967997613764,
+        0.0002403634404203659,
+        0.00016214785178808664,
+        8.665416873974895e-05,
+        5.3146350037705265e-05,
+        3.603143464836261e-05,
+        2.3219795640029324e-05,
+        1.4051267407199424e-05,
+        1.0027102969181312e-05,
+        5.5350681998417865e-06,
+        3.0315070793555074e-06,
+        1.5762199966649926e-06,
+        7.463926207570462e-07
+      ],
+      "preconditioner_audit": null,
+      "audit_s": 0.0,
+      "operator_complexity": 1.3201456677000138,
+      "timing_scope": "solve includes one diagnostic residual matvec per iteration; solve time includes lazy coarse factorization",
+      "pattern": "bands",
+      "ratio": 0.85,
+      "shear_ratio": 0.2,
+      "nu_p": 0.38,
+      "nu_pz": 0.36,
+      "axis": "z",
+      "C": [
+        [
+          1.6133196412202224,
+          0.8886819600608022,
+          0.7656124899919936,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.8886819600608022,
+          1.6133196412202226,
+          0.7656124899919936,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.7656124899919936,
+          0.7656124899919936,
+          1.3185548438751,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.3623188405797102
+        ]
+      ],
+      "density_sha256": "2b9f810edb96997275b47800452c3851cdff9e0815f5451a3e0130df9013685d",
+      "stiffness_sha256": "f3a1b0194cb70d159489d6dbdcad6dd459980f134eaf4fdee5a75c3aa80d9d03",
+      "rhs_sha256": "725b4d9cd8234f91d1d2f9dd272df2d261998679b122d324fdd789f558e026c0",
+      "active_dofs_sha256": "5655814ea9260e1ff0584a413958bcdc83111a79ca6a189886874ce1d7053e2d",
+      "body_stiffness_min": 0.001,
+      "body_stiffness_max": 1.0,
+      "dofs": 1143591,
+      "nnz": 69425520,
+      "assembly_s": 9.42958936598734
+    }
+  ]
+}
