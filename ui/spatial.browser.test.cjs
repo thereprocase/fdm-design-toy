@@ -176,6 +176,10 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.deepEqual(await page.evaluate(()=>viewer.keepouts.map(x=>({id:x.id,lines:x.lines}))),keepoutLines);
   assert.deepEqual(await page.evaluate(()=>viewer.R),await page.evaluate(()=>selected.R_design_to_print));
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),centers);
+  assert(await region.evaluate(box=>{
+    const spatial=box.querySelector('.spatial'),name=box.querySelector('[data-key="name"]'),location=box.querySelector('[data-key="location"]');
+    return !!(name.compareDocumentPosition(spatial)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!(spatial.compareDocumentPosition(location)&Node.DOCUMENT_POSITION_FOLLOWING);
+  }));
   // Mobile users can inspect a box without entering surface-placement mode.
   await page.setViewportSize({width:390,height:844});
   const beforeView=await page.evaluate(()=>draftFormState());

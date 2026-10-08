@@ -441,6 +441,7 @@ function addHelper(region={}) {
     byId('remove-status').textContent=`Removed ${name}. Undo remove restores its fields and position. Up to 20 removals are kept until another draft or table is loaded.`;
     updateRegions();byId('undo-remove').focus({preventScroll:true});
   };
+  box.querySelector('[data-key="name"]').closest('label').after(toggleLabel,spatial);
   const editor=document.createElement('details');editor.className='helper-editor';editor.open=true;
   text('summary','Edit helper settings',editor);
   for(const child of [...box.children].slice(1))editor.append(child);
