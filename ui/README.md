@@ -903,3 +903,9 @@ Enabled keep-out IDs remain labelled below the canvas when their import panel is
 closed. **Hide keep-outs** clears the visible overlays, keeps the geometry loaded,
 and returns keyboard focus to the preview. It does not change helper references
 or the saved draft. Re-enable individual constraints in the optional preview panel.
+
+Editing from an export-check row carries a **Previous review note** into the
+workspace after the exact table restores the draft. It retains the original
+rule, message, measurements and recorded report fingerprint, explicitly as a
+past result that has not been rerun on edits. The note never enters the saved
+draft; dismissing it or successfully opening another draft/table clears it.

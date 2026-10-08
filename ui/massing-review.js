@@ -44,7 +44,7 @@ function renderChecks(){
  el('check-filter-status').textContent=`Showing ${visible.length} of ${checks.length} recorded export checks.`+(filter==='attention'?` ${passed} passed checks are available under All checks or Passed checks.`:'')+(!visible.length?' No checks in this view. This does not qualify the part.':'');
  el('review-checks').replaceChildren();
  const names=new Map(saved.massing.helper_regions.map(h=>[h.id,h.name]));
- for(const c of visible){const row=add('article','',el('review-checks'));add('h3',`${c.rule} · ${c.level} · ${c.verdict}${c.provisional?' · provisional':''}`,row);let message=c.message;for(const [id,name]of names)message=message.split(id).join(`${name} [${id}]`);add('p',message,row);if(names.has(c.metrics?.helper_id))editButton(c.metrics.helper_id,names.get(c.metrics.helper_id),row);const fixes=add('ul','',row);for(const fix of c.fixes)add('li',fix,fixes);if(c.establishes)add('p',c.establishes,row);if(c.does_not_establish)add('p','Does not establish: '+c.does_not_establish,row);const details=add('details','',row);add('summary','Measurements',details);add('pre',JSON.stringify(c.metrics||{},null,2),details);}
+ for(const c of visible){const row=add('article','',el('review-checks'));add('h3',`${c.rule} · ${c.level} · ${c.verdict}${c.provisional?' · provisional':''}`,row);let message=c.message;for(const [id,name]of names)message=message.split(id).join(`${name} [${id}]`);add('p',message,row);if(names.has(c.metrics?.helper_id))editButton(c.metrics.helper_id,names.get(c.metrics.helper_id),row,c);const fixes=add('ul','',row);for(const fix of c.fixes)add('li',fix,fixes);if(c.establishes)add('p',c.establishes,row);if(c.does_not_establish)add('p','Does not establish: '+c.does_not_establish,row);const details=add('details','',row);add('summary','Measurements',details);add('pre',JSON.stringify(c.metrics||{},null,2),details);}
 }
 
 function clearSlice(){clearBundle();clearShell();clearMechanics();matchedSlice=null;++sliceGeneration;el('review-slice').value='';el('review-slice').disabled=true;showReviewSection('slice-results',!(true));el('slice-status').textContent='No slice evidence loaded.';}
@@ -73,15 +73,15 @@ function renderSlice(r){
  el('slice-provenance').textContent=JSON.stringify(r,null,2);
 }
 
-function editButton(helperId,name,parent){
+function editButton(helperId,name,parent,check=null){
  name=helperName(helperId);
  const button=add('button',`Edit ${name}`,parent);button.type='button';button.className='secondary';
- button.onclick=()=>transferDraft(helperId,name);
+ button.onclick=()=>transferDraft(helperId,name,check);
 }
 el('revise-draft').onclick=()=>transferDraft(null,'the shell and helper plan');
-function transferDraft(helperId,name){
+function transferDraft(helperId,name,check=null){
  if(!saved||!matchedReport)return;
-  try{sessionStorage.setItem('fdmgen-review-edit',JSON.stringify({draft:saved,helper_id:helperId}));location.href='index.html#review-edit';}
+  try{sessionStorage.setItem('fdmgen-review-edit',JSON.stringify({draft:saved,helper_id:helperId,...(check?{review_context:{report_sha256:matchedReportHash,check}}:{})}));location.href='index.html#review-edit';}
   catch(error){el('review-status').textContent='This browser cannot transfer the draft between pages. Return to the workspace, load its original table, and reopen the saved draft to edit '+name+'.';}
 }
 

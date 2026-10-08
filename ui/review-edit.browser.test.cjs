@@ -23,6 +23,35 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.equal(await page.evaluate(()=>sessionStorage.getItem('fdmgen-review-edit')),null);
  await page.goto('about:blank');await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href+'#review-edit');
  assert.match(await page.locator('#review-transfer-status').innerText(),/manually/);await page.locator('#cancel-review-transfer').click();assert(await page.locator('#review-transfer').isHidden());
+ // A real failed clearance check carries its reason, separately from draft intent.
+ const originalReport=JSON.parse(await fs.readFile(path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json'),'utf8'));
+ const clearance=originalReport.checks.find(c=>c.rule==='KEEP-CLEAR'&&c.verdict==='FAIL');
+ const backing=draft.massing.helper_regions.find(h=>h.id===clearance.metrics.helper_id);
+ await page.goto(pathToFileURL(path.join(__dirname,'massing-review.html')).href);
+ await page.locator('#review-draft').setInputFiles(draftPath);
+ await page.locator('#review-receipt').setInputFiles(path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json'));
+ const failedRow=page.locator('#review-checks article').filter({has:page.getByRole('heading',{name:'KEEP-CLEAR · M · FAIL · provisional',exact:true})}).first();
+ await failedRow.getByRole('button',{name:'Edit '+backing.name,exact:true}).click();
+ await page.waitForURL('**/index.html#review-edit');await page.locator('#table-file').setInputFiles(tablePath);
+ await page.waitForFunction(()=>!document.querySelector('#review-edit-context').hidden);
+ assert.match(await page.locator('#review-edit-context-summary').innerText(),/13.00 mm/);
+ assert.match(await page.locator('#review-edit-context').innerText(),/not a check of your current edits/);
+ const context=JSON.parse(await page.locator('#review-edit-context-source').textContent());
+ assert.deepEqual(context.check,clearance);
+ assert.equal(context.report_sha256,require('node:crypto').createHash('sha256').update(await fs.readFile(path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json'))).digest('hex'));
+ const backingFields=page.locator(`.helper-region[data-id="${backing.id}"]`);
+ assert(await backingFields.locator('[data-key="name"]').evaluate(e=>e===document.activeElement));
+ const snapshot=page.waitForEvent('download');await page.locator('#export').click();
+ const unchanged=JSON.parse(await fs.readFile(await(await snapshot).path(),'utf8'));
+ assert.deepEqual(unchanged.massing,draft.massing);assert.equal(unchanged.review_context,undefined);
+ await backingFields.locator('[data-geometry="center_mm"][data-axis="1"]').fill('-20');
+ assert.deepEqual(JSON.parse(await page.locator('#review-edit-context-source').textContent()),context);
+ await page.setViewportSize({width:390,height:844});
+ await page.locator('#review-edit-context summary').click();
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.locator('#dismiss-review-context').focus();await page.keyboard.press('Enter');
+ assert(await page.locator('#review-edit-context').isHidden());
+ await page.setViewportSize({width:1280,height:720});
  // Synthetic shell-only contract case: no helper exists to carry the edit action.
  const shellDraft=structuredClone(draft);shellDraft.massing.helper_regions=[];shellDraft.massing.shell_only=true;
  const bytes=Buffer.from(JSON.stringify(shellDraft));
@@ -41,5 +70,5 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const shellExport=JSON.parse(await fs.readFile(await(await shellDownload).path(),'utf8'));
  assert.deepEqual(shellExport.massing,shellDraft.massing);assert.equal(shellExport.orientation.id,shellDraft.orientation.id);
  assert.equal(await page.evaluate(()=>sessionStorage.getItem('fdmgen-review-edit')),null);
- assert.deepEqual(errors,[]);console.log('PASS helper and shell-only review handoffs, exact table restore, focus, preserved massing, consumed transfer and fallback');
+ assert.deepEqual(errors,[]);console.log('PASS helper and shell-only review handoffs, historical clearance context separate from draft, exact table restore, focus, preserved massing, consumed transfer and fallback');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
