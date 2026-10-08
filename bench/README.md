@@ -775,6 +775,38 @@ Reproduce with the command above, adding `--h .8` and a distinct output path.
 All solver source hashes and the raw mask/mesh hashes were checked against the
 preflight; the benchmark defaults and PLAN remain unchanged.
 
+### Optional idealised fixed-shell control
+
+`--fixed-shell-layers N` fixes density to one in the cells removed by N repeated
+six-face-neighbour binary erosions of the body mask. Outside-grid space is empty;
+holes also have shell boundaries, and sufficiently thin features become entirely
+fixed. The default is zero (disabled). Mask, loads and restraints are unchanged,
+but stiffness and material layout change: this is not a solver-only intervention.
+
+Receipts record the construction rule, layer count, shell/core counts and shell
+mask hash. Layers are voxel operations, **not a measured printed thickness** or
+a Euclidean distance offset. This field has no G-code provenance and does not
+establish a qualified shell, optimised helpers or an adopted gate problem.
+
+```sh
+python bench/amg_sensitivity.py --root /path/to/part-source \
+  --h .8 --emin 1e-6 --ratios .85 --shear-ratios .20 --nu-p .38 --nu-pz .36 \
+  --patterns bands --smoothers energy --strength-thresholds .08 \
+  --constraint-strength zero --coarse-solver pinv --fixed-shell-layers 2 \
+  --out out/amg-fixed-shell.json
+```
+
+The two-layer control (`receipts/bracket-h08-fixed-shell.json`) selected
+132,702 shell cells and 201,364 core
+cells, promoting 69,098 soft band cells to full stiffness. It converged in 26 CG
+iterations to a true residual of 5.4702e-7. Compliance changed from 3.5301e10 to
+2.8929e5 in the same Ep=1 normalization: a large physical-field change, not an
+accuracy comparison between solvers. The unmodified whole-body-band failure
+remains relevant. A slice-derived shell and the remaining timing, precision,
+material and zero-ersatz checks are still needed. The public CLI reproduced the
+exploratory density/stiffness hashes and complete residual history exactly.
+Full remote validation: 327 passed, 6 skips.
+
 ### Pending gate-domain decision
 
 The proposal linked above would retain the largest face-connected component,

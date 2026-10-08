@@ -85,3 +85,36 @@ def test_card_corners_use_nominal_poisson_and_normalized_card_matrix():
 def test_invalid_shear_ratio_refused(shear):
     with pytest.raises(ValueError):
         pilot.constitutive(.85, 'z', shear_ratio=shear)
+
+
+@pytest.mark.parametrize('layers', [-1, 1.5, True])
+def test_fixed_shell_rejects_invalid_layers(layers):
+    with pytest.raises(ValueError, match='nonnegative integer'):
+        pilot.fixed_shell_mask(np.ones((5,5,5), bool), layers)
+
+
+def test_fixed_shell_known_cube_and_thin_part():
+    mask=np.ones((5,5,5),bool)
+    shell=pilot.fixed_shell_mask(mask,2)
+    assert shell.sum()==124 and not shell[2,2,2]
+    assert pilot.fixed_shell_mask(np.ones((2,5,5),bool),2).all()
+    rho,E=pilot.stiffness_field(mask,1e-6,'uniform',2)
+    assert np.all(rho[shell]==1) and np.all(E[shell]==1)
+    assert rho[2,2,2]==.5
+    assert E[2,2,2]==1e-6+.5**3*(1-1e-6)
+
+
+def test_fixed_shell_hole_and_disabled_field():
+    mask=np.ones((9,9,9),bool);mask[4,4,4]=False
+    shell=pilot.fixed_shell_mask(mask,1)
+    assert not shell[4,4,4] and shell[3,4,4] and not shell[3,3,4]
+    for pattern in ['bands','uniform']:
+        rho,E=pilot.stiffness_field(mask,1e-6,pattern,0)
+        expected=np.full(mask.shape,.5) if pattern=='uniform' else np.broadcast_to(((np.arange(9)//4)%2)[:,None,None],mask.shape)
+        expected=np.where(mask,expected,0.)
+        np.testing.assert_array_equal(rho,expected)
+        np.testing.assert_array_equal(E,np.where(mask,1e-6+expected**3*(1-1e-6),0))
+        r1,e1=pilot.stiffness_field(mask,1e-6,pattern,1)
+        assert r1[4,4,4]==e1[4,4,4]==0
+        np.testing.assert_array_equal(r1[~shell],rho[~shell])
+        np.testing.assert_array_equal(e1[~shell],E[~shell])

@@ -65,11 +65,26 @@ def parameter_cases(ratios=None, shear_ratios=None, nu_p=None, nu_pz=None, card_
     return cases, card_source
 
 
-def stiffness_field(mask, emin, pattern):
+def fixed_shell_mask(mask, layers):
+    """Idealised shell from face-neighbour erosions, not a printed thickness."""
+    if isinstance(layers, (bool, np.bool_)) or not isinstance(layers, (int, np.integer)) or layers < 0:
+        raise ValueError('fixed shell layers must be a nonnegative integer')
+    mask = np.asarray(mask, dtype=bool)
+    if mask.ndim != 3 or not mask.any():
+        raise ValueError('nonempty 3D mask required')
+    if layers == 0:
+        return np.zeros_like(mask)
+    from scipy.ndimage import binary_erosion, generate_binary_structure
+    return mask & ~binary_erosion(mask, structure=generate_binary_structure(3, 1),
+                                  iterations=int(layers), border_value=0)
+
+
+def stiffness_field(mask, emin, pattern, fixed_shell_layers=0):
     """Uniform rho=.5 or four-cell grid-X bands alternating rho=0/1.
 
     All body cells remain active via E_min; outside cells are strictly inactive.
     Bands are an artificial contrast challenge, not proposed helper geometry.
+    Optional fixed face-neighbour shell layers override density to one.
     """
     mask = np.asarray(mask, dtype=bool)
     if mask.ndim != 3 or not mask.any() or not np.isfinite(emin) or not 0 < emin <= 1:
@@ -81,6 +96,7 @@ def stiffness_field(mask, emin, pattern):
     else:
         raise ValueError('pattern must be uniform or bands')
     rho = np.where(mask, rho, 0.)
+    rho[fixed_shell_mask(mask, fixed_shell_layers)] = 1.
     return rho, np.where(mask, emin + rho**3 * (1 - emin), 0.)
 
 
@@ -140,6 +156,8 @@ def main():
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--h', type=float, default=1.6)
     ap.add_argument('--emin', type=float, default=1e-3)
+    ap.add_argument('--fixed-shell-layers', type=int, default=0,
+                    help='experimental fixed rho=1 boundary layers by six-face erosion; zero disables')
     ap.add_argument('--ratios', nargs='+', type=float)
     ap.add_argument('--shear-ratios', nargs='+', type=float, help='Gpz/Ez; default 1/2.6')
     ap.add_argument('--nu-p', type=float)
@@ -166,18 +184,27 @@ def main():
         cases, card_source = parameter_cases(args.ratios, args.shear_ratios, args.nu_p, args.nu_pz, args.card_ratio_corners)
     except ValueError as error:
         ap.error(str(error))
+    if args.fixed_shell_layers < 0:
+        ap.error('fixed shell layers must be nonnegative')
     stiffness_field(np.ones((1, 1, 1), bool), args.emin, 'uniform')
     import scipy
     import pyamg
     from bracket_gate import build
     from fdmgen.adapters.spool_bracket import HANDOFF
     _, mask, grid, fixed, b, bc = build(args.root, (args.h,) * 3)
+    shell = fixed_shell_mask(mask, args.fixed_shell_layers)
     receipt = dict(schema='fdmgen/amg-sensitivity@0.1', machine_role='compute box',
         establishes='CPU convergence on these declared synthetic stiffness fields and gate restraints',
         does_not_establish='calibrated anisotropy, printable helpers, physical response, GPU/mixed-precision gate or zero-ersatz gap',
         card=card_source, parameter_cases=cases,
+        fixed_shell=(dict(layers=args.fixed_shell_layers,
+            model='mask minus repeated six-face-neighbour binary erosion; outside grid empty; shell rho=1',
+            shell_cells=int(shell.sum()), core_cells=int(np.count_nonzero(mask & ~shell)),
+            shell_mask_sha256=digest(shell),
+            scope='idealised voxel shell, not Euclidean or printed thickness, sliced occupancy or qualified helpers')
+            if args.fixed_shell_layers else None),
         law=dict(Ep=1., Ez='ratio', Gpz='ratio * shear_ratio; null shear_ratio means 1/2.6', frame='grid',
-                 density_power=3, emin=args.emin, bands='floor(grid_i/4) modulo 2 gives rho=0 or 1'),
+                 density_power=3, emin=args.emin, bands='floor(grid_i/4) modulo 2 gives rho=0 or 1; declared fixed shell overrides rho to 1'),
         h_mm=list(grid.h), grid=list(grid.shape), body_cells=int(mask.sum()), bc=bc,
         mask_sha256=digest(mask), fixed_sha256=digest(fixed), load_sha256=digest(b),
         mesh_sha256=hashlib.sha256((args.root / HANDOFF / 'body-only.stl').read_bytes()).hexdigest(),
@@ -190,7 +217,7 @@ def main():
         args.out.write_text(json.dumps(receipt, indent=2, allow_nan=False) + '\n')
     save()
     for pattern in args.patterns:
-        rho, E = stiffness_field(mask, args.emin, pattern)
+        rho, E = stiffness_field(mask, args.emin, pattern, args.fixed_shell_layers)
         for case in cases:
             for axis in args.axes:
                 C = constitutive(axis=axis, **case)
