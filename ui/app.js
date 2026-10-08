@@ -115,7 +115,7 @@ byId('pin-reference').onclick=()=>{if(!selected)return;referencePose=selected;re
 byId('clear-reference').onclick=()=>{referencePose=null;renderComparison();byId('pin-reference').focus({preventScroll:true});};
 function hasSlice(candidate) {
   const c=candidate.columns?.t_support_segments;
-  return Number.isFinite(c?.value)&&c.value>=0&&c.verdict!=='NOT_CHECKED';
+  return (Number.isFinite(c?.value)&&c.value>=0&&c.verdict!=='NOT_CHECKED')||!!shellColumn(candidate)||['t_bridge_span_external_mm','t_bridge_span_internal_mm'].some(key=>validBridgeColumn(candidate.columns?.[key]));
 }
 function renderBridge(candidate) {
   const panel=byId('pose-bridges');panel.replaceChildren();
@@ -176,7 +176,7 @@ function choose(candidate) {
     const column=candidate.columns?.[key];text('dt',label,byId('toolpath-metrics'));text('dd',formatted(column)+(column?' · toolpath evidence':''),byId('toolpath-metrics'));
   }
   const slice=candidate.columns?.t_support_segments;
-  byId('toolpath-settings').textContent=slice?.fidelity||'No pose slice supplied. These quantities are not checked.';
+  byId('toolpath-settings').textContent=slice?.fidelity||'No support-column slicer context supplied. Consult each available shell or bridge result for its own source and method.';
   const creditedFidelity=candidate.columns?.t_credited_mm3?.fidelity||'';
   byId('credited-scope').textContent=slice?.fidelity&&creditedFidelity.startsWith(slice.fidelity)?'Credited volume: '+creditedFidelity.slice(slice.fidelity.length).replace(/^;\s*/, ''):creditedFidelity;
   renderBridge(candidate);

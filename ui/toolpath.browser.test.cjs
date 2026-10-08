@@ -11,10 +11,29 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert(fitRows.some(r=>r.bed.startsWith('Fits')&&r.feasible.startsWith('Fit needs review')));
  assert.equal(fitRows.filter(r=>r.bed.startsWith('Does not fit')).length,3);
  await page.getByRole('button',{name:'facet-00',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/4,344/);assert.match(await page.locator('#toolpath-settings').innerText(),/support 1, threshold 45/);assert.match(await page.locator('#credited-scope').innerText(),/support excluded/);
- await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/Not checked/);assert.match(await page.locator('#toolpath-settings').innerText(),/No pose slice/);assert.equal(await page.locator('#credited-scope').innerText(),'');
+ await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/Not checked/);assert.match(await page.locator('#toolpath-settings').innerText(),/No support-column slicer context/);assert.equal(await page.locator('#credited-scope').innerText(),'');
  assert.equal(await page.locator('#pose-shell-summary').innerText(),'Not checked');
  assert.match(await page.locator('#pose-bridges').innerText(),/Not checked/);
  await page.locator('#sliced-only').check();assert.equal(await page.locator('#rows tr').count(),2);assert.match(await page.locator('#pose-count').innerText(),/Selected pose facet-02 is hidden/);await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/8,596/);
+ // Batch shell/bridge enrichment supplies evidence without support-count columns.
+ const checksOnly=JSON.parse(fs.readFileSync(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json')));
+ for(const candidate of checksOnly.candidates)delete candidate.columns.t_support_segments;
+ for(const mode of ['shell-and-bridge','bridge-only','shell-only','invalid-evidence']){
+  const fixture=structuredClone(checksOnly);
+  for(const candidate of fixture.candidates){
+   if(mode==='bridge-only')delete candidate.columns.t_shell_thin_fraction;
+   if(mode==='shell-only'){delete candidate.columns.t_bridge_span_external_mm;delete candidate.columns.t_bridge_span_internal_mm;}
+   if(mode==='invalid-evidence')for(const key of ['t_shell_thin_fraction','t_bridge_span_external_mm','t_bridge_span_internal_mm'])if(candidate.columns[key])candidate.columns[key].level='M';
+  }
+  await page.locator('#table-file').setInputFiles({name:mode+'.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))});
+  await page.locator('#sliced-only').check();
+  const poses=await page.locator('#rows button').allTextContents();
+  if(mode==='invalid-evidence'){assert.deepEqual(poses,['Show all poses']);continue;}
+  assert.deepEqual(poses,['facet-00','facet-01']);
+  await page.getByRole('button',{name:'facet-00',exact:true}).click();
+  assert.match(await page.locator('#rows tr').first().locator('td').nth(4).innerText(),/Not checked/);
+  assert.match(await page.locator('#toolpath-metrics').innerText(),/Not checked/);
+ }
  // Known-order comparison fixture: zero is measured, unchecked numeric values stay last.
  await page.locator('#sliced-only').uncheck();
  const table=JSON.parse(fs.readFileSync(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json')));
@@ -25,7 +44,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   contact_mm2:{value:[100,20,null,100][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   height_mm:{value:[30,10,null,30][i],unit:'mm',verdict:i===2?'NOT_CHECKED':'PASS'},
   t_bridge_span_external_mm:{value:[3.2,0,52,52][i],limit_mm:10,unit:'mm',rule:'BRG-001',level:'T',verdict:i===2?'NOT_CHECKED':i===3?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only bridge screen <b>inert</b>'},
-  t_bridge_span_internal_mm:{value:i===1?0:122,limit_mm:18,unit:'mm',rule:'BRG-001',level:'T',verdict:i===1?'PASS':'FAIL',provisional:true,fidelity:'Synthetic internal bridge screen',coverage:{bridge_roads:i===1?4:8,external_roads:4,internal_roads:i===1?0:4,cell_mm:.4,max_cantilever_mm:2}},
+  t_bridge_span_internal_mm:{value:i===1?0:122,limit_mm:18,unit:'mm',rule:'BRG-001',level:'T',verdict:i===2?'NOT_CHECKED':i===1?'PASS':'FAIL',provisional:true,fidelity:'Synthetic internal bridge screen',coverage:{bridge_roads:i===1?4:8,external_roads:4,internal_roads:i===1?0:4,cell_mm:.4,max_cantilever_mm:2}},
   t_shell_thin_fraction:{value:[.02,0,.1,.02][i],unit:'fraction',rule:'SHELL-001',level:'T',verdict:i===2?'NOT_CHECKED':i===0?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only screen; seed 0, cell 0.1 mm. <b>inert</b>'}}}));
  await page.locator('#table-file').setInputFiles({name:'sort-fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.getByRole('button',{name:'large',exact:true}).click();await page.locator('#rationale').fill('Keep this choice while comparing.');
@@ -180,7 +199,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#table-file').setInputFiles({name:'no-scope.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.waitForFunction(()=>document.querySelector('#feasible-scope').textContent.includes('scope not supplied'));
  assert.match(await page.locator('#feasible-scope').innerText(),/scope not supplied/);
- for(const c of table.candidates){c.feasible=false;c.columns.t_support_segments={value:null,verdict:'NOT_CHECKED'};}
+ for(const c of table.candidates){c.feasible=false;for(const key of ['t_support_segments','t_shell_thin_fraction','t_bridge_span_external_mm','t_bridge_span_internal_mm'])c.columns[key]={value:null,verdict:'NOT_CHECKED'};}
  await page.locator('#table-file').setInputFiles({name:'unsliced.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.waitForFunction(()=>document.querySelector('#pose-count').textContent.includes('0 have measured slices'));
  assert(await page.locator('#review-selected').isDisabled());

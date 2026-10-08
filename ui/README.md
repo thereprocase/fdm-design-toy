@@ -909,3 +909,8 @@ workspace after the exact table restores the draft. It retains the original
 rule, message, measurements and recorded report fingerprint, explicitly as a
 past result that has not been rerun on edits. The note never enters the saved
 draft; dismissing it or successfully opening another draft/table clears it.
+
+The pose slice filter includes usable SHELL-001 or BRG-001 toolpath results,
+even when no support-count column is supplied. Missing support counts remain
+**Not checked**; finding shell or bridge evidence never implies zero supports.
+Unchecked or malformed shell/bridge columns do not satisfy the filter.
