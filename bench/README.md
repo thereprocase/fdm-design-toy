@@ -171,6 +171,30 @@ coarse occupancy and load discretisation; they do not establish helper stiffness
 improvement. A revised contact-load discretisation must explicitly preserve each
 seat's resultant and moment before such a comparison can be interpreted.
 
+### Finer slice-grid audit before another mechanics comparison
+
+The same seed slices were deposited on the actual 0.8 mm bracket grid using
+caps off and a sampling step of h/12 (0.0667 mm). This refines both the FE grid
+and deposition relative to R1; it is not an isolated sampling comparison.
+The exact grid/frame receipt is `receipts/bracket-grid-h08.json`. It contains
+no stress field or reference compliance, so use it with `--audit-only` here:
+
+```bash
+python bench/compare_occupancy.py --root /path/to/part-checkout \
+  --reference bench/receipts/bracket-grid-h08.json \
+  --baseline seed-shell-only-h08-sf12.npz --project seed-project-h08-sf12.npz \
+  --threshold 0.5 --audit-only --out audit.json
+```
+
+`receipts/occupancy-seed-h08-threshold050.json` pins both NPZ hashes and their
+sampling provenance. Each printed domain is now one face-connected component
+and retains all 7,216 original fixed DOFs. Nevertheless, each loses 326 original
+loaded DOFs (5.07746 N summed absolute missing nodal forces). The vertical
+resultant falls from 117.72 N to 114.37189 N and a −0.18349 N horizontal resultant
+appears. Both cases are **blocked**, with no load transfer, filtering or solve.
+The shell-only/project domains contain 142,588/144,047 cells respectively.
+Finer cells alone do not establish an admissible original-load comparison.
+
 ### Explicit seat-load transfer and connected-domain sensitivity
 
 `seat_load_transfer.py` constructs nonnegative nodal forces parallel to each

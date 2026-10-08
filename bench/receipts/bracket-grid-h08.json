@@ -1,0 +1,72 @@
+{
+  "schema": "fdmgen/bracket-grid@0.1",
+  "establishes": "Exact grid and installed-to-print frame of the h0.8 bracket benchmark; mesh, mask, load and restraint hashes verified against the published control.",
+  "does_not_establish": [
+    "stress or displacement field",
+    "printed-material domain or load retention",
+    "physical qualification"
+  ],
+  "grid": {
+    "shape": [
+      272,
+      304,
+      32
+    ],
+    "h_mm": [
+      0.8,
+      0.8,
+      0.8
+    ],
+    "origin_print_mm": [
+      41.69395370483399,
+      5.2,
+      -9.177843387890312e-15
+    ]
+  },
+  "installed_to_print": {
+    "R": [
+      [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "t_mm": [
+      250.0,
+      182.0,
+      0.0
+    ]
+  },
+  "coordinate_convention": "Column vectors: print = R @ installed + t_mm. Grid origin is corner of cell (0,0,0); cell centres = origin + (indices + 0.5) * h_mm; arrays use ijk order.",
+  "body_cells": 334066,
+  "bc": {
+    "seat_nodes": {
+      "rear_seat": 2912,
+      "front_seat": 2996
+    },
+    "clamped_nodes": 6436,
+    "wall_nodes": 6124
+  },
+  "mask_sha256": "d91765f7ea706fcc93b2421a09fb479b7bc5dae00f03f5da0fb8489de39d1cd5",
+  "fixed_sha256": "130f0b143f6ec3c52b2fab1fc13f5f2c67bdf446f4e62f883960fdd8bbd77a6e",
+  "load_sha256": "a6b19cfa109e0da31ceddfae25e7e18ccf7361ee083826142bebfe7ddd8f97fe",
+  "mesh_sha256": "565d0e8fb8d452e3d1b86352be97a980f85ba8a97ce2bbe915292db0fdb63843",
+  "source_sha256": {
+    "bench/bracket_gate.py": "a01543d9b5b9a02f3834b6d60ea70a6c7d105b21e2c43acb88f5d8a63a41fdf5",
+    "src/fdmgen/adapters/spool_bracket.py": "53a6df6b2f939989956182e43fd2dddf52cbdad8d66f1d43ecf8112e1140304a",
+    "src/fdmgen/geom/voxel.py": "8279bc6063fbbbbfe028dd4a2304ae811ac11ced6e6cc4f935819c414aa778c0",
+    "src/fdmgen/fem/element.py": "a42db7c44b79b4847a32b058c5fbfcb570f2909568a8e0cb85768dc9c635a2f6"
+  },
+  "reference_receipt_sha256": "1da20693ea7b3df2e73cbcda7dd0530b7e7adcf5ebd72997a2e56a5239994a1f",
+  "exporter_sha256": "2b968f1aa60479ba4fed301f336411e5b0d7dd24b30a41837fb9392e206177e6"
+}
