@@ -57,6 +57,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('No supported compliance comparison'));
  assert.match(await page.locator('#mechanics-comparison').innerText(),/Project: 1 N summed absolute nodal load is missing/);
  assert.deepEqual(await page.locator('[data-mechanics-reasons] li').allTextContents(),['Project: 1 N summed absolute nodal load is missing.']);
+ const blockedRow=page.locator('#mechanics-rows tr').last();
+ assert.deepEqual(await blockedRow.locator('td').allTextContents(),['Seeded project','ready / solved; checks not established','Not established','Not established']);
+ assert.doesNotMatch(await page.locator('#mechanics-rows tr').nth(1).innerText(),/Not established/);
+ assert.equal(JSON.parse(await page.locator('#mechanics-provenance').textContent()).cases.project.solve.compliance_N_mm,badWeighted.cases.project.solve.compliance_N_mm);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-slice').setInputFiles([]);await page.locator('#review-slice').setInputFiles(fixture('slice-evidence'));
  await page.waitForFunction(()=>document.querySelector('#mechanics-results').hidden);

@@ -140,3 +140,12 @@ test('weighted comparison requires matching sampling methods but distinct source
  const reordered=read(),s=reordered.cases.project.provenance.sampling;
  reordered.cases.project.provenance.sampling=Object.fromEntries(Object.entries(s).reverse());assert(Review.mechanicsComparable(reordered));
 });
+
+test('individual mechanics rows follow their domain gates independently of pair sampling',()=>{
+ const r=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p1-sf16-r1.json')));
+ r.cases.project.audit.missing_load_l1_N=1;
+ assert(Review.mechanicsCaseReasons(r,'project').length>0);assert.deepEqual(Review.mechanicsCaseReasons(r,'baseline'),[]);
+ r.cases.project.audit.missing_load_l1_N=0;r.cases.project.provenance.sampling.step_frac='1/3';
+ assert.equal(Review.mechanicsComparable(r),false);assert.deepEqual(Review.mechanicsCaseReasons(r,'project'),[]);
+ r.cases.project.solve.cg_status=1;assert(Review.mechanicsCaseReasons(r,'project').some(x=>x.includes('successful convergence')));
+});

@@ -168,9 +168,9 @@ const MassingReview = (() => {
   }
   return r;
  }
- function mechanicsReasons(r){
+ function mechanicsCaseReasons(r,name){
   const reasons=[],weighted=r.schema==='fdmgen/density-weighted-mechanics-pilot@0.1';
-  for(const [name,label] of [['full_solid','Full-body context'],['baseline','Shell-only'],['project','Project']]){
+  const label={full_solid:'Full-body context',baseline:'Shell-only',project:'Project'}[name];
    const c=weighted?r.cases[name]:null,a=weighted?c.audit:r.audits[name],v=weighted?c.solve:r.solves?.[name];
    const note=message=>reasons.push(`${label}: ${message}`);
    if(a.status!=='ready')note('retained domain audit is not ready.');
@@ -190,7 +190,11 @@ const MassingReview = (() => {
     if(!(v.true_relative_residual<=1e-8))note('true relative residual exceeds 1e-8 or is missing.');
     if(!(v.compliance_N_mm>0))note('positive compliance is not established.');
    }
-  }
+  return reasons;
+ }
+ function mechanicsReasons(r){
+  const weighted=r.schema==='fdmgen/density-weighted-mechanics-pilot@0.1';
+  const reasons=['full_solid','baseline','project'].flatMap(name=>mechanicsCaseReasons(r,name));
   if(weighted){
    const base=r.cases.baseline.provenance.sampling,project=r.cases.project.provenance.sampling;
    const complete=s=>s&&typeof s==='object'&&!Array.isArray(s)&&typeof s.step_frac==='string'&&s.step_frac.length>0&&Number.isFinite(s.step_mm)&&s.step_mm>0&&typeof s.recorded_step_frac==='string'&&typeof s.generator==='string'&&typeof s.purpose==='string'&&(!Object.hasOwn(s,'caps')||typeof s.caps==='boolean');
@@ -208,6 +212,6 @@ const MassingReview = (() => {
   return reasons;
  }
  function mechanicsComparable(r){return mechanicsReasons(r).length===0;}
- return {draft,pair,slice,contextMismatch,shell,shellComparison,mechanics,mechanicsComparable,mechanicsReasons};
+ return {draft,pair,slice,contextMismatch,shell,shellComparison,mechanics,mechanicsComparable,mechanicsReasons,mechanicsCaseReasons};
 })();
 if(typeof module!=='undefined')module.exports=MassingReview;

@@ -316,6 +316,12 @@ review, not optimised designs or physical qualifications.
 
 ## Review a mechanics sensitivity
 
+Each mechanics result row applies its own domain/load/convergence checks before
+showing compliance or movement as established. A receipt marked ready/solved can
+still be withheld if its detailed audit contradicts that status. Pair-only sampling
+mismatches withhold the delta while leaving individually valid model rows visible.
+Raw measurements remain in the complete receipt.
+
 Withheld comparisons identify the first failed condition beside the summary and
 list every blocking domain, load, restraint, convergence or seat-conservation
 condition in the audit section. These explain the recorded model checks; they

@@ -126,8 +126,8 @@ function renderMechanics(r){
  if(reasons.length){const blocked=add('article','',el('mechanics-audits'));blocked.dataset.mechanicsReasons='';add('h3','Why this comparison is withheld',blocked);const list=add('ul','',blocked);for(const reason of reasons)add('li',reason,list);}
  for(const [name,label] of [['full_solid','Full-body context'],['baseline','Shell-only'],['project','Seeded project']]){
   const a=r.audits[name],s=r.solves?.[name],row=add('tr','',el('mechanics-rows'));
-  const valid=a.status==='ready'&&s?.status==='solved'&&s.true_relative_residual<=1e-8;
-  for(const value of [label,`${a.status} / ${s?.status||'not solved'}`,valid?num(s.compliance_N_mm):'Not established',valid?num(s.max_displacement_mm):'Not established'])add('td',value,row);
+  const valid=MassingReview.mechanicsCaseReasons(source,name).length===0;
+  for(const value of [label,`${a.status} / ${s?.status||'not solved'}${valid?'':'; checks not established'}`,valid?num(s.compliance_N_mm):'Not established',valid?num(s.max_displacement_mm):'Not established'])add('td',value,row);
   const detail=add('article','',el('mechanics-audits'));add('h3',label,detail);
   add('p',`${a.cells} cells; ${a.face_components} face-connected components; ${a.missing_loaded_dofs} missing loaded DOFs.`,detail);
   for(const reason of a.reasons)add('p',String(reason),detail);
