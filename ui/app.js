@@ -125,7 +125,7 @@ function choose(candidate) {
   cancelSurfacePlacement();remember();selected=candidate;renderPlanningPose();byId('pose-name').textContent=candidate.id;
   byId('direction').textContent=`Build direction (design frame): ${(candidate.build_dir_design || []).join(', ')}`;
   const design=candidate.columns?.F_L_max,vendor=candidate.columns?.F_L_max_vendor_corner;
-  byId('strength-range').textContent=Number.isFinite(design?.value)&&Number.isFinite(vendor?.value)?`Material-corner range: ${metricNumber(Math.min(design.value,vendor.value))}–${metricNumber(Math.max(design.value,vendor.value))}. Conservative design corner: ${metricNumber(design.value)}. ${design.fidelity||'FE prescreen; provisional.'}`:'Strength comparison is not checked for both material corners.';
+  byId('strength-range').textContent=Number.isFinite(design?.value)&&Number.isFinite(vendor?.value)&&design.verdict!=='NOT_CHECKED'&&vendor.verdict!=='NOT_CHECKED'?`Material-corner range: ${metricNumber(Math.min(design.value,vendor.value))}–${metricNumber(Math.max(design.value,vendor.value))}. Conservative design corner: ${metricNumber(design.value)}. ${design.fidelity||'FE prescreen; provisional.'}`:'Strength comparison is not checked for both material corners.';
   renderFailedChecks(candidate);
   byId('reasons').replaceChildren();
   const reasons=Array.isArray(candidate.reasons)?candidate.reasons:[];

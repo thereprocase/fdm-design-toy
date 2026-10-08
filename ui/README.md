@@ -788,3 +788,7 @@ selected row, or the first row without selecting it when no pose was chosen.
 Pose measurements below 0.001 in magnitude use scientific notation instead of
 rounding a nonzero value to zero. Exact zero remains zero. This changes display
 formatting only; source values, sort order and exported evidence remain intact.
+
+The material-corner range is withheld when either corner is explicitly
+**NOT_CHECKED**, even if the producer retained a numeric value. Individual values
+and the summary therefore agree about missing evidence; raw data is preserved.

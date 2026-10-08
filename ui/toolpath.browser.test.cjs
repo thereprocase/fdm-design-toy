@@ -193,5 +193,13 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#strength-range').innerText(),/2\.00e-5–4\.00e-5/);
  assert.equal(await page.evaluate(()=>selected.columns.F_L_max.value),.00004);
  assert.equal(await page.evaluate(()=>formatted({value:[0,-.00004,1.25],unit:'mm',verdict:'PASS'})),'0, -4.00e-5, 1.25 mm');
+ for(const key of ['F_L_max','F_L_max_vendor_corner']){
+   const unchecked=structuredClone(table);unchecked.candidates[2].columns[key].verdict='NOT_CHECKED';
+   await page.locator('#table-file').setInputFiles({name:key+'-unchecked.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(unchecked))});
+   await page.waitForFunction(key=>analysis.candidates[2].columns[key].verdict==='NOT_CHECKED',key);
+   await page.getByRole('button',{name:'unknown',exact:true}).click();
+   assert.equal(await page.locator('#strength-range').innerText(),'Strength comparison is not checked for both material corners.');
+   assert.equal(await page.evaluate(key=>selected.columns[key].value,key),table.candidates[2].columns[key].value);
+ }
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
