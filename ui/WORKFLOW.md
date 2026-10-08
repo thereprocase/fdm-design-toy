@@ -390,6 +390,11 @@ include any helper’s requested extra clearance. Mount washers and driver acces
 are not modelled. End rings are drawing clips of an axially unbounded model, not
 physical bore ends.
 
+In a helper’s settings, **Show selected interfaces on part** displays only that
+helper’s selected references using the loaded base models. If a required file is
+missing, it takes you to the interface or mesh loader. It does not include the
+helper’s extra clearance. With no selected references, it hides the overlays.
+
 Drawing an interface does not select it in a helper’s keep-clear references, move
 a helper or record a PASS. Use the exporter’s KEEP-CLEAR results to check the
 selected references and requested gaps. **Hide interface models** clears the

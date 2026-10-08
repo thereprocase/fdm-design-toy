@@ -41,6 +41,25 @@ function updateInterfaceVisibility(){
  byId('interface-visibility').hidden=!chosen.length;
  byId('interface-visible-names').textContent=chosen.length?(ready?'Interface models shown: ':'Interface models selected; load the matched STL and select a pose to draw: ')+chosen.map(item=>item.id).join(', ')+'. Blue dash-dot · base radii only, no helper extra clearance. End rings mark drawing clips, not physical ends.':'';
 }
+function showHelperInterfaces(box){
+ cancelSurfacePlacement();setActiveHelper(box);byId('interface-options').open=true;
+ const refs=[...box.querySelectorAll('[data-interface-id]:checked')].map(input=>input.dataset.interfaceId);
+ let target=byId('part-view');
+ if(!refs.length){
+  for(const input of byId('interface-items').querySelectorAll('[data-interface-preview]'))input.checked=false;
+  updateInterfaceVisibility();byId('interface-status').textContent='This helper has no selected interface references. Interface overlays hidden; no draft fields changed.';
+ }else if(!interfaceGeometry){
+  byId('interface-status').textContent='Load the interface-render JSON for this table to locate this helper’s selected interfaces. Helper references and clearance are unchanged.';target=byId('interface-file');
+ }else{
+  const missing=[];
+  for(const input of byId('interface-items').querySelectorAll('[data-interface-preview]'))input.checked=!input.disabled&&refs.includes(input.dataset.interfacePreview);
+  for(const id of refs)if(!interfaceGeometry.items.some(item=>item.id===id&&item.rendered))missing.push(id);
+  updateInterfaceVisibility();
+  byId('interface-status').textContent=refs.length?`${helperLabel(box)}: locating selected base interface models only; requested extra clearance is not drawn.`+(missing.length?' Not drawn: '+missing.join(', ')+'. See the model reasons below.':''):'This helper has no selected interface references. Interface overlays hidden; no draft fields changed.';
+  if(refs.length&&(!mesh||meshHash!==analysis?.mesh?.sha256)){byId('mesh-options').open=true;target=byId('mesh-file');}
+ }
+ target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
+}
 function clearInterfaces(){
  interfaceRequest++;interfaceGeometry=null;updateInterfaceVisibility();byId('interface-file').value='';byId('interface-items').replaceChildren();byId('interface-source').textContent='';byId('interface-provenance').hidden=true;byId('interface-status').textContent='No interface geometry loaded.';
 }
@@ -414,6 +433,7 @@ function addHelper(region={}) {
   }
   const refs=text('div','',box);refs.className='interface-refs';text('p','Keep these interfaces clear:',refs);
   const allInterfaces=text('button','Select all interfaces',refs);allInterfaces.type='button';allInterfaces.className='secondary helper-list-action';allInterfaces.dataset.selectInterfaces='';
+  const locateInterfaces=text('button','Show selected interfaces on part',refs);locateInterfaces.type='button';locateInterfaces.className='secondary helper-list-action';locateInterfaces.dataset.locateInterfaces='';locateInterfaces.onclick=()=>showHelperInterfaces(box);
   const coverage=text('p','',refs);coverage.className='hint';coverage.dataset.interfaceCoverage='';coverage.setAttribute('role','status');
   allInterfaces.onclick=()=>{const checks=[...box.querySelectorAll('[data-interface-id]')];for(const check of checks)check.checked=true;updateRegions();checks[0]?.focus({preventScroll:true});};
   for(const item of analysis?.interfaces||[]){const label=text('label','',refs),check=document.createElement('input');check.type='checkbox';check.dataset.interfaceId=item.id;check.checked=region.keep_clear?.interface_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));
