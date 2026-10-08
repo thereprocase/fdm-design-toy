@@ -67,6 +67,15 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.equal(await page.locator('#handoff-baseline').innerText(),'out/massing/spool-rack-g2-ef-facet-00-massing-shell-only.3mf');
   assert.match(await page.locator('#evidence-command').innerText(),/spool-rack-g2-ef-facet-00-massing.json project.gcode shell-only.gcode/);
   assert.match(await page.locator('#evidence-command').innerText(),/--pose facet-00 --out out\/evidence/);
+  for(const id of ['handoff-command','evidence-command']){
+    const beforeSelect=await page.evaluate(()=>draftFormState());
+    await page.locator('#select-'+id).focus();await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(()=>getSelection().toString()),await page.locator('#'+id).textContent());
+    assert(await page.locator('#'+id).evaluate(e=>e===document.activeElement));
+    assert.match(await page.locator('#'+id+'-selection').innerText(),/Nothing has been run/);
+    assert.equal(await page.evaluate(()=>draftFormState()),beforeSelect);
+  }
+
   assert(await page.locator('#handoff-placeholders').isHidden());
   const invalidHelperId=structuredClone(original);invalidHelperId.massing.helper_regions[0].id='Invalid Helper';
   const beforeInvalidId=await page.evaluate(()=>draftFormState());

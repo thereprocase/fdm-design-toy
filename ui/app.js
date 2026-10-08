@@ -445,6 +445,7 @@ function addHelper(region={}) {
   box.append(editor);byId('helper-regions').append(box);updateRegions();return box;
 }
 function resetHandoff(){
+ for(const id of ['handoff-command','evidence-command'])byId(id+'-selection').textContent='';
  byId('handoff-missing-boxes').replaceChildren();
  byId('handoff-command').textContent='fdmgen massing DRAFT.json --table TABLE.json --template PROFILE.3mf --out out/massing';
  byId('handoff-readiness').textContent='Export this draft to populate its filenames and geometry-input summary.';
@@ -593,6 +594,14 @@ function clearDraftError(){
  for(const f of document.querySelectorAll('[data-export-error]')){f.removeAttribute('aria-invalid');f.removeAttribute('aria-errormessage');delete f.dataset.exportError;}
 }
 document.addEventListener('input',event=>{if(event.target.hasAttribute('data-export-error'))clearDraftError();});
+for(const id of ['handoff-command','evidence-command']){
+ byId('select-'+id).onclick=()=>{
+  const command=byId(id);command.focus({preventScroll:true});
+  const range=document.createRange();range.selectNodeContents(command);
+  const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+  byId(id+'-selection').textContent='Command selected. Use your system Copy action (Ctrl+C or ⌘C), then replace placeholder paths on the worker. Nothing has been run.';
+ };
+}
 function downloadFile(contents,name){
  const url=URL.createObjectURL(new Blob([contents],{type:'application/json'})),a=document.createElement('a');
  a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -613,6 +622,7 @@ byId('download-table').onclick=()=>{
 byId('export').onclick=()=>{
   clearDraftError();
   try{
+    for(const id of ['handoff-command','evidence-command'])byId(id+'-selection').textContent='';
     remember();const draft=Plan.create(analysis,fingerprint,selected,planInput());
     downloadFile(JSON.stringify(draft,null,2)+'\n',Plan.filename(draft));checkpointDraft('downloaded');
     byId('handoff-command').textContent=`fdmgen massing ${Plan.filename(draft)} --table ${sourceTableFilename()} --template PROFILE.3mf --out out/massing`;
