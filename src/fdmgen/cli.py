@@ -545,46 +545,83 @@ def _cmd_evidence(a) -> int:
     return 2 if any(r["verdict"] == "FAIL" for r in m["receipts"]) else 0
 
 
-def _cmd_keepout_render(a) -> int:
+def _render_sidecar_base(a):
+    """Pins, refusals and clip box shared by keepout-render and interface-render: (base dict, table, body vertex
+    bounds) or an error string."""
     import hashlib
 
     import trimesh
     import yaml
 
-    from .catalog.checks.keepout import render_items
-
     def sha(b):
         return hashlib.sha256(b).hexdigest()
-    a.out.unlink(missing_ok=True)          # a failed run must not leave an older receipt looking current
     traw, praw = a.table.read_bytes(), a.problem.read_bytes()
     table, prob = json.loads(traw), yaml.safe_load(praw)
     if (prob.get("frames") or {}).get("design") != "installed":
-        print("ERROR   the problem does not declare frames.design = installed, so no installed-to-design transform is known")
-        return 1
+        return "the problem does not declare frames.design = installed, so no installed-to-design transform is known"
     if (prob.get("keep_outs") or []) != (table.get("keep_outs") or []):
-        print("ERROR   the table's keep_outs differ from the problem's; render from the problem the table was built from")
-        return 1
+        return "the table's keep_outs differ from the problem's; render from the problem the table was built from"
     roots = ([Path(os.environ["SPOOL_RACK_ROOT"])] if os.environ.get("SPOOL_RACK_ROOT") else []) + \
         [Path(__file__).resolve().parents[3] / str(table["mesh"].get("source") or "")]
     mesh_path = next((r / table["mesh"]["path"] for r in roots if (r / table["mesh"]["path"]).is_file()), None)
     if mesh_path is None:
-        print(f"ERROR   the body mesh {table['mesh']['path']} was not found")
-        return 1
+        return f"the body mesh {table['mesh']['path']} was not found"
     mraw = mesh_path.read_bytes()
     if sha(mraw) != table["mesh"].get("sha256"):
-        print("ERROR   the body mesh on disk is not the one the table pins")
-        return 1
+        return "the body mesh on disk is not the one the table pins"
     body = trimesh.load(mesh_path, force="mesh", process=False)
-    geo = render_items(table.get("keep_outs"), table.get("interfaces"), body.vertices.min(axis=0), body.vertices.max(axis=0),
-                       margin_mm=a.margin)
+    base = {"table": {"name": a.table.name, "sha256": sha(traw)},
+            "mesh": {"path": table["mesh"]["path"], "source": table["mesh"].get("source"), "sha256": sha(mraw)},
+            "problem": {"name": a.problem.name, "sha256": sha(praw), "frames": prob["frames"]},
+            "installed_to_design": {"R": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], "t_mm": [0.0, 0.0, 0.0],
+                                    "source": "problem frames.design = installed (identity)"}}
+    return base, table, (body.vertices.min(axis=0), body.vertices.max(axis=0))
+
+
+def _cmd_keepout_render(a) -> int:
+    from .catalog.checks.keepout import render_items
+    a.out.unlink(missing_ok=True)          # a failed run must not leave an older receipt looking current
+    got = _render_sidecar_base(a)
+    if isinstance(got, str):
+        print(f"ERROR   {got}")
+        return 1
+    base, table, (blo, bhi) = got
+    geo = render_items(table.get("keep_outs"), table.get("interfaces"), blo, bhi, margin_mm=a.margin)
     out = {"schema": "fdmgen/keepout-render@0.1", "units": "mm", "frame": "design",
            "scope": "render only: where the keep-outs are, for a viewer; the KEEP-OUT and KEEP-CLEAR checks decide clearance",
-           "table": {"name": a.table.name, "sha256": sha(traw)},
-           "mesh": {"path": table["mesh"]["path"], "source": table["mesh"].get("source"), "sha256": sha(mraw)},
-           "problem": {"name": a.problem.name, "sha256": sha(praw), "frames": prob["frames"]},
-           "installed_to_design": {"R": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], "t_mm": [0.0, 0.0, 0.0],
-                                   "source": "problem frames.design = installed (identity)"},
-           **geo}
+           **base, **geo}
+    a.out.parent.mkdir(parents=True, exist_ok=True)
+    a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
+    print(f"wrote {a.out}: " + ", ".join(f"{i['id']} ({'drawn' if i['rendered'] else 'not drawn'})" for i in out["items"]))
+    return 0
+
+
+def _cmd_interface_render(a) -> int:
+    import numpy as np
+
+    from .massing.export import interface_render_items
+    a.out.unlink(missing_ok=True)          # a failed run must not leave an older receipt looking current
+    got = _render_sidecar_base(a)
+    if isinstance(got, str):
+        print(f"ERROR   {got}")
+        return 1
+    base, table, (blo, bhi) = got
+    if not (np.isfinite(a.margin) and a.margin >= 0):
+        print(f"ERROR   --margin {a.margin!r} must be a finite length of 0 mm or more")
+        return 1
+    lo, hi = np.round(blo - a.margin, 6), np.round(bhi + a.margin, 6)
+    out = {"schema": "fdmgen/interface-render@0.1", "units": "mm", "frame": "design",
+           "scope": ("render only: the drawn cylinder is the modelled interface; KEEP-CLEAR in the export report "
+                     "decides; per-helper clearance is not included"),
+           **base,
+           "clip": {"bbox_mm": [lo.tolist(), hi.tolist()], "margin_mm": a.margin,
+                    "basis": "body bounding box in the design frame, widened by margin_mm; axis ends are drawing-only"},
+           "items": None}
+    try:
+        out["items"] = interface_render_items(table.get("interfaces"), lo, hi)
+    except ValueError as e:
+        print(f"ERROR   {e}")
+        return 1
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(f"wrote {a.out}: " + ", ".join(f"{i['id']} ({'drawn' if i['rendered'] else 'not drawn'})" for i in out["items"]))
@@ -774,6 +811,12 @@ def main(argv: list[str] | None = None) -> int:
     oe.add_argument("--samples", type=int, default=20000)
     oe.add_argument("--out", type=Path, required=True, help="output directory")
     oe.set_defaults(fn=_cmd_orient_evidence)
+    ir = sub.add_parser("interface-render", help="render-only interface cylinders for a viewer (sidecar to an orientation table)")
+    ir.add_argument("table", type=Path)
+    ir.add_argument("--problem", type=Path, required=True, help="the problem.yaml the table was built from")
+    ir.add_argument("--margin", type=float, default=10.0, help="how far past the body each drawn axis line extends (mm)")
+    ir.add_argument("--out", type=Path, required=True)
+    ir.set_defaults(fn=_cmd_interface_render)
     sc = sub.add_parser("shell-check", help="SHELL-001 at T level: printed shell thickness by slope from a slice")
     sc.add_argument("gcode", type=Path, help="slice of the posed body (plate coordinates = the table's pose)")
     sc.add_argument("--table", type=Path, required=True)

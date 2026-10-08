@@ -323,3 +323,58 @@ def check_keep_clear(helpers, interfaces) -> list[CheckResult]:
                                        "The helper box stays outside the modelled interface cylinder plus clearance.",
                                        "Printed fit, washer/driver access, or anything the cylinder model leaves out."))
     return out
+
+
+_AXIS_INDEX = {"X": 0, "Y": 1, "Z": 2}
+
+
+def interface_render_items(interfaces, clip_lo, clip_hi) -> list[dict]:
+    """Render-only interface geometry, from the same model check_keep_clear uses (_interface_radius, _AXIS_PLANE).
+
+    Each drawable interface is the infinite cylinder the check tests: its base radius, centre in the plane
+    perpendicular to its axis, and the axis line clipped to [clip_lo, clip_hi] for drawing only. Per-helper
+    clearance is not included. Interfaces the check cannot model (unknown type, no radius or centre) are listed
+    with rendered false and the reason. Raises ValueError on duplicate ids, a non-finite or non-positive radius,
+    a non-finite centre or clip box: those would draw something the check does not test.
+    """
+    import math
+    lo, hi = np.asarray(clip_lo, float), np.asarray(clip_hi, float)
+    if not (np.isfinite(lo).all() and np.isfinite(hi).all()):
+        raise ValueError("the clip box is not finite")
+    ids = [i.get("id") for i in interfaces or []]
+    dup = sorted({x for x in ids if ids.count(x) > 1}, key=str)
+    if dup:
+        raise ValueError(f"interface ids are not unique: {dup}")
+    for i in interfaces or []:                      # refuse geometry the check would treat as a number
+        for f in ("seat_radius_mm", "d_mm"):
+            vals = i.get(f)
+            vals = vals if isinstance(vals, list) else ([] if vals is None else [vals])
+            if any(not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0 for v in vals):
+                raise ValueError(f"interface {i.get('id')}: {f} {i.get(f)!r} must be finite and positive")
+        for key in ("center_xy_mm", "center_yz_mm", "center_xz_mm"):
+            if key in i and (not isinstance(i[key], list) or len(i[key]) != 2
+                             or any(not isinstance(v, (int, float)) or not math.isfinite(v) for v in i[key])):
+                raise ValueError(f"interface {i.get('id')}: {key} {i[key]!r} must be two finite numbers")
+    items = []
+    for i in interfaces or []:
+        base = {"id": i.get("id"), "type": i.get("type"), "role": i.get("role"), "support": i.get("support")}
+        r, model = _interface_radius(i)
+        axis = str(i.get("axis", "")).upper()
+        plane = _AXIS_PLANE.get(axis)
+        if r is None or plane is None or plane[1] not in i:
+            reason = model if r is None else f"axis or centre missing ({model})"
+            items.append({**base, "rendered": False, "reason": reason})
+            continue
+        (a, b), key = plane
+        centre = [float(v) for v in i[key]]
+        k = _AXIS_INDEX[axis]
+        start, end = np.zeros(3), np.zeros(3)
+        start[[a, b]] = end[[a, b]] = centre
+        start[k], end[k] = lo[k], hi[k]
+        items.append({**base, "axis": axis, "rendered": True, "base_radius_mm": float(r), "model": model,
+                      "centre_plane": {"key": key, "value": centre},
+                      "axis_start_mm": [round(float(v), 6) for v in start],
+                      "axis_end_mm": [round(float(v), 6) for v in end],
+                      "unbounded": [f"min_{axis.lower()}", f"max_{axis.lower()}"],
+                      "source_fields": {f: i[f] for f in ("seat_radius_mm", "d_mm") if f in i}})
+    return items

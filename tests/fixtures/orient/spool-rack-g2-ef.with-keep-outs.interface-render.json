@@ -1,0 +1,209 @@
+{
+ "schema": "fdmgen/interface-render@0.1",
+ "units": "mm",
+ "frame": "design",
+ "scope": "render only: the drawn cylinder is the modelled interface; KEEP-CLEAR in the export report decides; per-helper clearance is not included",
+ "table": {
+  "name": "spool-rack-g2-ef.with-keep-outs.orientation-table.json",
+  "sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a"
+ },
+ "mesh": {
+  "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+  "source": "spool-wall-rack",
+  "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e"
+ },
+ "problem": {
+  "name": "problem.yaml",
+  "sha256": "2926c74b693db4132ff4093023eebfce4b4b3af670a8c434186a830ef9f2e261",
+  "frames": {
+   "design": "installed",
+   "installed": "X out from the wall (wall plane X = 0), Y up, Z along the rods",
+   "print": "derived per orientation candidate; the handoff pose is a 180 deg turn about Z"
+  }
+ },
+ "installed_to_design": {
+  "R": [
+   [
+    1.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    1.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    1.0
+   ]
+  ],
+  "t_mm": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "source": "problem frames.design = installed (identity)"
+ },
+ "clip": {
+  "bbox_mm": [
+   [
+    -10.0,
+    -67.482418,
+    -10.0
+   ],
+   [
+    217.506042,
+    186.0,
+    34.0
+   ]
+  ],
+  "margin_mm": 10.0,
+  "basis": "body bounding box in the design frame, widened by margin_mm; axis ends are drawing-only"
+ },
+ "items": [
+  {
+   "id": "rear_seat",
+   "type": "rod_seat",
+   "role": "interface",
+   "support": "forbidden",
+   "axis": "Z",
+   "rendered": true,
+   "base_radius_mm": 13.6,
+   "model": "rod seat modelled as a cylinder of its largest seat radius",
+   "centre_plane": {
+    "key": "center_xy_mm",
+    "value": [
+     90.0,
+     0.0
+    ]
+   },
+   "axis_start_mm": [
+    90.0,
+    0.0,
+    -10.0
+   ],
+   "axis_end_mm": [
+    90.0,
+    0.0,
+    34.0
+   ],
+   "unbounded": [
+    "min_z",
+    "max_z"
+   ],
+   "source_fields": {
+    "seat_radius_mm": [
+     12.4,
+     13.6
+    ]
+   }
+  },
+  {
+   "id": "front_seat",
+   "type": "rod_seat",
+   "role": "interface",
+   "support": "forbidden",
+   "axis": "Z",
+   "rendered": true,
+   "base_radius_mm": 13.6,
+   "model": "rod seat modelled as a cylinder of its largest seat radius",
+   "centre_plane": {
+    "key": "center_xy_mm",
+    "value": [
+     190.0,
+     12.0
+    ]
+   },
+   "axis_start_mm": [
+    190.0,
+    12.0,
+    -10.0
+   ],
+   "axis_end_mm": [
+    190.0,
+    12.0,
+    34.0
+   ],
+   "unbounded": [
+    "min_z",
+    "max_z"
+   ],
+   "source_fields": {
+    "seat_radius_mm": [
+     12.4,
+     13.6
+    ]
+   }
+  },
+  {
+   "id": "mount_upper",
+   "type": "screw_clearance",
+   "role": "interface",
+   "support": "forbidden",
+   "axis": "X",
+   "rendered": true,
+   "base_radius_mm": 2.6,
+   "model": "screw bore modelled as a cylinder of its clearance diameter; washer and driver access are not modelled",
+   "centre_plane": {
+    "key": "center_yz_mm",
+    "value": [
+     164.0,
+     12.0
+    ]
+   },
+   "axis_start_mm": [
+    -10.0,
+    164.0,
+    12.0
+   ],
+   "axis_end_mm": [
+    217.506042,
+    164.0,
+    12.0
+   ],
+   "unbounded": [
+    "min_x",
+    "max_x"
+   ],
+   "source_fields": {
+    "d_mm": 5.2
+   }
+  },
+  {
+   "id": "mount_lower",
+   "type": "screw_clearance",
+   "role": "interface",
+   "support": "forbidden",
+   "axis": "X",
+   "rendered": true,
+   "base_radius_mm": 2.6,
+   "model": "screw bore modelled as a cylinder of its clearance diameter; washer and driver access are not modelled",
+   "centre_plane": {
+    "key": "center_yz_mm",
+    "value": [
+     40.0,
+     12.0
+    ]
+   },
+   "axis_start_mm": [
+    -10.0,
+    40.0,
+    12.0
+   ],
+   "axis_end_mm": [
+    217.506042,
+    40.0,
+    12.0
+   ],
+   "unbounded": [
+    "min_x",
+    "max_x"
+   ],
+   "source_fields": {
+    "d_mm": 5.2
+   }
+  }
+ ]
+}
