@@ -10,6 +10,15 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   page.on('dialog',dialog=>dialog.accept());
  await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
   await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
+  const reference=page.locator('#modifier-reference');
+  assert.equal(await reference.evaluate(e=>e.open),false);
+  assert.match(await reference.locator(':scope > summary').innerText(),/not verified for this draft/);
+  await page.setViewportSize({width:390,height:844});
+  await page.getByRole('button',{name:'facet-00',exact:true}).click();
+  await page.locator('#plan-pose').click();
+  const gap=await page.evaluate(()=>document.querySelector('#shell-only').getBoundingClientRect().top-document.querySelector('#skin').getBoundingClientRect().bottom);
+  assert(gap>=0&&gap<200,'reference evidence must not push helper entry a screen below shell controls');
+  await reference.locator(':scope > summary').click();
   const panel=page.locator('#modifier-evidence');
   assert.match(await panel.innerText(),/no verified slicer\/template match/);
   await panel.getByText('Tested slicer, profile and evidence limits',{exact:true}).click();

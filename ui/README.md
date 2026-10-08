@@ -1036,3 +1036,8 @@ A failed bridge in the selected pose's check summary offers **Locate recorded
 strand** when the verified bundle supplies matching road geometry. It opens the
 locator, selects that role's strand maximum and moves keyboard focus to its
 control. Tables without verified receipt geometry offer no location shortcut.
+
+The planning form keeps modifier probes under **Reference modifier evidence — not
+verified for this draft**, collapsed by default. Open it to inspect measured
+settings, side effects and profile hashes. This keeps helper entry close to the
+wall and skin controls without treating the reference probes as draft validation.
