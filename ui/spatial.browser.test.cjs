@@ -176,6 +176,16 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.deepEqual(await page.evaluate(()=>viewer.keepouts.map(x=>({id:x.id,lines:x.lines}))),keepoutLines);
   assert.deepEqual(await page.evaluate(()=>viewer.R),await page.evaluate(()=>selected.R_design_to_print));
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),centers);
+  // Mobile users can inspect a box without entering surface-placement mode.
+  await page.setViewportSize({width:390,height:844});
+  const beforeView=await page.evaluate(()=>draftFormState());
+  await region.getByRole('button',{name:'View this helper',exact:true}).click();
+  assert(await page.locator('#part-view').evaluate(e=>{const r=e.getBoundingClientRect();return e===document.activeElement&&r.top>=0&&r.bottom<=innerHeight;}));
+  assert(await page.evaluate(()=>viewer.onPick===null));
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeView);
+  await page.locator('#return-helper').click();
+  assert(await region.locator('[data-geometry="center_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));
+  await page.setViewportSize({width:1300,height:1000});
   await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('0.5');await page.waitForFunction(()=>document.querySelector('#region-warnings').textContent.includes('0.84'));
   const warningState=await page.evaluate(()=>draftFormState());
   await region.locator('.helper-editor').evaluate(e=>e.open=false);
@@ -187,7 +197,7 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   // Invalid dimensions and missing coordinates must focus the offending field, not centre X.
   for(const [key,axis,value] of [['size_mm',2,'0'],['size_mm',1,''],['center_mm',2,'']]){
     const field=region.locator(`[data-geometry="${key}"][data-axis="${axis}"]`),original=await field.inputValue();
-    await field.fill(value);const invalidState=await page.evaluate(()=>draftFormState());
+    await field.fill(value);assert(await region.getByRole('button',{name:'View this helper',exact:true}).isDisabled());const invalidState=await page.evaluate(()=>draftFormState());
     await region.locator('.helper-editor').evaluate(e=>e.open=false);
     await page.locator('#region-warnings li').filter({hasText:/Region sizes must be positive|Region centre and size need/}).getByRole('button',{name:'Edit Seat backing',exact:true}).click();
     assert(await field.evaluate(e=>e===document.activeElement));

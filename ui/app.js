@@ -405,6 +405,8 @@ function addHelper(region={}) {
   }
   undo.onclick=()=>{if(!lastMove)return;cancelSurfacePlacement();centres().forEach((f,i)=>f.value=lastMove[i]);lastMove=null;undo.disabled=true;updateRegions();status.textContent='Previous centre restored. Geometry checks have not been rerun.';};
   box.addEventListener('input',event=>{if(event.target.matches('[data-geometry="center_mm"]')){cancelSurfacePlacement();lastMove=null;undo.disabled=true;}});
+  const view=text('button','View this helper',spatial);view.type='button';view.className='secondary';view.dataset.viewHelper='';view.disabled=true;view.title='Load the matching mesh and enter a valid box to preview this helper.';
+  view.onclick=()=>{cancelSurfacePlacement();setActiveHelper(box);viewer.focusRegion(box.dataset.id);document.querySelector('.preview').scrollTop=0;byId('part-view').scrollIntoView({block:'center'});byId('part-view').focus({preventScroll:true});};
   const place=text('button','Place centre on part',spatial);place.type='button';place.className='secondary';
   place.onclick=()=>{
     if(!mesh||!selected){byId('placement-status').textContent='Load a matching mesh and choose a pose first.';byId('part-view').scrollIntoView({block:'center'});return;}
@@ -547,6 +549,7 @@ function updateRegions(){
   if(['center_mm','size_mm'].every(key=>valid[i].geometry[key].every((v,k)=>v===valid[j].geometry[key][k])))warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: identical planning boxes. Move, resize or remove the redundant copy as needed.`,[valid[i].id,valid[j].id]);
   if(Plan.boxSeparation(valid[i].geometry,valid[j].geometry).needs_review)warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: overlap or separation is below the nominal 0.84 mm screen. Review sliver modifiers.`,[valid[i].id,valid[j].id]);
  }
+ for(const box of editors.values())box.querySelector('[data-view-helper]').disabled=!viewer.vertices||!valid.some(r=>r.id===box.dataset.id);
  viewer.setRegions(valid);byId('focus-helper').disabled=!viewer.vertices||!valid.some(r=>r.active);updateDraftState();
 }
 function clearRemovalHistory(){
