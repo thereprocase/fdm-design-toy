@@ -1072,3 +1072,14 @@ accuracy on those two operators. The bracket still exceeds 40 iterations; this
 slice-derived, capped-linear-density case is not the required floor/material gate
 sweep. The CPU hierarchy construction and matrix assembly are measured separately
 and remain substantial; fast repeated GPU solves do not remove that setup cost.
+
+The helper-project slice is also replayed with the same material, original
+loads/restraints, grid and deposition method: [project FP64
+receipt](receipts/amg-transfer-project-gpu-fp64.json) and [project FP32
+receipt](receipts/amg-transfer-project-gpu-fp32.json). Both take 101 CG iterations
+and reach an independently recomputed relative residual of about 9.23e-10.
+Comparison with the matching baseline receipts above gives **−1.70555% compliance**
+in both precisions, reproducing the earlier CPU nominal-TI comparison. Both
+domains retain all original loads and 7,216 fixed DOFs. This extends the numerical
+transfer check to the helper-bearing slice; it adds no calibration, strength or
+physical qualification evidence and does not meet the solver gate.
