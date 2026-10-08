@@ -17,7 +17,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   t_support_segments:{value:[9,0,-1,9][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   F_L_max:{value:[.3,.1,null,.3][i],verdict:i===2?'NOT_CHECKED':'PASS'},
   contact_mm2:{value:[100,20,null,100][i],verdict:i===2?'NOT_CHECKED':'PASS'},
-  height_mm:{value:[30,10,null,30][i],verdict:i===2?'NOT_CHECKED':'PASS'},
+  height_mm:{value:[30,10,null,30][i],unit:'mm',verdict:i===2?'NOT_CHECKED':'PASS'},
   t_bridge_span_external_mm:{value:[3.2,0,52,52][i],limit_mm:10,unit:'mm',rule:'BRG-001',level:'T',verdict:i===2?'NOT_CHECKED':i===3?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only bridge screen <b>inert</b>'},
   t_bridge_span_internal_mm:{value:i===1?0:122,limit_mm:18,unit:'mm',rule:'BRG-001',level:'T',verdict:i===1?'PASS':'FAIL',provisional:true,fidelity:'Synthetic internal bridge screen',coverage:{bridge_roads:i===1?4:8,external_roads:4,internal_roads:i===1?0:4,cell_mm:.4,max_cantilever_mm:2}},
   t_shell_thin_fraction:{value:[.02,0,.1,.02][i],unit:'fraction',rule:'SHELL-001',level:'T',verdict:i===2?'NOT_CHECKED':i===0?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only screen; seed 0, cell 0.1 mm. <b>inert</b>'}}}));
@@ -60,6 +60,8 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  for(const key of ['t_support_segments','F_L_max','height_mm']){
   await page.locator('#pose-sort').selectOption(key);assert.deepEqual(await order(),['zero','large','tie','unknown']);
  }
+ assert.deepEqual(await page.locator('#rows tr').evaluateAll(rows=>rows.map(r=>r.cells[6].textContent)),['10 mm','30 mm','30 mm','Not checked']);
+ assert.equal(await page.getByRole('columnheader',{name:'Height mm',exact:true}).count(),1);
  await page.locator('#pose-sort').selectOption('contact_mm2');assert.deepEqual(await order(),['large','tie','zero','unknown']);
  await page.locator('#pose-sort').selectOption('analysis');assert.deepEqual(await order(),['large','zero','unknown','tie']);
  assert.equal(await page.locator('#pose-name').innerText(),'large');assert.equal(await page.locator('#rationale').inputValue(),'Keep this choice while comparing.');

@@ -183,10 +183,11 @@ function renderRows() {
     };
     for(const key of ['F_L_max','ovh_fail_mm2','contact_mm2','t_support_segments'])text('td',formatted(c.columns?.[key]),tr);
     text('td',shellSummary(c),tr);
+    text('td',formatted(c.columns?.height_mm),tr);
     const failures=failedColumns(c).length;
     text('td',(c.feasible?'Fits / stable':'Fit needs review')+`; ${failures} recorded failed check${failures===1?'':'s'}`,tr);
   }
-  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=7;}
+  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=8;}
 }
 byId('reveal-pose').onclick=()=>{
   if(!selected)return;

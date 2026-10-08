@@ -757,3 +757,7 @@ Changing the active helper or disabling its box ends focused framing.
 The preview scale bar reports millimetres in the orthographic view plane and
 updates with zoom and helper framing. It is a viewing aid, not a surface-distance
 measurement. Its inset, like the axis compass, does not accept placement clicks.
+
+The pose table includes print height beside its shell and fit results, so sorting
+by height leaves the compared measurement visible. Missing heights remain
+**Not checked** and sort after measured values; sorting does not choose a pose.
