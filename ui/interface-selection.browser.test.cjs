@@ -11,7 +11,11 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await all.click();assert.equal(await box.locator('[data-interface-id]:checked').count(),count);assert(await all.isDisabled());
  assert(await checks.first().evaluate(e=>e===document.activeElement));
  assert.notEqual(await p.evaluate(()=>draftFormState()),before);
- assert.match(await status.innerText(),/Clearance is blank.*0 mm extra clearance/);
+ assert.match(await status.innerText(),/Clearance is blank.*still checks at 0 mm extra clearance/);
+ assert.match(await status.innerText(),/outside the modelled interface, with no extra gap/);
+ assert.match(await status.innerText(),/Unselected interfaces are not checked/);
+ assert.match(await box.locator('[data-clearance]').locator('..').innerText(),/blank still checks with no extra gap/);
+ assert.doesNotMatch(await box.innerText(),/leave blank until known/);
  assert.equal(await box.locator('[data-clearance]').inputValue(),'');
  assert.equal(await p.evaluate(()=>planInput().helper_regions[0].keep_clear.clearance_mm),null);
  assert.equal(await p.evaluate(()=>planInput().helper_regions[0].keep_clear.interface_ids.length),count);

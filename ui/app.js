@@ -376,7 +376,7 @@ function addHelper(region={}) {
   text('p',analysis?.keep_outs?.length?'Keep-outs to track for this helper (global constraints still apply):':'This table has no keep-out declarations. Use a newer table to record keep-out references.',keepOutRefs);
   if(analysis?.keep_outs?.length)text('p','Keep-outs are drawn only when you load matching geometry and enable them under Optional: preview part keep-outs. Selecting a reference records intent; use the exporter’s KEEP-OUT results to inspect the modelled geometry check.',keepOutRefs).className='hint';
   for(const item of analysis?.keep_outs||[]){const label=text('label','',keepOutRefs),check=document.createElement('input');check.type='checkbox';check.dataset.keepOutId=item.id;check.checked=region.keep_clear?.keep_out_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));const info=text('details','',keepOutRefs);text('summary',item.id+' constraint',info);text('p',item.rule||'No rule description supplied.',info);if(item.derivation)text('p',item.derivation,info);text('p',`Declared frame: ${item.frame||'unspecified'}. Model: ${item.type||'unspecified'}. Selection records intent; geometry checks run in the exporter.`,info);}
-  const clearanceLabel=text('label','Required clearance, mm (leave blank until known)',box),clearance=document.createElement('input');clearance.type='number';clearance.min='0';clearance.step='0.1';clearance.dataset.clearance='';clearance.value=region.keep_clear?.clearance_mm??'';clearanceLabel.append(clearance);
+  const clearanceLabel=text('label','Extra clearance, mm (blank still checks with no extra gap)',box),clearance=document.createElement('input');clearance.type='number';clearance.min='0';clearance.step='0.1';clearance.dataset.clearance='';clearance.value=region.keep_clear?.clearance_mm??'';clearanceLabel.append(clearance);
   const toggleLabel=text('label','',box),toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.spatial='';toggle.checked=!!region.geometry;toggleLabel.append(toggle,document.createTextNode(' Place a box-shaped planning region'));
   const spatial=text('div','',box);spatial.className='spatial';spatial.hidden=!toggle.checked;
   text('p','Design-frame millimetres. Centre and size stay attached to the part across print poses.',spatial);
@@ -566,8 +566,8 @@ function updateInterfaceCoverage(box){
  if(!checks.length){show('This table declares no interfaces to select. No KEEP-CLEAR checks can be requested here.');return;}
  if(!count){show(`0 of ${checks.length} interfaces selected. The exporter will produce no KEEP-CLEAR check for this helper. Select the interfaces it must keep clear.`);return;}
  const raw=box.querySelector('[data-clearance]').value,value=Number(raw);
- const clearance=raw===''?'Clearance is blank: the exporter uses 0 mm extra clearance.':!Number.isFinite(value)||value<0?'Enter a finite, nonnegative clearance before exporting.':`Requested extra clearance: ${value} mm.`;
- show(`${count} of ${checks.length} interfaces selected for exporter KEEP-CLEAR checks. ${clearance} Checks cover the modelled interface geometry; printed fit and assembly access remain separate.`);
+ const clearance=raw===''?'Clearance is blank: the exporter still checks at 0 mm extra clearance. The helper must stay outside the modelled interface, with no extra gap. Enter a value to require a gap.':!Number.isFinite(value)||value<0?'Enter a finite, nonnegative clearance before exporting.':`Requested extra clearance: ${value} mm.`;
+ show(`${count} of ${checks.length} interfaces selected for exporter KEEP-CLEAR checks. Unselected interfaces are not checked. ${clearance} Checks cover the modelled interface geometry; printed fit and assembly access remain separate.`);
 }
 function helperGeometrySummary(box){
  const prefix='Edit helper settings — ';
