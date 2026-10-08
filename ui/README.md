@@ -316,6 +316,11 @@ review, not optimised designs or physical qualifications.
 
 ## Review a mechanics sensitivity
 
+Withheld comparisons identify the first failed condition beside the summary and
+list every blocking domain, load, restraint, convergence or seat-conservation
+condition in the audit section. These explain the recorded model checks; they
+do not recommend changing physical restraints to obtain a solve.
+
 The review also accepts `fdmgen/density-weighted-mechanics-pilot@0.1` receipts.
 They retain their separate original-load policy and uncalibrated stiffness law
 `E/E0 = min(raw_density, 1)^power`, with no stiffness floor. The page shows the

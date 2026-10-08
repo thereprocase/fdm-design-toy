@@ -116,3 +116,17 @@ test('weighted mechanics pairs real p1/p3 receipts without changing their schema
   }
  }
 });
+
+test('mechanics withholding names load, solver and seat conservation failures',()=>{
+ const read=p=>JSON.parse(fs.readFileSync(path.join(__dirname,p)));
+ const weighted=read('../bench/receipts/occupancy-density-p1-sf16-r1.json');
+ assert.deepEqual(Review.mechanicsReasons(weighted),[]);
+ weighted.cases.project.audit.missing_load_l1_N=1;
+ weighted.cases.baseline.solve.true_relative_residual=.01;
+ const reasons=Review.mechanicsReasons(weighted);
+ assert(reasons.some(x=>x.includes('Project: 1 N')));assert(reasons.some(x=>x.includes('Shell-only: true relative residual')));
+ const binary=read('../bench/receipts/occupancy-connected-sensitivity-r1.json');
+ assert.deepEqual(Review.mechanicsReasons(binary),[]);
+ const name=Object.keys(binary.seats)[0];binary.seats[name].moment_error_N_mm=1;
+ assert.deepEqual(Review.mechanicsReasons(binary),[`${name}: seat moment error exceeds 1e-7 N mm.`]);
+});

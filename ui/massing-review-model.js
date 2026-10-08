@@ -168,19 +168,36 @@ const MassingReview = (() => {
   }
   return r;
  }
- function weightedComparable(r){
-  return ['full_solid','baseline','project'].every(name=>{
-   const c=r.cases[name],a=c.audit,f=c.fragment_removal,v=c.solve;
-   return a.status==='ready'&&a.reasons.length===0&&a.face_components===1&&a.missing_loaded_dofs===0&&a.missing_load_l1_N===0&&a.loaded_fixed_dofs===0&&a.restrained_rigid_modes===6&&f.removed_original_load_l1_N===0&&f.removed_fixed_dofs===0&&v?.status==='solved'&&v.cg_status===0&&v.true_relative_residual<=1e-8&&v.compliance_N_mm>0;
-  });
+ function mechanicsReasons(r){
+  const reasons=[],weighted=r.schema==='fdmgen/density-weighted-mechanics-pilot@0.1';
+  for(const [name,label] of [['full_solid','Full-body context'],['baseline','Shell-only'],['project','Project']]){
+   const c=weighted?r.cases[name]:null,a=weighted?c.audit:r.audits[name],v=weighted?c.solve:r.solves?.[name];
+   const note=message=>reasons.push(`${label}: ${message}`);
+   if(a.status!=='ready')note('retained domain audit is not ready.');
+   for(const reason of a.reasons)note('audit reports '+String(reason));
+   if(a.face_components!==1)note(`${a.face_components} face-connected components; one is required.`);
+   if(a.missing_loaded_dofs!==0)note(`${a.missing_loaded_dofs} loaded DOFs are absent.`);
+   if(a.loaded_fixed_dofs!==0)note(`${a.loaded_fixed_dofs} loaded DOFs are also fixed.`);
+   if(a.restrained_rigid_modes!==6)note(`${a.restrained_rigid_modes} of 6 rigid modes restrained.`);
+   if(weighted){
+    if(a.missing_load_l1_N!==0)note(`${a.missing_load_l1_N} N summed absolute nodal load is missing.`);
+    if(c.fragment_removal.removed_original_load_l1_N!==0)note('fragment removal lost original nodal load.');
+    if(c.fragment_removal.removed_fixed_dofs!==0)note('fragment removal lost fixed DOFs.');
+   }
+   if(v?.status!=='solved')note('no completed solve.');
+   else{
+    if(weighted&&v.cg_status!==0)note('solver did not report successful convergence.');
+    if(!(v.true_relative_residual<=1e-8))note('true relative residual exceeds 1e-8 or is missing.');
+    if(!(v.compliance_N_mm>0))note('positive compliance is not established.');
+   }
+  }
+  if(!weighted)for(const [name,seat] of Object.entries(r.seats)){
+   if(!(seat.force_error_N<=1e-9))reasons.push(`${name}: seat force error exceeds 1e-9 N.`);
+   if(!(seat.moment_error_N_mm<=1e-7))reasons.push(`${name}: seat moment error exceeds 1e-7 N mm.`);
+  }
+  return reasons;
  }
- function mechanicsComparable(r){
-  if(r.schema==='fdmgen/density-weighted-mechanics-pilot@0.1')return weightedComparable(r);
-  return ['full_solid','baseline','project'].every(name=>{
-   const a=r.audits[name],s=r.solves?.[name];
-   return a.status==='ready'&&a.reasons.length===0&&a.face_components===1&&a.missing_loaded_dofs===0&&a.loaded_fixed_dofs===0&&a.restrained_rigid_modes===6&&s?.status==='solved'&&s.true_relative_residual<=1e-8&&s.compliance_N_mm>0;
-  })&&Object.values(r.seats).every(s=>s.force_error_N<=1e-9&&s.moment_error_N_mm<=1e-7);
- }
- return {draft,pair,slice,contextMismatch,shell,shellComparison,mechanics,mechanicsComparable};
+ function mechanicsComparable(r){return mechanicsReasons(r).length===0;}
+ return {draft,pair,slice,contextMismatch,shell,shellComparison,mechanics,mechanicsComparable,mechanicsReasons};
 })();
 if(typeof module!=='undefined')module.exports=MassingReview;

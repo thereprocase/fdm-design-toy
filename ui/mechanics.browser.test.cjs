@@ -51,6 +51,8 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  badWeighted.cases.project.audit.missing_load_l1_N=1;
  await page.locator('#review-mechanics').setInputFiles({name:'synthetic-lost-load.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(badWeighted))});
  await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('No supported compliance comparison'));
+ assert.match(await page.locator('#mechanics-comparison').innerText(),/Project: 1 N summed absolute nodal load is missing/);
+ assert.deepEqual(await page.locator('[data-mechanics-reasons] li').allTextContents(),['Project: 1 N summed absolute nodal load is missing.']);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-slice').setInputFiles([]);await page.locator('#review-slice').setInputFiles(fixture('slice-evidence'));
  await page.waitForFunction(()=>document.querySelector('#mechanics-results').hidden);
