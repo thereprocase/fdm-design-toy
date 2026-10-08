@@ -770,3 +770,7 @@ Bed fit (BED-001) has its own pose-table column, separate from combined feasibil
 (BED-001 plus BED-002 in the bracket tables). A pose can fit the bed while failing
 contact/stability. Missing or unchecked bed-fit evidence stays **Not checked**;
 the producer's geometric fidelity note is retained on the cell.
+
+The pose identifier column stays visible while scrolling horizontally through
+comparison metrics, including on narrow screens. Its selected-row highlight and
+keyboard selection remain available beside the far-right fit results.
