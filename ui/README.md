@@ -711,3 +711,9 @@ The preview labels only the active helper by default to keep dense proposals
 readable. **Show all helper labels** restores every name when needed. All valid
 box outlines remain visible either way; this viewing preference does not change
 the draft or exclude helpers from export.
+
+When a bundle producer withholds paired shell or bridge deltas, review shows its
+first reason in the bundle summary and the full reason list verbatim as text.
+Producer-withheld shell comparisons do not display a numeric delta in the bundle
+view. These manifest notes are labelled producer-reported; receipt validation
+remains separate, and manifest numeric deltas are not promoted as validated results.

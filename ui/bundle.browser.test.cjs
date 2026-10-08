@@ -12,6 +12,18 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/122.1 mm/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/Ceiling model maxima: external not recorded; internal not recorded/);
+ // Synthetic withholding metadata exercises display, not measured producer evidence.
+ f.manifest.paired={'shell-check':{withheld:['Slicer profile differs <b>literal</b>','Raster methods differ']},'bridge-check':{withheld:['Bridge limits differ']}};
+ await page.locator('#review-bundle').setInputFiles(files());
+ await page.waitForFunction(()=>document.querySelector('#bundle-summary').textContent.includes('Slicer profile differs'));
+ assert.match(await page.locator('#bundle-summary').innerText(),/Slicer profile differs <b>literal<\/b>/);
+ assert.deepEqual(await page.locator('#bundle-withheld li').allTextContents(),['Slicer profile differs <b>literal</b>','Raster methods differ','Bridge limits differ']);
+ assert.equal(await page.locator('#bundle-withheld b').count(),0);
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/Producer withheld/);
+ assert.doesNotMatch(await page.locator('#shell-comparison-status').innerText(),/percentage points/);
+ f.manifest.paired={};await page.locator('#review-bundle').setInputFiles(files());
+ await page.waitForFunction(()=>document.querySelector('#bundle-withheld').hidden);
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
  // Synthetic additive ceiling measurement, with a freshly computed matching file hash.
  const ceiling=JSON.parse(f.files[3].buffer);ceiling.result.metrics.max_ceiling_span_external_mm=7.8;ceiling.result.metrics.max_ceiling_span_internal_mm=15.7;
  f.files[3].buffer=Buffer.from(JSON.stringify(ceiling));f.manifest.receipts[3].sha256=fixture.sha(f.files[3].buffer);

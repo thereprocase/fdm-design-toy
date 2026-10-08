@@ -188,6 +188,19 @@ el('review-bundle').onchange=async e=>{
   el('shell-baseline-status').textContent='Bundle baseline shell check matches the shell-only G-code and pose.';
   showReviewSection('bundle-results',!(false));el('bundle-status').textContent='All five receipt fingerprints verified; bundle matched this export.';
   el('bundle-summary').textContent='Loaded helper evidence, project shell check and baseline shell check together. Both bridge receipts are shown below.';
+
+  const withheld=el('bundle-withheld');withheld.replaceChildren();withheld.hidden=true;
+  for(const check of ['shell-check','bridge-check']){
+   const pair=bundle.manifest.paired?.[check];
+   if(!pair||!Object.hasOwn(pair,'withheld'))continue;
+   const reasons=Array.isArray(pair.withheld)&&pair.withheld.length&&pair.withheld.every(x=>typeof x==='string'&&x.trim())
+    ?pair.withheld:['Producer supplied no readable withholding reasons; inspect the complete manifest.'];
+   if(withheld.hidden){el('bundle-summary').textContent+=` Producer withheld ${check} comparison: ${reasons[0]}`;withheld.hidden=false;}
+   add('h3',`Producer withheld ${check} comparison`,withheld);
+   const list=add('ul','',withheld);for(const reason of reasons)add('li',reason,list);
+   if(check==='shell-check')el('shell-comparison-status').textContent=`Producer withheld this bundled comparison: ${reasons[0]} See the full reason list in the bundle section.`;
+  }
+  if(!withheld.hidden)add('p','These are the producer-reported reasons from the manifest. Receipt validation remains separate; no withheld numeric delta is promoted here.',withheld).className='hint';
   el('bundle-bridges').replaceChildren();
   for(const [kind,r]of Object.entries(bundle.bridges)){
    const row=add('article','',el('bundle-bridges')),m=r.result.metrics,num=v=>v.toLocaleString(undefined,{maximumFractionDigits:3});
