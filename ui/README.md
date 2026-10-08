@@ -668,3 +668,7 @@ warns when current edits are absent from that download. Reopening a draft,
 including a review handoff, clears previous export filenames and geometry-input
 summaries. Export again to populate them, or replace the template paths with
 your existing saved files.
+
+While surface placement is armed, an orbit gesture stays a drag once it travels
+at least four screen pixels from its press point, even if it returns there before
+release. It leaves placement armed for a subsequent deliberate click.

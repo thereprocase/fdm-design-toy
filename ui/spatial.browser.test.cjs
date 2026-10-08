@@ -44,6 +44,12 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await page.locator('#part-view').dispatchEvent('pointercancel',{pointerId:1});
   await page.locator('#part-view').dispatchEvent('pointerup',{clientX:hit[0],clientY:hit[1],pointerId:1});
   assert.equal(await page.evaluate(()=>window.pickCalls),0);assert(await page.evaluate(()=>!!viewer.onPick));
+  const beforeOrbit=await page.evaluate(()=>draftFormState());
+  await page.mouse.move(...hit);await page.mouse.down();
+  await page.mouse.move(hit[0]+30,hit[1],{steps:3});await page.mouse.move(...hit,{steps:3});await page.mouse.up();
+  assert.equal(await page.evaluate(()=>window.pickCalls),0);
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeOrbit);assert(await page.evaluate(()=>!!viewer.onPick));
+  await page.locator('#view-top').click();await page.waitForFunction(()=>!viewer.pending);
   await page.mouse.click(...hit);await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('Region centre placed'));
   assert.equal(await page.evaluate(()=>viewer.regions.length),1);
   await region.getByRole('button',{name:'Undo last centre move'}).click();
