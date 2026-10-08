@@ -16,6 +16,20 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   for(const [key,value] of Object.entries({name:'Seat backing',location:'Rear seat',purpose:'Seat load transfer',keep_clear:'Preserve rod bore'}))await region.locator(`[data-key="${key}"]`).fill(value);
   await region.locator('[data-interface-id="rear_seat"]').check();await region.locator('[data-spatial]').check();
   await page.locator('#zoom-in').click();assert(await page.evaluate(()=>viewer.zoom>1));await page.locator('#zoom-out').click();
+  const beforeViews=await page.evaluate(()=>({form:draftFormState(),pose:selected.id,vertices:Array.from(viewer.vertices)}));
+  for(const [id,yaw] of [['view-x',Math.PI/2],['view-y',0]]){
+    await page.locator('#zoom-in').click();await page.locator('#'+id).click();
+    assert.deepEqual(await page.evaluate(()=>[viewer.yaw,viewer.pitch,viewer.zoom]),[yaw,0,1]);
+    await page.waitForFunction(()=>!viewer.pending);
+    const axes=await page.evaluate(()=>{const p=viewer.project(0,0,0),z=viewer.project(0,0,1);return [z[0]-p[0],z[1]-p[1]];});
+    assert(Math.abs(axes[0])<1e-9&&axes[1]<0); // Print Z points up in both side views.
+    assert.deepEqual(await page.evaluate(()=>({form:draftFormState(),pose:selected.id,vertices:Array.from(viewer.vertices)})),beforeViews);
+  }
+  await page.setViewportSize({width:390,height:844});
+  assert(await page.locator('#view-x').isVisible());assert(await page.locator('#view-y').isVisible());
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.setViewportSize({width:1300,height:1000});
+
   await page.locator('#view-top').click();await region.getByRole('button',{name:'Place centre on part'}).click();
   const overlay=await page.locator('#part-view').boundingBox(),beforeOverlay=await page.evaluate(()=>({state:draftFormState(),yaw:viewer.yaw,pitch:viewer.pitch}));
   await page.evaluate(()=>{window.pickCalls=0;const pick=viewer.onPick;viewer.onPick=p=>{window.pickCalls++;pick(p);};});

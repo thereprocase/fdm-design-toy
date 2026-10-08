@@ -648,3 +648,8 @@ print Z points toward the viewer rather than upward on screen.
 The design-axis indicator is a noninteractive overlay: clicking or dragging it
 does not place helper centres or rotate the part. Cancelled pointer gestures do
 not leave a pending surface click.
+
+**Print +X side** and **Print +Y side** look toward the part from the respective
+positive print axis, with print Z upward on screen. These presets help inspect
+helper depth. Like Top view and Angled view, they reset zoom and change only the
+camera; the selected print pose and helper coordinates remain unchanged.

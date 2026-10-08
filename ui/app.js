@@ -17,6 +17,7 @@ function updatePreview(){
 }
 byId('zoom-in').onclick=()=>viewer.zoomBy(1.4);byId('zoom-out').onclick=()=>viewer.zoomBy(1/1.4);
 byId('view-iso').onclick=()=>viewer.view('iso');byId('view-top').onclick=()=>viewer.view('top');
+byId('view-x').onclick=()=>viewer.view('print-x');byId('view-y').onclick=()=>viewer.view('print-y');
 byId('mesh-file').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;cancelSurfacePlacement();const request=++meshRequest;
  try{if(file.size>100*1024*1024)throw Error('Preview supports STL files up to 100 MB.');const raw=await file.arrayBuffer(), hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',raw)),b=>b.toString(16).padStart(2,'0')).join('');

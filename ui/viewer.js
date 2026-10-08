@@ -70,7 +70,10 @@ class PartViewer {
   setRegions(regions){this.regions=regions;this.schedule();}
   clear(){this.vertices=null;this.onPick=null;this.canvas.style.cursor='';this.schedule();}
   zoomBy(factor){this.zoom=Math.max(.5,Math.min(8,this.zoom*factor));this.schedule();}
-  view(name){this.yaw=name==='top'?0:-.65;this.pitch=name==='top'?Math.PI/2:.65;this.zoom=1;this.schedule();}
+  view(name){
+    const angles={top:[0,Math.PI/2],'print-x':[Math.PI/2,0],'print-y':[0,0],iso:[-.65,.65]};
+    [this.yaw,this.pitch]=angles[name]||angles.iso;this.zoom=1;this.schedule();
+  }
   schedule(){if(this.pending)return;this.pending=true;requestAnimationFrame(()=>{this.pending=false;this.draw();});}
   draw(){
     const canvas=this.canvas, width=canvas.clientWidth,height=canvas.clientHeight,dpr=window.devicePixelRatio||1;
