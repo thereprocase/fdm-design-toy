@@ -601,3 +601,33 @@ Use `--coarse-solver pinv` to compare a dense pseudoinverse on the coarsest
 operator with the default sparse LU (`splu`). The receipt records this choice
 per row. No fine-grid operator, loads or restraints are changed. This option is
 an experimental numerical comparison, not an automatic repair or new default.
+
+Coarse-pseudoinverse comparison
+(`receipts/bracket-r1-strength-pinv-emin003.json`, harness `495e9ec`) reruns
+exactly the preceding three banded cases with `--coarse-solver pinv`. Every
+recorded mask, load, restraint, density, stiffness, active-DOF, constitutive and
+strength input matches the LU receipt. Only the coarse solver changes.
+
+| Strength theta | LU CG / residual | Pseudoinverse CG / residual |
+|---:|---:|---:|
+| 0 | 150 cap / 0.0198 | 150 cap / 0.0198 |
+| 0.08 | 150 cap / 248.1 | **59 / 7.29e-7** |
+| 0.25 | 150 cap / 11.61 | 150 cap / 11.61 |
+
+The 0.08 case reaches the 1e-6 residual target; the other two still fail, so the
+benchmark exits 2. This demonstrates a strong interaction between strength
+filtering and the coarse solve on this case, not that positive thresholds are
+universally beneficial or that a pseudoinverse fixes every hierarchy. In
+particular, the default case's slow convergence remains unresolved. Defaults
+stay unchanged. No comparison of converged compliance against the failed LU
+iterates is justified, and there is no independent full-bracket direct solution
+in this receipt.
+
+For the converged case, hierarchy setup took 7.90 s and the CG call 12.96 s,
+including diagnostic residual matvecs and the lazy coarse factorization. These
+are shared CPU timings, not GPU performance. The 59 iterations still exceed
+the <=40 gate, and this R1 single-case run does not cover the required finer
+grid, other material cases or mixed precision. Remote suite: 263 passed,
+6 CUDA-only skips; small direct-reference controls include both coarse solvers
+at all three thresholds. Source/input hashes were verified, and all three
+residual histories exactly reproduced the preceding private diagnostic run.
