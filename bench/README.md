@@ -994,3 +994,34 @@ T0 sustained-effective card, not a sweep of its uncertainty intervals. These
 CPU reference iterations target 1e-9 and do not establish the GPU iteration or
 wall-time gate. Setup includes assembling both operators; the receipt records
 the cost separately from the solve.
+
+### Auxiliary AMG transfer pack (CPU stage)
+
+`amg_transfer.py` exports the residual-block-Jacobi auxiliary hierarchy used in
+GPU transfer experiments. The physical matrix remains TI; the auxiliary matrix
+uses isotropic E = 1,000 MPa and nu = 0.3 with the same weights and constraints.
+It records a converged CPU reference, two V-cycle probe vectors, explicit
+restriction matrices, source/input hashes and assembly/hierarchy/solve timings.
+It refuses an unconverged CPU reference. This is an experimental benchmark, not
+a replacement for the production solver or its pinned Warp version.
+
+```bash
+python bench/amg_transfer.py --case cube --out out/transfer/cube.npz
+python bench/amg_transfer.py --case bracket --root /path/to/part-checkout \
+  --reference bench/receipts/bracket-grid-h08.json --occupancy shell-only.npz \
+  --card catalog/materials/polymaker-polylite-asa-t0.yaml \
+  --basis sustained_effective --out out/transfer/bracket.npz
+```
+
+The bracket mode uses all positive-density cells, capped linear density and the
+original nodal loads/restraints. It refuses an incompatible frame/grid or a failed
+domain audit; it adds no floor, component filtering or load transfer. The cube
+also stores a sparse-direct solution as a known answer. Outputs are an NPZ and
+its JSON manifest (`fdmgen/amg-transfer@0.1`). Keep both together. The Python
+`load_pack(path, expected_sha256)` reader verifies the whole file, array hashes,
+sparse bounds, hierarchy dimensions and R = P transpose before device upload.
+
+CPU export needs the same existing SciPy/PyAMG environment as the other AMG
+pilots. No GPU package is needed for this stage. GPU execution is a separate
+benchmark stage; a short solve segment excludes CPU setup, transfer and upload
+and does not establish the optimiser's time budget or the P0-H gate.
