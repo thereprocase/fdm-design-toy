@@ -854,7 +854,8 @@ The workspace asks before a valid replacement table or saved draft discards edit
 since the last open/download checkpoint. Cancel preserves the current form,
 including incomplete numeric fields. Invalid incoming files leave it intact
 without a discard prompt. Browsers that support departure warnings also warn
-before leaving an edited plan. This is not autosave: export the draft to keep it.
+before leaving an edited plan. This is not autosave: export a completed draft, or
+download a work snapshot to preserve unfinished inputs.
 
 Draft downloads use the part and pose identifiers, for example
 `spool-rack-g2-ef-facet-00-massing-plan.json`. Filename segments use safe ASCII
@@ -1064,3 +1065,20 @@ Each helper shows how many interfaces are selected for exporter KEEP-CLEAR check
 clearance field. A blank clearance remains unspecified in the draft; the exporter
 uses 0 mm extra clearance, which the UI now states explicitly. Reopened drafts
 keep their saved selections. This summary is planning intent, not a geometry check.
+
+### Keep unfinished work
+
+**Save unfinished work → Download work snapshot** saves raw form values, including
+blank dimensions and incomplete notes. Reopen the exact source orientation table,
+then use **Reopen work snapshot**. A mismatched or malformed snapshot is refused
+before any current edits are discarded. Valid replacement asks before discarding
+edits. Keep the snapshot and **Download exact source table** file together.
+
+This separate `fdmgen.work-snapshot.v0.1` browser format is not accepted by the
+massing CLI. It preserves the selected pose, shell fields, all helper inputs
+(including hidden helpers in shell-only mode), and historical proposal metadata.
+It excludes other poses’ notes, meshes, receipts, camera and undo history.
+Nothing is saved automatically. A snapshot checkpoint only records a requested
+file download, not that the browser retained it. Complete the required fields
+and **Export planning draft** before running the exporter; existing validation
+and evidence requirements still apply.

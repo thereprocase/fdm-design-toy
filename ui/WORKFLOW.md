@@ -396,3 +396,13 @@ Use **Download exact source table** in the export handoff section for drafts and
 massing exports made from the enriched workspace. Keep the original root table
 for rerunning `orient-evidence`; the enriched download does not replace that input. Recorded G-code/source hashes are provenance; the browser does not
 open those inputs or rerun the checks.
+
+## Pause with incomplete helper inputs
+
+Use **Save unfinished work → Download work snapshot** if dimensions or required
+notes are still incomplete. Also download the exact source table. To resume,
+open that table first, then **Reopen work snapshot**. The snapshot preserves raw
+inputs for the selected pose and all helpers, including original proposal metadata.
+It does not save meshes, receipts, other poses’ notes or undo history, and is not
+an input to `fdmgen massing`. Finish the form and **Export planning draft** before
+following the CLI steps. No checks run when a snapshot is saved or reopened.

@@ -1,0 +1,43 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));let accept=true,dialogs=0;p.on('dialog',d=>{dialogs++;return accept?d.accept():d.dismiss();});
+ const table=path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json');
+ const open=()=>p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+ await open();await p.locator('#table-file').setInputFiles(table);await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));
+ await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===6);
+ const box=p.locator('.helper-region').first();await box.locator('details.helper-editor').evaluate(e=>e.open=true);
+ await box.locator('[data-geometry="size_mm"]').first().fill('');await box.locator('[data-clearance]').fill('');await box.locator('[data-key="purpose"]').fill('Unfinished <note> & rationale');
+ await p.locator('#walls').fill('');const before=await p.evaluate(()=>draftFormState()),proposal=await p.evaluate(()=>proposalOrigin);
+ await p.locator('#work-snapshot').evaluate(e=>e.open=true);
+ const downloadEvent=p.waitForEvent('download');await p.locator('#save-work').click();const download=await downloadEvent;
+ const raw=JSON.parse(require('node:fs').readFileSync(await download.path(),'utf8'));
+ assert.equal(raw.schema,'fdmgen.work-snapshot.v0.1');assert.equal(raw.walls,'');assert.equal(raw.helpers[0].fields['size_mm:0'],'');assert.deepEqual(raw.proposal,proposal);
+ assert.equal(await p.evaluate(()=>hasDraftEdits()),false);assert.match(await p.locator('#draft-edit-state').innerText(),/not an export-ready draft/);
+ await open();await p.locator('#table-file').setInputFiles(table);
+ await p.locator('#work-snapshot').evaluate(e=>e.open=true);
+ const upload=async value=>{await p.locator('#work-file').setInputFiles({name:'work.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});await p.waitForFunction(()=>document.getElementById('work-file').value==='');};
+ await upload(raw);await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===6);
+ assert.equal(await p.evaluate(()=>draftFormState()),before);assert.deepEqual(await p.evaluate(()=>proposalOrigin),proposal);
+ assert.match(await p.locator('#work-status').innerText(),/No checks were rerun/);assert.equal(await p.evaluate(()=>hasDraftEdits()),false);
+ await p.locator('#export').click();assert.match(await p.locator('#export-status').innerText(),/walls/i);assert.equal(await p.evaluate(()=>draftFormState()),before);
+ await p.locator('#walls').fill('5');const edited=await p.evaluate(()=>draftFormState());
+ accept=false;await upload(raw);assert.match(await p.locator('#work-status').innerText(),/cancelled/);assert.equal(await p.evaluate(()=>draftFormState()),edited);accept=true;
+ const count=dialogs;
+ for(const bad of [{...raw,orientation_table_sha256:'0'.repeat(64)},{...raw,pose:'absent'},{...raw,helpers:[raw.helpers[0],raw.helpers[0]]},{...raw,helpers:[{...raw.helpers[0],fields:{...raw.helpers[0].fields,'size_mm:0':null}}]}]){
+  await upload(bad);assert.match(await p.locator('#work-status').innerText(),/Could not reopen work/);assert.equal(await p.evaluate(()=>draftFormState()),edited);
+ }
+ assert.equal(dialogs,count);assert(await p.evaluate(()=>hasDraftEdits()));
+ // Hidden helper fields remain recoverable even when shell-only is selected.
+ const hidden={...raw,shell_only:true};await upload(hidden);
+ assert(await p.locator('#helper-panel').isHidden());assert.equal(await p.locator('.helper-region').count(),6);
+ assert.deepEqual(await p.evaluate(()=>workSnapshot().helpers),raw.helpers);
+ await p.locator('#shell-only').uncheck();
+ const restored=p.locator('.helper-region').first();await restored.locator('details.helper-editor').evaluate(e=>e.open=true);
+ const dimension=restored.locator('[data-geometry="size_mm"]').first();await dimension.fill('17');await dimension.blur();
+ await restored.getByRole('button',{name:'Undo dimension edit',exact:true}).click();assert.equal(await dimension.inputValue(),'');
+ await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));
+ await p.waitForFunction(()=>document.getElementById('draft-status').textContent.includes('Draft restored'));
+ assert.equal(await p.locator('#work-status').textContent(),'');
+ assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ console.log('PASS unfinished work actual download/reload, raw blanks, proposal, export refusal, cancellation, mismatch/malformed preservation and mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

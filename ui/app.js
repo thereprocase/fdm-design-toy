@@ -503,6 +503,7 @@ function showReviewContext(context,helper){
  byId('review-edit-context-source').textContent=JSON.stringify(context,null,2);helper.querySelector('[data-key="name"]').closest('label').after(reviewContextPanel);reviewContextPanel.hidden=false;
 }
 function resetPlan(){
+ byId('work-status').textContent='';
  clearReviewContext();
   renderPlanningPose();
   cancelSurfacePlacement();clearDraftError();
@@ -537,8 +538,8 @@ function updateDraftState(){
  const label=byId('draft-edit-state');label.className=changed?'warning':'hint';
  label.textContent=draftCheckpointKind==='new'
   ?(changed?'Draft edited. Download it to keep these changes.':'No draft downloaded in this session.')
-  :changed?`Changes since ${draftCheckpointKind==='opened'?'reopening':'the last download'}. Export an updated draft before running checks.`
-  :`No edits since ${draftCheckpointKind==='opened'?'reopening this draft':'the last draft download'}.`;
+  :changed?`Changes since ${draftCheckpointKind==='snapshot'?'the work snapshot':draftCheckpointKind==='opened'?'reopening':'the last download'}. Export an updated draft before running checks.`
+  :`No edits since ${draftCheckpointKind==='snapshot'?'the work snapshot (not an export-ready draft)':draftCheckpointKind==='opened'?'reopening this draft':'the last draft download'}.`;
  const handoff=byId('handoff-snapshot');handoff.className=changed?'warning':'hint';
  handoff.textContent=draftCheckpointKind==='downloaded'
   ?changed?'The commands below describe the last downloaded draft. Current edits are not included; export an updated draft before running them.':'The commands below describe the last downloaded draft. Use the actual saved filenames on your worker.'
@@ -547,7 +548,7 @@ function updateDraftState(){
 }
 function checkpointDraft(kind){draftCheckpointKind=kind;draftCheckpoint=draftFormState();updateDraftState();}
 function hasDraftEdits(){return draftCheckpoint!==null&&draftFormState()!==draftCheckpoint;}
-function allowDraftReplacement(action){return !hasDraftEdits()||confirm(`Discard current draft edits and ${action}? Cancel to export your current draft first.`);}
+function allowDraftReplacement(action){return !hasDraftEdits()||confirm(`Discard current draft edits and ${action}? Cancel to download your draft or save unfinished work first.`);}
 window.addEventListener('beforeunload',event=>{if(hasDraftEdits()){event.preventDefault();event.returnValue='';}});
 document.addEventListener('input',event=>{
  if(event.target.matches('#rationale,#walls,#skin,#shell-only,.helper-region input,.helper-region textarea'))updateDraftState();
@@ -638,6 +639,68 @@ byId('draft-file').onchange=async event=>{
     restoreDraft(raw);
   }catch(error){if(openRequest!==draftRequest)return;byId('draft-status').textContent='Could not reopen draft: '+error.message;}
 };
+// Work snapshots preserve raw values; they deliberately do not use the backend draft schema.
+function workFieldKey(field){
+ if(field.dataset.key)return 'text:'+field.dataset.key;
+ if(field.hasAttribute('data-interface-id'))return 'interface:'+field.dataset.interfaceId;
+ if(field.hasAttribute('data-keep-out-id'))return 'keepout:'+field.dataset.keepOutId;
+ if(field.hasAttribute('data-clearance'))return 'clearance';
+ if(field.hasAttribute('data-spatial'))return 'spatial';
+ return field.dataset.geometry+':'+field.dataset.axis;
+}
+function workSnapshot(){
+ if(!analysis||!selected||!fingerprint)throw Error('Open an orientation table and choose a pose first.');
+ return {schema:'fdmgen.work-snapshot.v0.1',orientation_table_sha256:fingerprint,pose:selected.id,
+  walls:byId('walls').value,skin:byId('skin').value,rationale:byId('rationale').value,shell_only:byId('shell-only').checked,
+  proposal:proposalOrigin,
+  helpers:[...byId('helper-regions').children].map(box=>({id:box.dataset.id,fields:Object.fromEntries(
+   [...box.querySelectorAll('input,textarea')].map(f=>[workFieldKey(f),f.type==='checkbox'?f.checked:f.value]))}))};
+}
+function validateWorkSnapshot(raw){
+ const fail=message=>{throw Error(message);};
+ if(raw?.schema!=='fdmgen.work-snapshot.v0.1')fail('Unsupported work snapshot format.');
+ if(!analysis||raw.orientation_table_sha256!==fingerprint)fail('Open the exact orientation table used by this snapshot first.');
+ const candidate=analysis.candidates.find(c=>c.id===raw.pose);if(!candidate)fail('Snapshot pose is absent from this table.');
+ const numeric=value=>{if(typeof value!=='string')return false;const field=document.createElement('input');field.type='number';field.value=value;return field.value===value&&(value===''||Number.isFinite(Number(value)));};
+ if(!numeric(raw.walls)||!numeric(raw.skin)||typeof raw.rationale!=='string'||typeof raw.shell_only!=='boolean')fail('Invalid snapshot shell inputs or notes.');
+ if(raw.proposal!==null&&(!raw.proposal||typeof raw.proposal!=='object'||Array.isArray(raw.proposal)||typeof raw.proposal.generator!=='string'||!raw.proposal.generator.trim()))fail('Invalid proposal metadata.');
+ if(!Array.isArray(raw.helpers)||raw.helpers.length>1000)fail('Invalid snapshot helper list (maximum 1000).');
+ const texts=['name','location','purpose','keep_clear'].map(k=>'text:'+k);
+ const numbers=['clearance',...['center_mm','size_mm'].flatMap(k=>[0,1,2].map(a=>k+':'+a))];
+ const checks=['spatial',...(analysis.interfaces||[]).map(x=>'interface:'+x.id),...(analysis.keep_outs||[]).map(x=>'keepout:'+x.id)];
+ const keys=[...texts,...numbers,...checks],ids=new Set();
+ for(const h of raw.helpers){
+  if(!h||typeof h.id!=='string'||!h.id||ids.has(h.id))fail('Snapshot helper identifiers must be nonempty and unique.');ids.add(h.id);
+  const f=h.fields;if(!f||typeof f!=='object'||Array.isArray(f)||Object.keys(f).length!==keys.length||keys.some(k=>!Object.hasOwn(f,k)))fail('Snapshot helper fields do not match this table.');
+  if(texts.some(k=>typeof f[k]!=='string')||numbers.some(k=>!numeric(f[k]))||checks.some(k=>typeof f[k]!=='boolean'))fail('Invalid snapshot helper values.');
+ }
+ return candidate;
+}
+byId('save-work').onclick=()=>{
+ try{const raw=workSnapshot();validateWorkSnapshot(raw);downloadFile(JSON.stringify(raw,null,2)+'\n','unfinished-work.json');
+  resetHandoff();checkpointDraft('snapshot');byId('work-status').textContent='Work snapshot downloaded. Keep it with the exact source table. Complete the form and export a planning draft before running the exporter.';
+ }catch(error){byId('work-status').textContent='Could not save work: '+error.message;}
+};
+byId('work-file').onchange=async event=>{
+ const file=event.target.files[0];if(!file)return;const request=tableRequest,openRequest=++draftRequest;
+ try{
+  const raw=JSON.parse(await file.text());if(openRequest!==draftRequest)return;
+  if(request!==tableRequest)throw Error('The analysis changed while opening the snapshot. Open it again.');
+  const candidate=validateWorkSnapshot(raw);
+  if(!allowDraftReplacement('reopen this work snapshot')){byId('work-status').textContent='Snapshot replacement cancelled. Current edits are unchanged.';return;}
+  clearRemovalHistory();clearDraftError();clearReviewContext();cancelSurfacePlacement();
+  proposalOrigin=raw.proposal;renderProposal();choose(candidate);
+  byId('walls').value=raw.walls;byId('skin').value=raw.skin;byId('rationale').value=raw.rationale;decisions.set(candidate.id,raw.rationale);
+  byId('shell-only').checked=raw.shell_only;byId('helper-panel').hidden=raw.shell_only;byId('helper-regions').replaceChildren();
+  for(const helper of raw.helpers){const box=addHelper({id:helper.id,geometry:{center_mm:[0,1,2].map(a=>helper.fields['center_mm:'+a]),size_mm:[0,1,2].map(a=>helper.fields['size_mm:'+a])}});
+   for(const f of box.querySelectorAll('input,textarea')){const value=helper.fields[workFieldKey(f)];if(f.type==='checkbox')f.checked=value;else f.value=value;}
+   box.querySelector('legend').textContent=helper.fields['text:name'].trim()||'Helper region';box.querySelector('.spatial').hidden=!helper.fields.spatial;
+  }
+  resetHandoff();byId('draft-status').textContent='';byId('export-status').textContent='';updateRegions();checkpointDraft('snapshot');
+  byId('work-status').textContent='Unfinished work restored. Required fields may still be incomplete; export a planning draft to validate them. No checks were rerun.';
+ }catch(error){if(openRequest===draftRequest)byId('work-status').textContent='Could not reopen work: '+error.message;}
+ finally{event.target.value='';}
+};
 function invalidDraftField(){
  const walls=byId('walls'),skin=byId('skin'),w=Number(walls.value),s=Number(skin.value);
  if(!Number.isInteger(w)||w<1||w>20)return walls;
@@ -718,6 +781,7 @@ byId('export').onclick=()=>{
 
 function restoreDraft(raw){
     const restored=Plan.restore(raw,analysis,fingerprint),input=restored.input;
+    byId('work-status').textContent='';
     clearRemovalHistory();
     clearDraftError();clearReviewContext();
     proposalOrigin=input.proposal||null;renderProposal();
