@@ -334,6 +334,9 @@ function renderOrientationBundle(bundle){
   text('p','Recorded G-code SHA-256: '+slice.gcode_sha256,row).className='hint';
   for(const item of bundle.receipts.filter(r=>r.entry.pose===slice.pose)){
    const details=text('details','',row);text('summary',item.receipt.result.rule+' · T · '+item.entry.verdict+' · '+item.entry.check,details);
+   const profile=item.receipt.gcode?.print_settings_id;
+   text('p','Recorded process profile: '+(typeof profile==='string'&&profile.trim()?profile:'Not recorded'),details).dataset.processProfile='';
+   text('p','This is the receipt’s profile identifier, not confirmation that the production process is bound. Confirm the production profile in the owner-decision discussion.',details).className='hint';
    text('p','Receipt SHA-256: '+item.entry.sha256,details);text('pre',JSON.stringify(item.receipt,null,2),details);
   }
  }

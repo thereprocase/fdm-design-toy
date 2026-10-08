@@ -12,6 +12,9 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#orientation-bundle-status').textContent.startsWith('Complete bundle verified'));
  assert.match(await page.locator('#orientation-bundle-count').innerText(),/2 pose slices; 4 receipt fingerprints checked; 2 FAIL/);
  assert.equal(await page.locator('[data-bundle-pose]').count(),2);
+ assert.equal(await page.locator('[data-process-profile]').count(),4);
+ assert((await page.locator('[data-process-profile]').allTextContents()).every(v=>v==='Recorded process profile: Part P1S ASA 4w 8-skin screen'));
+
  assert.match(await page.locator('#orientation-bundle-scope').innerText(),/not opened by this browser/);
  await page.getByRole('button',{name:'Review facet-01',exact:true}).click();
  assert.equal(await page.locator('#pose-name').innerText(),'facet-01');assert.match(await page.locator('#pose-bridges').innerText(),/52.2 mm/);
