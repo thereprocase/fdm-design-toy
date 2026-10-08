@@ -13,8 +13,25 @@ if [[ ! -x "$CHROMIUM_PATH" ]]; then
   echo 'Install the Playwright Chromium browser or set CHROMIUM_PATH' >&2
   exit 2
 fi
-node --test ui/bridge-locations.test.cjs ui/orient-bundle.test.cjs ui/keepout-render.test.cjs ui/plan.test.cjs ui/viewer.test.cjs ui/coupon-evidence.test.cjs ui/massing-review-model.test.cjs ui/evidence-bundle.test.cjs
-for check in orient-bundle orient-roads planning toolpath coupons spatial capabilities massing-review review-edit keep-outs proposal mechanics shell-review bundle enriched-review bridge-review unsaved; do
-  node "ui/$check.browser.test.cjs"
+# Discover new regressions automatically, without running browser scripts in Node's
+# parallel test worker pool. The legacy mesh smoke test has a distinct filename.
+export LC_ALL=C
+shopt -s nullglob
+unit_checks=()
+for check in ui/*.test.cjs; do
+  case "$check" in
+    *.browser.test.cjs|ui/browser.test.cjs) ;;
+    *) unit_checks+=("$check") ;;
+  esac
 done
-node ui/browser.test.cjs
+browser_checks=(ui/*.browser.test.cjs ui/browser.test.cjs)
+if (( ${#unit_checks[@]} == 0 || ${#browser_checks[@]} == 0 )); then
+  echo 'Expected both Node and browser regression files' >&2
+  exit 2
+fi
+printf 'Running %d Node test files and %d browser scripts (sequential browser runs)\n' "${#unit_checks[@]}" "${#browser_checks[@]}"
+node --test "${unit_checks[@]}"
+for check in "${browser_checks[@]}"; do
+  printf 'Browser check: %s\n' "$check"
+  node "$check"
+done

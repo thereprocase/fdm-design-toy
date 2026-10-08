@@ -135,10 +135,10 @@ checks real measured and unmeasured candidates, filter behavior and mobile layou
 ## Run all UI checks on a test worker
 
 Keep browser automation and full Python suites off the development laptop. Copy a
-source snapshot and the matching part fixture to the compute box, then run inside
+source snapshot and the matching part fixture to an available test worker, then run inside
 a named detached tmux job with a log and exit-code file. No GPU is needed for
-these browser checks. Install Node and Playwright in a separate tools directory;
-install its Chromium browser and system libraries on the worker.
+these browser checks. Use the worker’s existing Node, Playwright and Chromium
+installation; Playwright stays outside the project dependencies.
 
 ```bash
 export NODE_PATH=/path/to/browser-tools/node_modules
@@ -148,8 +148,11 @@ bash ui/run-tests.sh
 ```
 
 The runner uses Playwright's installed Chromium unless `CHROMIUM_PATH` is set.
-It requires the real mesh fixture and runs all Node checks plus the planning,
-pose-toolpath, coupon, spatial-editing and mesh-import browser checks sequentially.
+It requires the real mesh fixture. It discovers `ui/*.test.cjs` Node checks and
+`ui/*.browser.test.cjs` browser scripts, plus the legacy `ui/browser.test.cjs`
+mesh smoke test. Browser scripts run sequentially, outside the Node test worker
+pool. New regressions following those filenames are included automatically;
+the log lists each browser script before running it.
 A missing fixture or browser is an error, not a silently skipped check. Run the
 Python suite separately; the UI runner does not establish solver correctness.
 
