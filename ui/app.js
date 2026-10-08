@@ -800,6 +800,7 @@ byId('draft-file').onchange=async event=>{
     if(!allowDraftReplacement('open this saved draft')){byId('draft-status').textContent='Draft replacement cancelled. Current edits are unchanged.';event.target.value='';return;}
     restoreDraft(raw);
   }catch(error){if(openRequest!==draftRequest)return;byId('draft-status').textContent='Could not reopen draft: '+error.message;}
+  finally{if(openRequest===draftRequest)event.target.value='';}
 };
 // Work snapshots preserve raw values; they deliberately do not use the backend draft schema.
 function workFieldKey(field){
