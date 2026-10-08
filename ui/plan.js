@@ -62,7 +62,12 @@ const Plan = (() => {
   function restore(draft,analysis,hash) {
     if(!['fdmgen.massing-plan.v0.1','fdmgen.massing-plan.v0.2',schema].includes(draft?.schema))throw Error('Unsupported planning draft format.');
     if(!analysis)throw Error('Load the source orientation table before opening its draft.');
-    if(draft.source?.orientation_table_sha256!==hash)throw Error('This draft belongs to a different orientation table. Load its original table first.');
+    if(draft.source?.orientation_table_sha256!==hash){
+      const expected=draft.source?.orientation_table_sha256;
+      const hint=typeof expected==='string'&&/^[a-f0-9]{64}$/.test(expected)
+        ?` Required table SHA256: ${expected}. If saved with Download exact source table, look for orientation-table-${expected.slice(0,12)}.json. The full fingerprint must match; renaming a different table will not fix this.`:'';
+      throw Error('This draft belongs to a different orientation table. Load its original table first.'+hint);
+    }
     const candidate=analysis.candidates.find(c=>c.id===draft.orientation?.id);
     if(!candidate)throw Error('The selected pose is missing from this table.');
     const m=draft.massing;

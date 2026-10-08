@@ -37,3 +37,5 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 .helper-editor>summary{cursor:pointer;margin-bottom:12px;color:#245c47}
 
 .geometry-group + .geometry-group{margin-top:16px}.geometry-group h4{margin:0 0 10px;font-size:.9rem}
+
+#draft-status{overflow-wrap:anywhere}

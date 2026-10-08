@@ -743,3 +743,8 @@ displayed. Accepting a new orientation table still clears the old mesh.
 **Return to helper** reopens a folded editor and reveals its centre field. For a
 helper without an enabled box, it focuses the name instead. Navigation preserves
 the draft; keyboard/mobile browser checks cover both cases.
+
+When a saved draft requires another source table, the import error names its
+full required fingerprint and the suggested exact-table download filename.
+Renaming another table cannot satisfy that fingerprint; current edits remain
+available while the correct source is located.

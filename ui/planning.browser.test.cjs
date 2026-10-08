@@ -128,8 +128,12 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since reopening this draft/);
   assert.equal(await page.locator('#walls').inputValue(),'4');assert.equal(await page.locator('.helper-region').count(),2);assert.deepEqual(await download(),original);assert(await page.locator('#undo-remove').isDisabled());
   await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();
+  const beforeWrongTable=await page.evaluate(()=>draftFormState());
   const wrong=structuredClone(original);wrong.source.orientation_table_sha256='0'.repeat(64);await upload(wrong);
   await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.includes('different orientation table'));assert.equal(await page.locator('.helper-region').count(),1);
+  assert.match(await page.locator('#draft-status').innerText(),/orientation-table-000000000000\.json/);
+  assert((await page.locator('#draft-status').innerText()).includes('Required table SHA256: '+'0'.repeat(64)));
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeWrongTable);
   assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   assert(await page.locator('#undo-remove').isEnabled());await page.locator('#undo-remove').click();assert.deepEqual(await download(),original);
   await page.locator('#shell-only').check();assert.deepEqual((await download()).massing.helper_regions,[]);assert.match(await page.locator('#handoff-readiness').innerText(),/geometry inputs needed/);

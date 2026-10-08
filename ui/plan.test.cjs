@@ -129,3 +129,12 @@ test('pose import matches rigid rotation and build-direction contract',()=>{
  assert.throws(()=>Plan.validatePose({...pose,build_dir_design:[0,1,0]}),/lift/);
  assert.throws(()=>Plan.validatePose({...pose,build_dir_design:[0,0,2]}),/lift/);
 });
+
+test('wrong-table recovery identifies exact saved table without trusting malformed hashes',()=>{
+ const draft=Plan.create(analysis,hash,candidate,input);
+ assert.throws(()=>Plan.restore(draft,analysis,'c'.repeat(64)),error=>
+   error.message.includes(`Required table SHA256: ${hash}`)&&error.message.includes('orientation-table-aaaaaaaaaaaa.json')&&error.message.includes('full fingerprint must match'));
+ draft.source.orientation_table_sha256='../untrusted';
+ assert.throws(()=>Plan.restore(draft,analysis,hash),error=>
+   error.message.includes('different orientation table')&&!error.message.includes('../untrusted')&&!error.message.includes('look for'));
+});
