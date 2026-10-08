@@ -63,7 +63,7 @@ function scalePanel(width,height){return {x:width-Math.min(100,width*.25)-24,y:h
 const AXIS_PANEL={x:8,y:8,width:122,height:116};
 class PartViewer {
   constructor(canvas) {
-    this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;this.focusId=null;this.bed=null;this.keepouts=[];
+    this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;this.focusId=null;this.bed=null;this.keepouts=[];this.interfaces=[];
     let start=null,down=null,dragged=false,pointer=null;
     const onOverlay=e=>{
       const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
@@ -86,6 +86,7 @@ class PartViewer {
     new ResizeObserver(()=>this.schedule()).observe(canvas);
   }
   setRoadWitness(witness){this.roadWitness=witness;this.schedule();}
+  setInterfaces(items){this.interfaces=items;this.schedule();}
   setKeepouts(items){this.keepouts=items;this.schedule();}
   setBed(bed){this.bed=bedFootprint(bed);this.bedMargin=bedInset(bed);this.schedule();}
   set(vertices,R,t){this.focusId=null;this.R=R;this.t=t;this.vertices=transformMesh(vertices,R,t);this.schedule();}
@@ -130,6 +131,14 @@ class PartViewer {
     // Render-only constraints remain separate from body triangles and helper picking.
     for(const item of this.keepouts){
       ctx.strokeStyle=item.type==='box'?'rgba(155,35,117,.8)':'rgba(155,35,117,.12)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();
+      for(const line of item.lines){
+        const v=transformMesh(line.flat(),this.R,this.t),a=project(...v.slice(0,3)),b=project(...v.slice(3,6));
+        ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);
+      }
+      ctx.stroke();ctx.setLineDash([]);
+    }
+    for(const item of this.interfaces){
+      ctx.strokeStyle='#176c9c';ctx.lineWidth=1.5;ctx.setLineDash([7,3,1,3]);ctx.beginPath();
       for(const line of item.lines){
         const v=transformMesh(line.flat(),this.R,this.t),a=project(...v.slice(0,3)),b=project(...v.slice(3,6));
         ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);

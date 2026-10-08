@@ -1,0 +1,28 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
+ const root=path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs'),bytes=fs.readFileSync(root+'.orientation-table.json'),table=JSON.parse(bytes),sha=crypto.createHash('sha256').update(bytes).digest('hex');
+ const geometry=JSON.parse(fs.readFileSync(process.env.FDM_INTERFACE_FIXTURE||root+'.interface-render.json'));assert.equal(geometry.table.sha256,sha);
+ await p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);await p.locator('#table-file').setInputFiles(root+'.orientation-table.json');await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===6);
+ const before=await p.evaluate(()=>workSnapshot());await p.locator('#interface-options').evaluate(e=>e.open=true);
+ const upload=async g=>{await p.locator('#interface-file').setInputFiles({name:'interfaces.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(g))});await p.waitForFunction(()=>document.getElementById('interface-file').value==='');};
+ await upload(geometry);assert.match(await p.locator('#interface-status').innerText(),/fingerprints matched/);
+ await p.locator('[data-interface-preview="rear_seat"]').check();assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);assert.match(await p.locator('#interface-visible-names').innerText(),/load the matched STL/);
+ await p.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);await p.waitForFunction(()=>viewer.interfaces.length===1);
+ assert.equal(await p.evaluate(()=>viewer.interfaces[0].base_radius_mm),13.6);assert.deepEqual(await p.evaluate(()=>workSnapshot()),before);
+ const lines=await p.evaluate(()=>viewer.interfaces[0].lines);await p.getByRole('button',{name:'facet-01',exact:true}).click();assert.deepEqual(await p.evaluate(()=>viewer.interfaces[0].lines),lines);assert.deepEqual(await p.evaluate(()=>viewer.R),table.candidates.find(c=>c.id==='facet-01').R_design_to_print);
+ await p.getByRole('button',{name:'facet-00',exact:true}).click();
+ await p.locator('[data-interface-preview="mount_upper"]').check();
+ await p.locator('#part-view').scrollIntoViewIfNeeded();await p.waitForFunction(()=>!viewer.pending);
+ const miss=await p.evaluate(()=>{const rect=viewer.canvas.getBoundingClientRect();for(const item of viewer.interfaces)for(const line of item.lines){const d=line[0].map((x,k)=>(x+line[1][k])/2),v=transformMesh(d,viewer.R,viewer.t),q=viewer.project(...v);if(q[0]>140&&q[0]<rect.width-10&&q[1]>110&&q[1]<rect.height-70&&!pickSurface(viewer.vertices,viewer.project,q[0],q[1]))return [rect.left+q[0],rect.top+q[1]];}return null;});
+ assert(miss,'a visible cylinder line outside the body is available for a pick-miss control');
+ await p.evaluate(()=>{window.interfacePick='not called';viewer.onPick=point=>window.interfacePick=point;});await p.mouse.click(...miss);assert.equal(await p.evaluate(()=>window.interfacePick),null);await p.evaluate(()=>viewer.onPick=null);
+ const retained=await p.evaluate(()=>({geometry:interfaceGeometry,lines:viewer.interfaces,work:workSnapshot()}));
+ for(const edit of [g=>g.table.sha256='0'.repeat(64),g=>g.items[0].base_radius_mm+=1,g=>g.items.pop()]){const bad=structuredClone(geometry);edit(bad);await upload(bad);assert.match(await p.locator('#interface-status').innerText(),/retained/);assert.deepEqual(await p.evaluate(()=>({geometry:interfaceGeometry,lines:viewer.interfaces,work:workSnapshot()})),retained);}
+ assert.match(await p.locator('#interface-visible-names').innerText(),/no helper extra clearance/);
+ if(process.env.FDM_INTERFACE_SCREENSHOT)await p.locator('.preview').screenshot({path:process.env.FDM_INTERFACE_SCREENSHOT});
+ await p.locator('#hide-interfaces').click();assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);assert.deepEqual(await p.evaluate(()=>workSnapshot()),retained.work);
+ await p.locator('[data-interface-preview="mount_upper"]').check();await p.locator('#table-file').setInputFiles([]);await p.locator('#table-file').setInputFiles(root+'.orientation-table.json');await p.waitForFunction(()=>interfaceGeometry===null);assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);
+ assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ console.log('PASS real producer interface import/frame binding, mesh gate, pose persistence, overlay-only pick miss, malformed retention, explicit visibility, no draft mutation and mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

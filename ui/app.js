@@ -33,6 +33,37 @@ byId('return-helper').onclick=()=>{
  target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
  document.querySelector('.preview').scrollTop=0;
 };
+let interfaceGeometry=null,interfaceRequest=0;
+function updateInterfaceVisibility(){
+ const chosen=interfaceGeometry?interfaceGeometry.items.filter(item=>byId('interface-items').querySelector(`[data-interface-preview="${CSS.escape(item.id)}"]`)?.checked):[];
+ const ready=!!selected&&!!mesh&&meshHash===analysis?.mesh?.sha256;
+ viewer.setInterfaces(ready?chosen.map(item=>({...item,lines:InterfaceRender.segments(item)})):[]);
+ byId('interface-visibility').hidden=!chosen.length;
+ byId('interface-visible-names').textContent=chosen.length?(ready?'Interface models shown: ':'Interface models selected; load the matched STL and select a pose to draw: ')+chosen.map(item=>item.id).join(', ')+'. Blue dash-dot · base radii only, no helper extra clearance. End rings mark drawing clips, not physical ends.':'';
+}
+function clearInterfaces(){
+ interfaceRequest++;interfaceGeometry=null;updateInterfaceVisibility();byId('interface-file').value='';byId('interface-items').replaceChildren();byId('interface-source').textContent='';byId('interface-provenance').hidden=true;byId('interface-status').textContent='No interface geometry loaded.';
+}
+function renderInterfaceOptions(){
+ const list=byId('interface-items');list.replaceChildren();
+ for(const item of interfaceGeometry.items){
+  const label=text('label','',list),input=document.createElement('input');input.type='checkbox';input.dataset.interfacePreview=item.id;input.disabled=!item.rendered;label.append(input,document.createTextNode(' '+item.id));input.onchange=updateInterfaceVisibility;
+  text('p',item.rendered?`${item.axis} axis · base radius ${item.base_radius_mm} mm. ${item.model}.`:'Not drawn: '+item.reason,list).className='hint';
+ }
+ byId('interface-source').textContent=JSON.stringify(interfaceGeometry,null,2);byId('interface-provenance').hidden=false;updateInterfaceVisibility();
+}
+byId('hide-interfaces').onclick=()=>{for(const input of byId('interface-items').querySelectorAll('input'))input.checked=false;updateInterfaceVisibility();byId('part-view').focus({preventScroll:true});};
+byId('interface-file').onchange=async event=>{
+ const file=event.target.files[0];if(!file)return;const request=++interfaceRequest,tableHash=fingerprint;
+ try{
+  if(file.size>5*1024*1024)throw Error('Interface geometry supports JSON files up to 5 MB.');
+  const data=JSON.parse(await file.text());if(request!==interfaceRequest)return;
+  if(tableHash!==fingerprint)throw Error('The table changed; reopen the interface geometry.');
+  InterfaceRender.validate(data,analysis,fingerprint);interfaceGeometry=data;renderInterfaceOptions();
+  byId('interface-status').textContent='Table and mesh fingerprints matched. Choose the interface models to draw; helper references and clearance checks are unchanged.';
+ }catch(error){if(request===interfaceRequest)byId('interface-status').textContent=error.message+(interfaceGeometry?' Previously matched interface geometry and visibility are retained.':'');}
+ finally{if(request===interfaceRequest)event.target.value='';}
+};
 let keepoutGeometry=null,keepoutRequest=0;
 function updateKeepoutVisibility(){
  const items=keepoutGeometry?keepoutGeometry.items.filter(x=>byId('keepout-items').querySelector(`[data-keepout-preview="${CSS.escape(x.id)}"]`)?.checked):[];
@@ -67,6 +98,7 @@ byId('keepout-file').onchange=async event=>{
  }catch(e){if(request===keepoutRequest)byId('keepout-status').textContent=e.message+(keepoutGeometry?' Previously matched geometry and visibility are retained.':'');}
 };
 function updatePreview(){
+ updateInterfaceVisibility();
  if(!analysis || !selected || !mesh || meshHash!==analysis.mesh?.sha256){cancelSurfacePlacement();viewer.clear();return;}
  try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();viewer.setRoadWitness(orientationRoad?.source.design_mm||null);}
  catch(e){cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent=e.message;}
@@ -322,7 +354,7 @@ async function loadOrientationTable(file,request,bundle=null){
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';return false;}
     if(!bundle)byId('orientation-bundle-files').value='';
-    clearOrientationBundle();clearKeepouts();fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('download-work-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    clearOrientationBundle();clearKeepouts();clearInterfaces();fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('download-work-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;

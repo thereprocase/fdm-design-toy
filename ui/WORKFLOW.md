@@ -369,6 +369,33 @@ not the envelope between samples. Expand the provenance for original unbounded
 axes, clipping, frame and sampling. Use exporter KEEP-OUT results for clearance;
 a drawing is not a check. Changing tables clears this optional geometry.
 
+### Locate interface models while placing helpers
+
+On the evidence worker, generate a sidecar for the exact table open in the browser:
+
+```sh
+fdmgen interface-render TABLE.json --problem PROBLEM.yaml --out interface-render.json
+```
+
+The worker needs the matching part source checkout (or `SPOOL_RACK_ROOT` for the
+bracket adapter). The problem must explicitly declare the supported frame
+relationship. Exit 1 leaves no output file; read the terminal error. Generating
+this file does not run a clearance check.
+
+Open **Optional: locate interface models** beside the part preview and load the
+sidecar. Choose which interfaces to draw, then load the matching STL and select a
+pose. Blue dash-dot cylinders show the base models used by KEEP-CLEAR: the largest
+seat radius for a rod seat, or the clearance-bore radius for a screw. They do not
+include any helper’s requested extra clearance. Mount washers and driver access
+are not modelled. End rings are drawing clips of an axially unbounded model, not
+physical bore ends.
+
+Drawing an interface does not select it in a helper’s keep-clear references, move
+a helper or record a PASS. Use the exporter’s KEEP-CLEAR results to check the
+selected references and requested gaps. **Hide interface models** clears the
+view without changing the draft. Wrong-table or malformed sidecars leave the
+previously matched overlay intact; opening another table clears it.
+
 ### Open an orientation evidence batch
 
 On the geometry worker, use the original root table that defines the sliced poses,
