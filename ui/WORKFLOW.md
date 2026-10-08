@@ -102,6 +102,15 @@ Use the second workstation for slicing.
    writing `evidence-bundle.json` and five receipt files. Exit 2 records
    one or more FAIL results; exit 1 means an error without a completed manifest.
 
+If evidence exits 1, read the terminal line naming the failed check and slice
+(for example, `bridge-check on the project slice failed`) and the preceding error.
+Check the matching body source checkout or `SPOOL_RACK_ROOT` on that worker;
+confirm the G-codes came from the exact exported projects with automatic
+arrangement and orientation off; and check the exact table bytes and project/baseline
+pairing. Correct the inputs and rerun the full evidence command. Partial receipt
+files alone are not a completed bundle. Exit 2 instead means a completed bundle
+contains FAIL results to inspect.
+
 A written file or zero exit code does not establish physical qualification.
 Changing the draft requires a new export and new evidence for that export.
 
