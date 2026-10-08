@@ -204,7 +204,9 @@ a drawing is not a check. Changing tables clears this optional geometry.
 
 ### Open an orientation evidence batch
 
-On the geometry worker, use the exact table that defines the sliced poses:
+On the geometry worker, use the original root table that defines the sliced poses,
+before shell/bridge enrichment. Feeding an enriched table back into
+`orient-evidence` is refused because those pose columns already contain receipts:
 
 ```sh
 fdmgen orient-evidence TABLE.json \
@@ -229,6 +231,7 @@ rank or qualify poses; unsliced poses remain unchecked for these measurements.
 
 The enriched table has its own byte fingerprint. A draft pinned to the original
 table still requires that original table; this route does not migrate old drafts.
-Use **Download exact source table** in the export handoff section for subsequent exports from the enriched
-workspace. Recorded G-code/source hashes are provenance; the browser does not
+Use **Download exact source table** in the export handoff section for drafts and
+massing exports made from the enriched workspace. Keep the original root table
+for rerunning `orient-evidence`; the enriched download does not replace that input. Recorded G-code/source hashes are provenance; the browser does not
 open those inputs or rerun the checks.

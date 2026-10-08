@@ -930,6 +930,11 @@ or cancelled import retains the current draft and previous bundle summary.
 Manual table replacement clears the prior bundle summary. The exact enriched
 bytes remain downloadable; drafts pinned to the original table are not migrated.
 
+To rerun `orient-evidence`, use the original root table before shell/bridge
+enrichment. An enriched download already contains those pose receipts and is
+refused as input to another batch. Use that download for drafts and massing
+exports created from the enriched workspace.
+
 The real two-pose example is in `ui/fixtures/orient-evidence/`. Both bridge FAIL
 receipts remain visible. File verification is not physical qualification or an
 independent check of the recorded G-code/source hashes. See the [batch workflow](WORKFLOW.md#open-an-orientation-evidence-batch).
