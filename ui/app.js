@@ -10,7 +10,12 @@ byId('review-poses').onclick=()=>document.querySelector('.candidates').scrollInt
 const viewer = new PartViewer(byId('part-view'));
 byId('all-helper-labels').onchange=()=>{viewer.showAllLabels=byId('all-helper-labels').checked;viewer.schedule();};
 let mesh=null,meshHash=null,meshRequest=0,meshBounds=null,activeHelper=null;
-byId('return-helper').onclick=()=>{if(activeHelper?.isConnected){activeHelper.scrollIntoView({block:'center'});activeHelper.querySelector('[data-geometry="center_mm"]')?.focus({preventScroll:true});}};
+byId('return-helper').onclick=()=>{
+ if(!activeHelper?.isConnected)return;
+ setActiveHelper(activeHelper);
+ const target=activeHelper.querySelector(activeHelper.querySelector('[data-spatial]').checked?'[data-geometry="center_mm"]':'[data-key="name"]');
+ target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
+};
 function updatePreview(){
  if(!analysis || !selected || !mesh || meshHash!==analysis.mesh?.sha256){cancelSurfacePlacement();viewer.clear();return;}
  try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();}

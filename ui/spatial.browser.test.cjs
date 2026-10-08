@@ -15,6 +15,23 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   const region=page.locator('.helper-region').first();
   for(const [key,value] of Object.entries({name:'Seat backing',location:'Rear seat',purpose:'Seat load transfer',keep_clear:'Preserve rod bore'}))await region.locator(`[data-key="${key}"]`).fill(value);
   await region.locator('[data-interface-id="rear_seat"]').check();await region.locator('[data-spatial]').check();
+  const checkReturn=async selector=>{
+    const state=await page.evaluate(()=>draftFormState());
+    await region.locator('.helper-editor summary').click();
+    assert.equal(await region.locator('.helper-editor').evaluate(e=>e.open),false);
+    await page.locator('#return-helper').focus();await page.keyboard.press('Enter');
+    assert(await region.locator('.helper-editor').evaluate(e=>e.open));
+    const target=region.locator(selector).first();
+    assert(await target.evaluate(e=>e===document.activeElement));
+    assert(await target.evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}));
+    assert.equal(await page.evaluate(()=>draftFormState()),state);
+  };
+  await page.setViewportSize({width:390,height:844});
+  await checkReturn('[data-geometry="center_mm"]');
+  await region.locator('[data-spatial]').uncheck();
+  await checkReturn('[data-key="name"]');
+  await region.locator('[data-spatial]').check();
+  await page.setViewportSize({width:1300,height:1000});
   await page.locator('#zoom-in').click();assert(await page.evaluate(()=>viewer.zoom>1));await page.locator('#zoom-out').click();
   const beforeViews=await page.evaluate(()=>({form:draftFormState(),pose:selected.id,vertices:Array.from(viewer.vertices)}));
   for(const [id,yaw] of [['view-x',Math.PI/2],['view-y',0]]){

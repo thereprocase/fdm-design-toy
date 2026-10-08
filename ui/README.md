@@ -739,3 +739,7 @@ change the recorded strand verdict or establish a helper-edit remedy.
 A rejected STL replacement retains the previously fingerprint-matched mesh and
 camera view, with an explicit rejection message. The rejected file is never
 displayed. Accepting a new orientation table still clears the old mesh.
+
+**Return to helper** reopens a folded editor and reveals its centre field. For a
+helper without an enabled box, it focuses the name instead. Navigation preserves
+the draft; keyboard/mobile browser checks cover both cases.
