@@ -185,10 +185,15 @@ function renderRows() {
     for(const key of ['F_L_max','ovh_fail_mm2','contact_mm2','t_support_segments'])text('td',formatted(c.columns?.[key]),tr);
     text('td',shellSummary(c),tr);
     text('td',formatted(c.columns?.height_mm),tr);
+    const bed=c.columns?.fits_bed;
+    const bedKnown=bed?.rule==='BED-001'&&bed.level==='M'&&typeof bed.value==='boolean'&&bed.verdict===(bed.value?'PASS':'FAIL');
+    const bedCell=text('td',bedKnown?(bed.value?'Fits':'Does not fit')+' · M'+(bed.provisional?' · provisional':''):'Not checked',tr);
+    if(bedKnown&&bed.fidelity)bedCell.title=bed.fidelity;
+
     const failures=failedColumns(c).length;
     text('td',(c.feasible===true?'Fits / stable':c.feasible===false?'Fit needs review':'Fit not recorded')+`; ${failures} recorded failed check${failures===1?'':'s'}`,tr);
   }
-  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=8;}
+  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=9;}
 }
 byId('reveal-pose').onclick=()=>{
   if(!selected)return;

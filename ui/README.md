@@ -765,3 +765,8 @@ by height leaves the compared measurement visible. Missing heights remain
 Pose filters display the producer's declared feasibility scope as text, or state
 that it was not supplied. Only explicit true flags pass the feasible-only filter;
 missing flags read **Fit not recorded**. Other check verdicts remain independent.
+
+Bed fit (BED-001) has its own pose-table column, separate from combined feasibility
+(BED-001 plus BED-002 in the bracket tables). A pose can fit the bed while failing
+contact/stability. Missing or unchecked bed-fit evidence stays **Not checked**;
+the producer's geometric fidelity note is retained on the cell.
