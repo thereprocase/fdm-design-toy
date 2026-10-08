@@ -173,6 +173,7 @@ function renderRows() {
       return sortKey==='contact_mm2'?y-x:x-y;
     });
   }
+  byId('review-selected').disabled=!selected;byId('review-selected').textContent=selected?'Review selected pose: '+selected.id:'Review selected pose';
   byId('reveal-pose').hidden=!selected||rows.some(c=>c.id===selected.id);
   const sliced=analysis.candidates.filter(c=>hasSlice(c)).length;
   byId('pose-count').textContent=`Showing ${rows.length} of ${analysis.candidates.length} poses; ${sliced} have measured slices.${selected&&!rows.some(c=>c.id===selected.id)?' Selected pose '+selected.id+' is hidden by this filter.':''}`;
@@ -204,6 +205,7 @@ function renderRows() {
     };
   }
 }
+byId('review-selected').onclick=()=>{if(selected){const heading=byId('pose-name');heading.focus({preventScroll:true});heading.scrollIntoView({block:'start'});}};
 byId('reveal-pose').onclick=()=>{
   if(!selected)return;
   if(selected.feasible!==true)byId('feasible-only').checked=false;

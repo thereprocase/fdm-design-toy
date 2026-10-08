@@ -792,3 +792,7 @@ formatting only; source values, sort order and exported evidence remain intact.
 The material-corner range is withheld when either corner is explicitly
 **NOT_CHECKED**, even if the producer retained a numeric value. Individual values
 and the summary therefore agree about missing evidence; raw data is preserved.
+
+**Review selected pose** beside the comparison controls moves to the selected
+pose's evidence and planning action. It preserves the current choice and draft,
+and places keyboard focus on the detail heading. It is disabled until selection.

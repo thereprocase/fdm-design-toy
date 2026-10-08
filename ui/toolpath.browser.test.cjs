@@ -134,6 +134,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: 52.2 mm/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ const beforeReviewJump=await page.evaluate(()=>draftFormState());
+ for(const width of [1366,390]){
+  await page.setViewportSize({width,height:844});
+  await page.locator('#review-selected').click();
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'pose-name');
+  const plan=await page.locator('#plan-pose').boundingBox();assert(plan.y>=0&&plan.y+plan.height<=844);
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeReviewJump);
+  assert.match(await page.locator('#review-selected').innerText(),/facet-01/);
+ }
  const scrollTable=page.locator('.pose-table');
  await page.locator('#feasible-only').uncheck();await page.locator('#sliced-only').uncheck();
  const activeButton=page.getByRole('button',{name:'facet-01',exact:true});
@@ -166,6 +175,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  for(const c of table.candidates){c.feasible=false;c.columns.t_support_segments={value:null,verdict:'NOT_CHECKED'};}
  await page.locator('#table-file').setInputFiles({name:'unsliced.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.waitForFunction(()=>document.querySelector('#pose-count').textContent.includes('0 have measured slices'));
+ assert(await page.locator('#review-selected').isDisabled());
  await page.locator('#feasible-only').check();await page.locator('#sliced-only').check();
  const beforeEmpty=await page.evaluate(()=>draftFormState());
  await page.getByRole('button',{name:'Show all poses',exact:true}).focus();await page.keyboard.press('Enter');
