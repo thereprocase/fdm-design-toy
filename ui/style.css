@@ -54,3 +54,7 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 
 #review-edit-context{padding:12px;overflow-wrap:anywhere}
 #review-edit-context-source{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;max-height:300px;overflow:auto}
+
+#orientation-bundle-options,#orientation-bundle-summary{overflow-wrap:anywhere}
+#orientation-bundle-summary article{border-top:1px solid #d3d9d0;padding:12px 0}
+#orientation-bundle-summary pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;max-height:360px;overflow:auto}

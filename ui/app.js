@@ -251,8 +251,7 @@ byId('reveal-pose').onclick=()=>{
   const button=byId('rows').querySelector('[aria-pressed="true"]');
   button?.focus();button?.scrollIntoView({block:'nearest',inline:'nearest'});
 };
-byId('table-file').onchange=async event=>{
-  const file=event.target.files[0];if(!file)return;const request=++tableRequest;
+async function loadOrientationTable(file,request,bundle=null){
   try {
     const bytes=await file.arrayBuffer(), raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes), data=JSON.parse(raw);
     if(!data || typeof data.schema!=='string' || !data.schema || !Array.isArray(data.candidates) || !data.candidates.length)throw Error('Expected an orientation table with a schema and candidates.');
@@ -270,13 +269,50 @@ byId('table-file').onchange=async event=>{
     for(const c of data.candidates){if(!c||typeof c.id!=='string'||!c.id||ids.has(c.id)||!c.columns||typeof c.columns!=='object'||Array.isArray(c.columns)||!Array.isArray(c.build_dir_design)||c.build_dir_design.length!==3||!c.build_dir_design.every(Number.isFinite))throw Error('Each candidate needs a unique id, columns and a finite build direction.');ids.add(c.id);try{Plan.validatePose(c);}catch(error){throw Error(`Candidate ${c.id}: ${error.message}`);}}
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
-    if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';event.target.value='';return;}
-    clearKeepouts();fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';return false;}
+    if(!bundle)byId('orientation-bundle-files').value='';
+    clearOrientationBundle();clearKeepouts();fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
     byId('pose-name').textContent='Choose a candidate';byId('direction').textContent='';byId('strength-range').textContent='';byId('reasons').replaceChildren();byId('failed-check-count').textContent='';byId('failed-checks').replaceChildren();byId('metrics').replaceChildren();byId('toolpath-metrics').replaceChildren();byId('toolpath-settings').textContent='';byId('credited-scope').textContent='';byId('pose-bridges').replaceChildren();byId('pose-shell-summary').textContent='';byId('pose-shell-fidelity').textContent='';byId('pose-shell-coverage').textContent='';byId('pose-shell-receipt').textContent='';byId('pose-shell-details').hidden=true;byId('rationale').value='';resetPlan();byId('export').disabled=true;byId('plan-pose').disabled=true;byId('export-status').textContent='';renderRows();resumeReviewDraft();
-  }catch(error){if(request!==tableRequest)return;byId('status').textContent=`Could not load table: ${error.message}${analysis?' The previous table and current draft remain available.':''}`;}
+    if(bundle)renderOrientationBundle(bundle);
+    return true;
+  }catch(error){if(request!==tableRequest)return;byId('status').textContent=`Could not load table: ${error.message}${analysis?' The previous table and current draft remain available.':''}`;return false;}
+}
+
+byId('table-file').onchange=async event=>{
+ const file=event.target.files[0];if(!file)return;const accepted=await loadOrientationTable(file,++tableRequest);if(accepted===false)event.target.value='';
+};
+function clearOrientationBundle(){
+ byId('orientation-bundle-summary').hidden=true;byId('orientation-bundle-poses').replaceChildren();byId('orientation-bundle-manifest').textContent='';byId('orientation-bundle-status').textContent='No orientation bundle verified for this table.';
+}
+function renderOrientationBundle(bundle){
+ const m=bundle.manifest,failures=m.receipts.filter(r=>r.verdict==='FAIL').length;
+ byId('orientation-bundle-summary').hidden=false;
+ byId('orientation-bundle-count').textContent=`${m.slices.length} pose slices; ${m.receipts.length} receipt fingerprints checked; ${failures} FAIL receipts. File verification does not qualify a pose.`;
+ byId('orientation-bundle-scope').textContent=(m.establishes||'Recorded shell and bridge toolpath checks.')+' Not established: '+(m.does_not_establish||'physical qualification or a pose ranking.')+' The input G-code and part source files were not opened by this browser; their hashes are recorded provenance.';
+ const rows=byId('orientation-bundle-poses');rows.replaceChildren();
+ for(const slice of m.slices){
+  const row=text('article','',rows);row.dataset.bundlePose=slice.pose;text('h3',slice.pose+' · '+slice.slice_kind,row);
+  const button=text('button','Review '+slice.pose,row);button.type='button';button.className='secondary';
+  button.onclick=()=>{choose(analysis.candidates.find(c=>c.id===slice.pose));byId('pose-name').focus({preventScroll:true});byId('pose-name').scrollIntoView({block:'start'});};
+  text('p','Recorded G-code SHA-256: '+slice.gcode_sha256,row).className='hint';
+  for(const item of bundle.receipts.filter(r=>r.entry.pose===slice.pose)){
+   const details=text('details','',row);text('summary',item.receipt.result.rule+' · T · '+item.entry.verdict+' · '+item.entry.check,details);
+   text('p','Receipt SHA-256: '+item.entry.sha256,details);text('pre',JSON.stringify(item.receipt,null,2),details);
+  }
+ }
+ byId('orientation-bundle-manifest').textContent=JSON.stringify({manifest_sha256:bundle.manifestHash,...m},null,2);
+ byId('orientation-bundle-status').textContent='Complete bundle verified. Loaded its exact enriched table; choose a pose to review the recorded results.';
+}
+byId('orientation-bundle-files').onchange=async event=>{
+ const files=[...event.target.files];if(!files.length)return;const request=++tableRequest;
+ try{
+  const bundle=await OrientBundle.load(files);if(request!==tableRequest)return;
+  const accepted=await loadOrientationTable({arrayBuffer:async()=>bundle.tableBytes},request,bundle);
+  if(request===tableRequest&&!accepted){event.target.value='';byId('orientation-bundle-status').textContent=byId('status').textContent+' The previous bundle summary, if any, is retained.';}
+ }catch(error){if(request!==tableRequest)return;byId('orientation-bundle-status').textContent='Could not open orientation bundle: '+error.message+' The current table, draft and previous bundle summary remain unchanged.';}
 };
 byId('pose-sort').onchange=byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};
 function addHelper(region={}) {

@@ -201,3 +201,34 @@ The moulding box is bounded for display, and spool sweeps show sampled discs,
 not the envelope between samples. Expand the provenance for original unbounded
 axes, clipping, frame and sampling. Use exporter KEEP-OUT results for clearance;
 a drawing is not a check. Changing tables clears this optional geometry.
+
+### Open an orientation evidence batch
+
+On the geometry worker, use the exact table that defines the sliced poses:
+
+```sh
+fdmgen orient-evidence TABLE.json \
+  --slice facet-00 shell-only facet-00.gcode \
+  --slice facet-01 shell-only facet-01.gcode \
+  --out out/orientation-evidence
+```
+
+Use your actual pose IDs and G-code paths. Each pose accepts one slice, labelled
+`shell-only` or `project`; do not mix the two within one pose. The worker needs the
+matching part checkout (or `SPOOL_RACK_ROOT` for the bracket). Preserve the exported
+pose when slicing, with automatic arrangement and orientation off. Exit 2 means a
+completed batch contains a FAIL; exit 1 means an error and no completed manifest.
+Partial receipts alone are not a completed batch.
+
+In the orientation workspace, open **Or open a complete orientation evidence
+bundle** and select all output JSON files together: the manifest, enriched table,
+and two receipts per pose. The workspace checks hashes and bindings before loading
+the enriched table. Invalid input or cancelled replacement preserves current edits.
+Use each **Review POSE** button to inspect that pose's results. The batch does not
+rank or qualify poses; unsliced poses remain unchecked for these measurements.
+
+The enriched table has its own byte fingerprint. A draft pinned to the original
+table still requires that original table; this route does not migrate old drafts.
+Use **Download exact source table** in the export handoff section for subsequent exports from the enriched
+workspace. Recorded G-code/source hashes are provenance; the browser does not
+open those inputs or rerun the checks.

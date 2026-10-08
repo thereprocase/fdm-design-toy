@@ -919,3 +919,17 @@ The previous-check note appears immediately after the targeted helper name.
 Review handoff scrolls the focused name field into view rather than centring the
 whole helper editor, which can be taller than the screen. Dismissing the note
 returns focus to that helper; opening another draft/table clears the note.
+
+### Orientation evidence bundle import
+
+The opening screen accepts a complete `fdmgen/orient-evidence@0.1` bundle in one
+file selection: manifest, enriched table and both receipts per pose. Hashes,
+pose/G-code/root-table/mesh bindings and the table's receipt-linked measurements
+are checked before the shared table loader and unsaved-draft guard run. A failed
+or cancelled import retains the current draft and previous bundle summary.
+Manual table replacement clears the prior bundle summary. The exact enriched
+bytes remain downloadable; drafts pinned to the original table are not migrated.
+
+The real two-pose example is in `ui/fixtures/orient-evidence/`. Both bridge FAIL
+receipts remain visible. File verification is not physical qualification or an
+independent check of the recorded G-code/source hashes. See the [batch workflow](WORKFLOW.md#open-an-orientation-evidence-batch).
