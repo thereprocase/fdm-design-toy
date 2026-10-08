@@ -237,9 +237,10 @@ matching part source checkout (or `SPOOL_RACK_ROOT` for the bracket). Exit 2 mea
 the completed receipt contains a FAIL to inspect. Exit 1 means no new receipt was
 written: read the terminal error for the cause. Common causes include a missing
 part checkout or a slice that does not verify as the requested pose (the wrong
-G-code, or automatic arrangement/orientation during slicing). A file left at the
-output path from an earlier run is not evidence that this run succeeded; use a
-fresh output filename for a new check. Keep old receipt files intact;
+G-code, or automatic arrangement/orientation during slicing). The current checker
+clears the requested output before work, so an earlier receipt at that path is
+removed even if the new check fails. Use a fresh output filename to preserve
+existing evidence. Keep old receipt files intact;
 a new optional location receipt does not repair or reissue an existing bundle.
 A missing-location message leaves the old measurements readable without an
 invented overlay.
