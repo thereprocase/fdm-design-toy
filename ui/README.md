@@ -796,3 +796,8 @@ and the summary therefore agree about missing evidence; raw data is preserved.
 **Review selected pose** beside the comparison controls moves to the selected
 pose's evidence and planning action. It preserves the current choice and draft,
 and places keyboard focus on the detail heading. It is disabled until selection.
+
+Helpers with identical display names receive a temporary “helper N” suffix in
+the selector, editor legends, preview and warning actions. N is their current
+list position, not their stable identifier. Saved names and identifiers remain
+unchanged; the suffix disappears when names become distinct.

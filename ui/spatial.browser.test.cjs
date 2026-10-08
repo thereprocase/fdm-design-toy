@@ -188,6 +188,20 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await duplicateWarning.getByRole('button',{name:'Edit Seat backing copy',exact:true}).click();
   assert(await copy.evaluate(e=>e.classList.contains('active-helper')));
   assert.equal(await page.evaluate(()=>draftFormState()),beforeWarningNavigation);
+  await copy.locator('[data-key="name"]').fill('Seat backing');
+  const duplicateNameState=await page.evaluate(()=>draftFormState());
+  assert.equal(await region.locator('legend').innerText(),'Seat backing (helper 1)');
+  assert.equal(await copy.locator('legend').innerText(),'Seat backing (helper 2)');
+  assert.deepEqual(await page.locator('#preview-helper option').allTextContents(),['Choose a helper','Seat backing (helper 1)','Seat backing (helper 2)']);
+  await duplicateWarning.getByRole('button',{name:'Edit Seat backing (helper 1)',exact:true}).click();
+  assert.equal(await page.locator('#preview-helper').inputValue(),firstId);
+  await duplicateWarning.getByRole('button',{name:'Edit Seat backing (helper 2)',exact:true}).click();
+  assert.equal(await page.locator('#preview-helper').inputValue(),copyId);
+  assert.match(await page.locator('#active-helper-status').innerText(),/Seat backing \(helper 2\)/);
+  assert.equal(await page.evaluate(()=>draftFormState()),duplicateNameState);
+  assert.deepEqual(await page.evaluate(()=>planInput().helper_regions.map(r=>r.name)),['Seat backing','Seat backing']);
+  await copy.locator('[data-key="name"]').fill('Seat backing copy');
+  assert.equal(await region.locator('legend').innerText(),'Seat backing');
   const drawnHelperLabels=()=>page.evaluate(()=>{
     const ctx=viewer.canvas.getContext('2d'),original=ctx.fillText,labels=[];
     ctx.fillText=function(value,...args){if(value.includes('Seat backing'))labels.push(value);return original.call(this,value,...args);};

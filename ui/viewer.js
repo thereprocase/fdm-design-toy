@@ -130,7 +130,7 @@ class PartViewer {
       for(let i=0;i<24;i+=3)points.push(project(corners[i],corners[i+1],corners[i+2]));
       ctx.strokeStyle=region.active?'#175caa':'#ad501c';ctx.lineWidth=region.active?3:2;ctx.setLineDash(region.active?[]:[5,3]);ctx.beginPath();
       for(let i=0;i<8;i++)for(let a=0;a<3;a++){const j=i^(1<<a);if(j>i){ctx.moveTo(points[i][0],points[i][1]);ctx.lineTo(points[j][0],points[j][1]);}}
-      ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';ctx.fillStyle=region.active?'#174d89':'#84360f';if(region.active||this.showAllLabels)ctx.fillText((region.active?'Editing: ':'')+(region.name||'Planning region'),points[7][0]+5,points[7][1]-5);
+      ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';ctx.fillStyle=region.active?'#174d89':'#84360f';if(region.active||this.showAllLabels)ctx.fillText((region.active?'Editing: ':'')+(region.previewName||region.name||'Planning region'),points[7][0]+5,points[7][1]-5);
     }
     // Directions follow both the design-to-print rotation and camera, without translation.
     ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(AXIS_PANEL.x,AXIS_PANEL.y,AXIS_PANEL.width,AXIS_PANEL.height);
