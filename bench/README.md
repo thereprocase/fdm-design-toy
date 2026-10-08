@@ -596,3 +596,8 @@ still need examination. The original default remains zero. Remote direct-solve
 controls passed at all three thresholds; full suite 260 passed, 6 CUDA-only
 skips. Source hashes were verified. This is CPU numerical evidence, not a GPU
 gate result or a physical bracket prediction.
+
+Use `--coarse-solver pinv` to compare a dense pseudoinverse on the coarsest
+operator with the default sparse LU (`splu`). The receipt records this choice
+per row. No fine-grid operator, loads or restraints are changed. This option is
+an experimental numerical comparison, not an automatic repair or new default.

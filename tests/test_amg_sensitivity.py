@@ -36,8 +36,9 @@ def test_bands_exercise_actual_contrast_without_activating_exterior():
     assert np.unique(uniform[mask]).size == 1
 
 
+@pytest.mark.parametrize('coarse_solver', ['splu', 'pinv'])
 @pytest.mark.parametrize('theta', [0., .08, .25])
-def test_small_ti_contrast_solve_matches_direct(theta):
+def test_small_ti_contrast_solve_matches_direct(theta, coarse_solver):
     pytest.importorskip('pyamg')
     E = np.ones((5, 2, 2)); E[1:3] = 1e-3
     fixed, load = reference.cantilever(*E.shape)
@@ -48,7 +49,7 @@ def test_small_ti_contrast_solve_matches_direct(theta):
     nodes = ids[::3] // 3
     points = np.column_stack(np.unravel_index(nodes, tuple(v+1 for v in E.shape)))
     B = pilot.rigid_candidates(points); B[fixed[ids] != 0] = 0
-    result = pilot.solve_case(A, rhs, B, 'energy', 100, strength_threshold=theta)
+    result = pilot.solve_case(A, rhs, B, 'energy', 100, strength_threshold=theta, coarse_solver=coarse_solver)
     exact = np.linalg.solve(A.toarray(), rhs)
     assert result['converged']
     assert result['compliance'] == pytest.approx(rhs @ exact, rel=1e-8)

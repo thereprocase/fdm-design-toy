@@ -82,9 +82,11 @@ def stiffness_field(mask, emin, pattern):
     return rho, np.where(mask, emin + rho**3 * (1 - emin), 0.)
 
 
-def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0.):
+def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coarse_solver='splu'):
     if not np.isfinite(strength_threshold) or not 0 <= strength_threshold <= 1:
         raise ValueError('strength threshold must be finite in [0,1]')
+    if coarse_solver not in ('splu', 'pinv'):
+        raise ValueError('coarse solver must be splu or pinv')
     import pyamg
     # Reset separately for every case, including spectral-radius estimation.
     np.random.seed(seed)
@@ -93,7 +95,7 @@ def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0.):
         A.tobsr(blocksize=(3, 3)), B=B, symmetry='symmetric', smooth=smoother,
         strength=('symmetric', {'theta': strength_threshold}),
         max_coarse=100, presmoother=('block_gauss_seidel', {'sweep': 'symmetric'}),
-        postsmoother=('block_gauss_seidel', {'sweep': 'symmetric'}), coarse_solver='splu')
+        postsmoother=('block_gauss_seidel', {'sweep': 'symmetric'}), coarse_solver=coarse_solver)
     setup_s = time.perf_counter() - start
     history = []
     norm = np.linalg.norm(rhs)
@@ -105,7 +107,7 @@ def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0.):
     solve_s = time.perf_counter() - start
     residual = float(np.linalg.norm(rhs - A @ u) / norm)
     compliance = float(rhs @ u)
-    return dict(smoother=smoother, seed=seed,
+    return dict(smoother=smoother, seed=seed, coarse_solver=coarse_solver,
                 strength=dict(method='symmetric', theta=strength_threshold, blocksize=3), status=int(status), iterations=len(history),
                 converged=bool(status == 0 and np.isfinite(residual) and residual <= 1e-6
                                and np.isfinite(compliance) and compliance > 0),
@@ -131,6 +133,7 @@ def main():
     ap.add_argument('--smoothers', nargs='+', choices=['jacobi', 'energy'], default=['energy'])
     ap.add_argument('--strength-thresholds', nargs='+', type=float, default=[0.],
                     help='symmetric nodal block-strength theta values in [0,1]')
+    ap.add_argument('--coarse-solver', choices=['splu', 'pinv'], default='splu')
     ap.add_argument('--maxiter', type=int, default=150)
     args = ap.parse_args()
     if not np.isfinite(args.h) or args.h <= 0 or args.maxiter < 1:
@@ -176,7 +179,7 @@ def main():
                 B = rigid_candidates(grid.node_coords()[gdofs[::3] // 3]); B[fixed[gdofs] != 0] = 0
                 for smoother in args.smoothers:
                     for theta in args.strength_thresholds:
-                        row = solve_case(A, rhs, B, smoother, args.maxiter, strength_threshold=theta)
+                        row = solve_case(A, rhs, B, smoother, args.maxiter, strength_threshold=theta, coarse_solver=args.coarse_solver)
                         row.update(pattern=pattern, **case, axis=axis, C=C.tolist(),
                             density_sha256=digest(rho), stiffness_sha256=digest(E), rhs_sha256=digest(rhs),
                             active_dofs_sha256=digest(gdofs), body_stiffness_min=float(E[mask].min()),
