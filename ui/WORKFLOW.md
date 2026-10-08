@@ -53,6 +53,9 @@ if you want no helper regions in this draft. Helpers request 100% infill; sparse
 infill receives no structural credit. Otherwise, give each helper a name,
 location, load-carrying purpose and interface constraints. Select the applicable
 interface and keep-out references, and enter the required clearance when known.
+Part keep-outs are not drawn in the preview. Expand each constraint to read its
+rule, declared frame and model; inspect the exporter’s KEEP-OUT results after
+export. A visible helper box does not establish clearance.
 **Add helper** selects the new region and focuses its name, ready for typing.
 
 Enable **Place a box-shaped planning region** to specify a helper's centre and
