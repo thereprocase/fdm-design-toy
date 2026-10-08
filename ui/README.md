@@ -735,3 +735,7 @@ keyboard focus, including on narrow screens. Existing helper fields are retained
 Bridge failure guidance links directly to the [owner decision record](https://github.com/thereprocase/fdm-design-toy/issues/17#issuecomment-6049963530),
 including bracket infill policy and coupon printing. That navigation does not
 change the recorded strand verdict or establish a helper-edit remedy.
+
+A rejected STL replacement retains the previously fingerprint-matched mesh and
+camera view, with an explicit rejection message. The rejected file is never
+displayed. Accepting a new orientation table still clears the old mesh.
