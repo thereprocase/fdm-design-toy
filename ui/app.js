@@ -183,6 +183,10 @@ function shellSummary(candidate) {
 function validBridgeColumn(c){
  return c?.rule==='BRG-001'&&c.level==='T'&&c.unit==='mm'&&['PASS','FAIL'].includes(c.verdict)&&Number.isFinite(c.value)&&c.value>=0&&Number.isFinite(c.limit_mm)&&c.limit_mm>0;
 }
+function bridgeCoverage(column){
+ const cov=column?.coverage;
+ return cov&&['bridge_roads','external_roads','internal_roads'].every(k=>Number.isInteger(cov[k])&&cov[k]>=0)&&cov.external_roads+cov.internal_roads===cov.bridge_roads&&Number.isFinite(cov.cell_mm)&&cov.cell_mm>0&&Number.isFinite(cov.max_cantilever_mm)&&cov.max_cantilever_mm>=0?cov:null;
+}
 function comparisonSliceKind(column){return ['shell-only','project'].includes(column?.receipt?.slice_kind)?column.receipt.slice_kind:null;}
 function renderComparison(){
  byId('pin-reference').disabled=!selected;byId('clear-reference').disabled=!referencePose;
@@ -236,7 +240,7 @@ function renderBridge(candidate) {
     if(valid){
       text('p',`Ceiling span maximum: ${Number.isFinite(c.ceiling_span_mm)&&c.ceiling_span_mm>=0?c.ceiling_span_mm.toLocaleString(undefined,{maximumFractionDigits:3})+' mm':'not recorded'}. This supplementary model is twice the distance to the nearest support below; the recorded verdict uses the strand span. These are independent per-measure maxima over all evaluated roads of this type, not two measurements of one road. Physical behaviour needs testing.`,section);
       const cov=c.coverage,kind=key.includes('external')?'external_roads':'internal_roads';
-      const complete=cov&&['bridge_roads','external_roads','internal_roads'].every(k=>Number.isInteger(cov[k])&&cov[k]>=0)&&cov.external_roads+cov.internal_roads===cov.bridge_roads&&Number.isFinite(cov.cell_mm)&&cov.cell_mm>0&&Number.isFinite(cov.max_cantilever_mm)&&cov.max_cantilever_mm>=0;
+      const complete=bridgeCoverage(c);
       text('p',complete?`${cov[kind].toLocaleString()} ${label.toLowerCase()} evaluated (${cov.bridge_roads.toLocaleString()} bridge roads total). Raster cell ${cov.cell_mm} mm; longest cantilever across all bridge roads ${cov.max_cantilever_mm} mm (reported, not judged).${cov[kind]===0?' No roads of this type were evaluated; a zero span is not a successful bridge trial.':''}`:'Bridge-road coverage is not established by this column.',section);
     }
     if(c){const details=text('details','',section);text('summary','Recorded bridge column, coverage and provenance',details);const raw=text('pre',JSON.stringify(c,null,2),details);raw.style.whiteSpace='pre-wrap';raw.style.overflowWrap='anywhere';}
@@ -347,6 +351,8 @@ function renderRows() {
       const column=c.columns?.[key],valid=validBridgeColumn(column);
       const line=text('div',label+': '+(valid?`${column.verdict} · ${metricNumber(column.value)} mm · T${column.provisional?' · provisional':''} · ${comparisonSliceKind(column)||'slice kind not recorded'}`:'Not checked'),bridges);
       if(valid)line.title=`Recorded limit ${column.limit_mm} mm. ${column.fidelity||'Method context not supplied; review the recorded column.'}`;
+      const coverage=valid&&bridgeCoverage(column),role=key.includes('external')?'external_roads':'internal_roads';
+      if(coverage&&coverage[role]===0)text('span',' · No roads of this type evaluated; not a bridge trial.',line);
     }
 
   }

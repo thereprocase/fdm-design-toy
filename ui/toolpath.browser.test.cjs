@@ -86,6 +86,12 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.getByRole('button',{name:'zero',exact:true}).click();
  assert.equal(await page.locator('#reference-name').innerText(),'Reference: large');
  assert.equal(await page.locator('#comparison-name').innerText(),'Selected: zero');
+ const zeroBridge=page.locator('#rows tr.selected [data-bridge-summary]');assert.match(await zeroBridge.innerText(),/Internal: PASS · 0 mm[\s\S]*No roads of this type evaluated; not a bridge trial/);
+ assert.equal(await zeroBridge.locator('span').count(),1); // External zero has no coverage record: do not infer no roads.
+ const originalCoverage=await page.evaluate(()=>selected.columns.t_bridge_span_internal_mm.coverage);
+ await page.evaluate(()=>{selected.columns.t_bridge_span_internal_mm.coverage.bridge_roads=999;renderRows();});assert.equal(await page.locator('#rows tr.selected [data-bridge-summary] span').count(),0);
+ await page.evaluate(cov=>{selected.columns.t_bridge_span_internal_mm.coverage=cov;renderRows();},originalCoverage);
+
  assert.match(await page.locator('#planning-pose').innerText(),/Planning pose: zero/);
  assert.doesNotMatch(await page.locator('#planning-pose').innerText(),/large/);
  const shellRow=page.locator('#comparison-rows tr').filter({has:page.getByRole('rowheader',{name:'Thin shell fraction · T',exact:true})});
