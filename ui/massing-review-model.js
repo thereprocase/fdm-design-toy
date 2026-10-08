@@ -151,7 +151,7 @@ const MassingReview = (() => {
   mechanicsInputs(report,sliced,r.cases,r.reference_sha256);
   const m=r.material,nonnegative=v=>Number.isFinite(v)&&v>=0;
   if(!m||m.law!=='E/E0 = min(raw_density, 1)^power'||!Number.isFinite(m.E0_MPa)||m.E0_MPa<=0||!Number.isFinite(m.nu)||m.nu<=-1||m.nu>=.5||!Number.isFinite(m.power)||m.power<=0||m.stiffness_floor!==0||typeof m.evidence!=='string')throw Error('Unsupported or incomplete density-weighted material law.');
-  if(r.domain_policy!=='largest face component of positive-density cells'||r.load_policy!=='original full-body nodal loads and restraints; no transfer or deletion'||!hash(r.load_sha256))throw Error('Unsupported density-weighted domain or load policy.');
+  if(!['largest face component of positive-density cells','all positive-density cells'].includes(r.domain_policy)||r.load_policy!=='original full-body nodal loads and restraints; no transfer or deletion'||!hash(r.load_sha256))throw Error('Unsupported density-weighted domain or load policy.');
   if(typeof r.establishes!=='string'||!Array.isArray(r.does_not_establish)||!r.does_not_establish.every(x=>typeof x==='string'))throw Error('Weighted mechanics needs evidence scope.');
   if(JSON.stringify(r.grid)!==JSON.stringify(r.cases.project.provenance.grid)||JSON.stringify(r.installed_to_print)!==JSON.stringify(r.cases.project.provenance.installed_to_print))throw Error('Weighted mechanics grid or transform differs from occupancy provenance.');
   for(const name of ['full_solid','baseline','project']){
@@ -162,7 +162,12 @@ const MassingReview = (() => {
     for(const key of ['cells','face_components','missing_loaded_dofs','loaded_fixed_dofs','restrained_rigid_modes','missing_load_l1_N'])if(!nonnegative(a[key]))throw Error('Invalid weighted mechanics audit: '+key);
    }
    const f=c.fragment_removal;
-   for(const key of ['removed_cells','removed_grid_volume_mm3','removed_deposited_volume_mm3','removed_original_load_l1_N','removed_fixed_dofs'])if(!nonnegative(f?.[key]))throw Error('Missing weighted fragment accounting: '+key);
+   if(r.domain_policy==='largest face component of positive-density cells'){
+    for(const key of ['removed_cells','removed_grid_volume_mm3','removed_deposited_volume_mm3','removed_original_load_l1_N','removed_fixed_dofs'])if(!nonnegative(f?.[key]))throw Error('Missing weighted fragment accounting: '+key);
+   }else{
+    const stable=v=>JSON.stringify(v,(_,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.keys(x).sort().map(k=>[k,x[k]])):x);
+    if(Object.hasOwn(c,'fragment_removal')||stable(c.raw_audit)!==stable(c.audit))throw Error('All-positive domain must preserve the raw audit without fragment removal.');
+   }
    if(!nonnegative(c.cells_outside_full_body)||!Number.isFinite(c.positive_stiffness_fraction_min)||c.positive_stiffness_fraction_min<=0||c.positive_stiffness_fraction_min>1)throw Error('Invalid weighted domain measurement.');
    if(c.solve?.status==='solved')for(const key of ['compliance_N_mm','max_displacement_mm','true_relative_residual'])if(!nonnegative(c.solve[key]))throw Error('Invalid weighted solve measurement: '+key);
   }
@@ -187,8 +192,8 @@ const MassingReview = (() => {
    if(a.restrained_rigid_modes!==6)note(`${a.restrained_rigid_modes} of 6 rigid modes restrained.`);
    if(weighted){
     if(a.missing_load_l1_N!==0)note(`${a.missing_load_l1_N} N summed absolute nodal load is missing.`);
-    if(c.fragment_removal.removed_original_load_l1_N!==0)note('fragment removal lost original nodal load.');
-    if(c.fragment_removal.removed_fixed_dofs!==0)note('fragment removal lost fixed DOFs.');
+    if(c.fragment_removal&&c.fragment_removal.removed_original_load_l1_N!==0)note('fragment removal lost original nodal load.');
+    if(c.fragment_removal&&c.fragment_removal.removed_fixed_dofs!==0)note('fragment removal lost fixed DOFs.');
    }
    if(v?.status!=='solved')note('no completed solve.');
    else{

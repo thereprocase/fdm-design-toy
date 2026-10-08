@@ -354,6 +354,13 @@ requires successful retained-domain audits, no recorded lost load or restraints,
 and converged solves. The browser pairs recorded inputs; it does not rerun FE,
 verify NPZ bytes, calibrate the law or establish physical movement/strength.
 
+Weighted receipts may instead declare **all positive-density cells**. This
+unfiltered policy requires identical raw and retained audits and no fragment-removal
+record. The page says that no fragments were removed; it does not manufacture
+zero-removal measurements. The largest-component policy still requires its
+explicit fragment accounting. Neither policy bypasses load, restraint or
+convergence checks.
+
 After loading the exact draft, export receipt and paired slice evidence, the
 review page accepts a `fdmgen/seat-load-transfer-pilot@0.1` mechanics receipt.
 It requires the export's project and plan hashes, both loaded slice G-code

@@ -53,6 +53,19 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   assert.match(await page.locator('#mechanics-audits').innerText(),/Raw domain: blocked/);
   assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),JSON.parse(fs.readFileSync(weightedPath)));
  }
+ const unfiltered=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p1-sf16-r1.json')));
+ // Synthetic rendering control, not a relabelled physical receipt.
+ unfiltered.domain_policy='all positive-density cells';
+ for(const c of Object.values(unfiltered.cases)){c.raw_audit=structuredClone(c.audit);delete c.fragment_removal;}
+ await page.locator('#review-mechanics').setInputFiles({name:'synthetic-unfiltered.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(unfiltered))});
+ await page.waitForFunction(()=>document.querySelector('#mechanics-policy').textContent.includes('No fragments were removed'));
+ assert.doesNotMatch(await page.locator('#mechanics-audits').innerText(),/Removed \d+ cells/);
+ assert.doesNotMatch(await page.locator('#mechanics-rows').innerText(),/Not established/);
+ assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),unfiltered);
+ const contradictory=structuredClone(unfiltered);contradictory.cases.project.raw_audit.cells++;
+ await page.locator('#review-mechanics').setInputFiles({name:'synthetic-contradiction.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(contradictory))});
+ await page.waitForFunction(()=>document.querySelector('#mechanics-status').textContent.includes('must preserve the raw audit'));
+ assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),unfiltered);
  const badWeighted=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p3-sf16-r1.json')));
  badWeighted.cases.project.audit.missing_load_l1_N=1;
  await page.locator('#review-mechanics').setInputFiles({name:'synthetic-lost-load.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(badWeighted))});

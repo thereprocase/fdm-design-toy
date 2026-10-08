@@ -161,3 +161,22 @@ test('individual mechanics rows follow their domain gates independently of pair 
  }
  const r=read();r.cases.project.audit.missing_fixed_dofs=0;assert(Review.mechanicsComparable(r));
  });
+
+test('all-positive policy requires unchanged audits and no fragment-removal record',()=>{
+ const make=()=>{
+  // Synthetic policy control; the archived R1 full-body case required filtering.
+  const r=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p1-sf16-r1.json')));
+  r.domain_policy='all positive-density cells';
+  for(const c of Object.values(r.cases)){c.raw_audit=structuredClone(c.audit);delete c.fragment_removal;}
+  return r;
+ };
+ const r=make(),before=JSON.stringify(r);
+ assert.equal(Review.mechanics(seedReport,seedSlice,r),r);assert(Review.mechanicsComparable(r));assert.equal(JSON.stringify(r),before);
+ r.cases.project.raw_audit=Object.fromEntries(Object.entries(r.cases.project.raw_audit).reverse());
+ assert.equal(Review.mechanics(seedReport,seedSlice,r),r);
+ for(const mutate of [r=>r.cases.project.raw_audit.cells++,r=>r.cases.project.fragment_removal={},r=>r.domain_policy='unspecified']){
+  const bad=make();mutate(bad);assert.throws(()=>Review.mechanics(seedReport,seedSlice,bad));
+ }
+ const lost=make();lost.cases.project.audit.retained_fixed_dofs--;lost.cases.project.raw_audit=structuredClone(lost.cases.project.audit);
+ Review.mechanics(seedReport,seedSlice,lost);assert(!Review.mechanicsComparable(lost));
+});
