@@ -144,6 +144,9 @@ Open [helper export review](massing-review.html). Load the saved draft and expor
 report first. Then select the manifest **and all five receipt JSON files together**
 from the evidence output folder. Fingerprints must pair before results are shown.
 Read failed and unchecked results, their scope, coverage and method context.
+The review page’s **Next steps** section repeats the full bundle command. Its
+optional helper-material command produces only the sliced-helper receipt; it
+does not replace the shell and bridge checks in a full bundle.
 If a paired comparison is withheld, read the first reason in the bundle summary
 and the complete producer-reported list below it. Resolve the stated input or
 context mismatch before trying to interpret a numerical change.
