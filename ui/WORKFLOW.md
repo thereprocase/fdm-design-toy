@@ -96,8 +96,10 @@ Use the second workstation for slicing.
    settings. Turn automatic arrangement and orientation off. Retain the original
    project files and the corresponding project and shell-only G-codes.
 3. Run the displayed `fdmgen evidence` command with the report, both G-codes, exact
-   table and selected pose. It runs helper material, shell and pose-bound bridge
-   checks, writing `evidence-bundle.json` and five receipt files. Exit 2 records
+   table and selected pose. This worker also needs the matching part source
+   checkout (or `SPOOL_RACK_ROOT` for the bracket adapter): shell and bridge checks
+   load the body mesh. It runs helper material, shell and pose-bound bridge checks,
+   writing `evidence-bundle.json` and five receipt files. Exit 2 records
    one or more FAIL results; exit 1 means an error without a completed manifest.
 
 A written file or zero exit code does not establish physical qualification.
