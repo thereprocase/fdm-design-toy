@@ -24,3 +24,10 @@ test('bundle pairing reports the specific mismatched input',async()=>{
   const f=fixture();mutate(f);await assert.rejects(Bundle.load(inputs(f),f.context),message);
  }
 });
+
+test('bundle lists every missing receipt and validates roles before file recovery',async()=>{
+ const f=fixture(),missing=f.files.splice(1,3).map(file=>file.name);
+ await assert.rejects(Bundle.load(inputs(f),f.context),error=>missing.every(name=>error.message.includes(name))&&error.message.includes('all five receipt files together'));
+ const invalid=fixture();invalid.files=[];invalid.manifest.receipts[1]={...invalid.manifest.receipts[0]};
+ await assert.rejects(Bundle.load(inputs(invalid),invalid.context),/duplicate bundle receipt role/);
+});

@@ -812,3 +812,5 @@ The review summary exposes current SHA-256 input fingerprints in an expandable p
 Add, duplicate and undo-remove actions focus and reveal the helper name, including on small screens. Duplicate and Remove choose their resulting selection on activation, so button focus does not shift the controls during a pointer click. Undo still preserves incomplete field values and the helper’s original position.
 
 Reference pose comparisons include supplementary bridge ceiling maxima beside strand maxima. These are independent per-measure maxima, potentially on different roads; the strand verdict remains authoritative for the recorded screen. Missing ceiling measurements remain explicitly unrecorded.
+
+An incomplete bundle selection lists every missing receipt filename and asks for the manifest and all five receipts together. Each picker selection replaces the selected files; a rejected set leaves previously verified results intact.

@@ -41,6 +41,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#review-bundle').setInputFiles(fs.readdirSync(dir).filter(n=>n.endsWith('.json')).map(n=>path.join(dir,n)));
  await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('All five'));
  const real=JSON.parse(await page.locator('#bundle-provenance').textContent());
+ const verifiedManifest=await page.locator('#bundle-provenance').textContent();
+ await page.locator('#review-bundle').setInputFiles(path.join(dir,'evidence-bundle.json'));
+ await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('Missing bundle receipts:'));
+ const missingMessage=await page.locator('#bundle-status').innerText();
+ for(const receipt of real.receipts)assert(missingMessage.includes(receipt.path));
+ assert.match(missingMessage,/each selection replaces/);
+ assert.equal(await page.locator('#bundle-provenance').textContent(),verifiedManifest);
+ assert(await page.locator('#bundle-results').isVisible());
  assert.equal(real.receipts.find(r=>r.check==='bridge-check'&&r.slice_kind==='project').sha256,'e82806aa7543dff15d94459ab1eff1d7af221bd06a871ad905ba687eb46fd76b');
  assert.match(await page.locator('#bundle-bridges').innerText(),/Project bridges · T FAIL/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/Shell-only baseline bridges · T FAIL/);

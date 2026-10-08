@@ -37,13 +37,17 @@
   if(manifest.inputs?.table_sha256!==report.plan.table_sha256)throw Error('Bundle belongs to a different orientation table. Use the exact table bytes pinned by this export report.');
   if(manifest.pose!==report.plan.candidate_id)throw Error('Bundle belongs to a different pose. Select the bundle generated for this export report and pose.');
   if(!Array.isArray(manifest.receipts)||manifest.receipts.length!==5)throw Error('Bundle needs all five receipt entries.');
-  const receipts=new Map(),paths=new Set();
+  const receipts=new Map(),paths=new Set(),roles=new Set();
   for(const e of manifest.receipts){
    const slot=e.check+'/'+e.slice_kind;
-   if(!slots.includes(slot)||receipts.has(slot))throw Error('Unknown or duplicate bundle receipt role.');
+   if(!slots.includes(slot)||roles.has(slot))throw Error('Unknown or duplicate bundle receipt role.');
    if(typeof e.path!=='string'||!e.path||/[\\/:]/.test(e.path)||e.path==='.'||e.path==='..'||paths.has(e.path))throw Error('Select a bundle with unique receipt filenames in one directory.');
-   paths.add(e.path);const file=entries.get(e.path);
-   if(!file)throw Error('Missing bundle receipt: '+e.path);
+   paths.add(e.path);roles.add(slot);
+  }
+  const missing=[...paths].filter(path=>!entries.has(path));
+  if(missing.length)throw Error('Missing bundle receipts: '+missing.join(', ')+'. Select the manifest and all five receipt files together; each selection replaces the previous file selection.');
+  for(const e of manifest.receipts){
+   const slot=e.check+'/'+e.slice_kind,file=entries.get(e.path);
    if(!hash(e.sha256)||file.sha!==e.sha256)throw Error('Receipt fingerprint differs: '+e.path);
    if(file.value.schema!==e.schema||!verdicts.includes(e.verdict))throw Error('Receipt schema or verdict differs: '+e.path);
    receipts.set(slot,file.value);
