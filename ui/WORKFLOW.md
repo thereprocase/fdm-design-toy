@@ -25,6 +25,30 @@ mesh. For the 3D preview, supply the matching `body-mounted.stl` from the part
 source checkout; the JSON files do not include the STL. The workspace checks
 its fingerprint. This example does not download or generate geometry for you.
 
+### Try the interface and keep-out overlays
+
+Continue with the original example table and six-helper draft above. The checkout
+already contains both matching sidecars in `tests/fixtures/orient/`:
+
+- [Interface models](../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.interface-render.json):
+  `spool-rack-g2-ef.with-keep-outs.interface-render.json`.
+- [Keep-out models](../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.keepout-render.json):
+  `spool-rack-g2-ef.with-keep-outs.keepout-render.json`.
+
+Load the interface file under **Optional: locate interface models**, then select
+**rear_seat** to see its blue base cylinder. Load the matching STL if needed.
+Choose a helper in **Helper to edit** and optionally enable **Preview active
+helper’s requested clearance**. The purple envelopes use all of that helper’s
+selected interface references, independently of which blue base models you
+chose. Read the named helper and radii beside the preview; no clearance check runs.
+
+Load the keep-out file under **Optional: preview part keep-outs** and select a
+constraint to draw its magenta geometry. Hide either overlay group when it
+obscures the part. Both imports and visibility controls preserve the draft.
+These sidecars pin the original table bytes and will be refused against the
+sliced-pose example’s enriched table below; generate new sidecars for that table
+with the documented commands rather than editing fingerprints.
+
 ### Try the sliced-pose example
 
 To inspect measured shell and bridge checks instead, open **Or open a complete
