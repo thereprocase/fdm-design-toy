@@ -15,6 +15,8 @@ const {chromium}=require('playwright'),path=require('node:path'),fs=require('nod
  await page.locator('#bridge-location-buttons').getByRole('button',{name:'internal strand · 122.1 mm',exact:true}).click();
  assert.deepEqual(await page.evaluate(()=>reviewViewer.roadWitness),r.result.metrics.worst.internal.strand.design_mm);
  assert.match(await page.locator('#bridge-location-selected').innerText(),/Slicer roles do not prove/);
+ assert.equal(await page.locator('#bridge-location-buttons [aria-pressed="true"]').count(),1);
+ assert.match(await page.locator('#bridge-location-buttons [aria-pressed="true"]').innerText(),/internal strand/);
  await page.locator('#review-top').click();
  const old=await page.locator('#bridge-location-source').textContent();
  // Bad optional geometry cannot replace the valid location or any bundle measurements.
@@ -29,7 +31,10 @@ const {chromium}=require('playwright'),path=require('node:path'),fs=require('nod
  await page.locator('#bridge-location-buttons').getByRole('button',{name:/internal ceiling/}).click();
  assert.deepEqual(await page.evaluate(()=>reviewViewer.roadWitness),r.result.metrics.worst.internal.ceiling.design_mm);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- await page.locator('#bridge-location-hide').click();assert.equal(await page.evaluate(()=>reviewViewer.roadWitness),null);
+ await page.locator('#bridge-location-hide').focus();await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>reviewViewer.roadWitness),null);
+ assert.match(await page.evaluate(()=>document.activeElement.textContent),/internal ceiling/);
+ assert.equal(await page.locator('#bridge-location-buttons [aria-pressed="true"]').count(),0);
+ await page.keyboard.press('Enter');assert.deepEqual(await page.evaluate(()=>reviewViewer.roadWitness),r.result.metrics.worst.internal.ceiling.design_mm);
  await page.locator('#bridge-location-buttons').getByRole('button',{name:/internal strand/}).click();
  await page.locator('#bridge-location-kind').selectOption('project');assert.equal(await page.evaluate(()=>reviewViewer.roadWitness),null);assert.equal(await page.locator('#bridge-location-buttons button').count(),0);
  await page.locator('#bridge-location-kind').selectOption('baseline');await page.locator('#review-bridge').setInputFiles(path.join(dir,'shell-only.bridge-check.json'));
