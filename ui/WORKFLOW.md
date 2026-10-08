@@ -96,9 +96,10 @@ part when you choose a different print pose.
 - **Cancel placement** or Escape exits picking without moving the helper.
 - **Move centre by** and the axis buttons move along design X/Y/Z.
 - **Undo last centre move** reverses the latest nudge or successful surface pick,
-  restoring the previous coordinate text, including blanks. Typing a coordinate
-  clears that helper’s history. Up to 20 nudges and successful picks per helper
-  can be undone in reverse order during this editing session.
+  restoring the previous coordinate text, including blanks. **Redo centre move**
+  restores an undone placement. A fresh move clears redo; typing a coordinate
+  clears both histories for that helper. Up to 20 nudges and successful picks
+  can be undone and redone during this editing session.
 - **Duplicate region** copies its fields into an independently editable helper.
   **Undo remove** restores a removed helper while that removal history remains
   in this session.

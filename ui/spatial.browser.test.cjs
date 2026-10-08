@@ -117,9 +117,13 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await page.locator('#view-top').click();await page.waitForFunction(()=>!viewer.pending);
   await page.mouse.click(...hit);await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('Region centre placed'));
   assert.equal(await page.evaluate(()=>viewer.regions.length),1);
+  const pickedPlacement=await page.evaluate(()=>draftFormState());
   await region.getByRole('button',{name:'Undo last centre move'}).click();
   assert.equal(await page.evaluate(()=>draftFormState()),beforeOverlay.state);
   assert(await region.getByRole('button',{name:'Undo last centre move'}).isDisabled());
+  await region.getByRole('button',{name:'Redo centre move',exact:true}).click();
+  assert.equal(await page.evaluate(()=>draftFormState()),pickedPlacement);
+  await region.getByRole('button',{name:'Undo last centre move'}).click();
   await region.locator('[data-geometry="center_mm"][data-axis="0"]').fill('');
   const blankBeforePick=await page.evaluate(()=>draftFormState());
   await region.getByRole('button',{name:'Place centre on part'}).click();await page.mouse.click(...hit);
@@ -173,15 +177,28 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await cy.fill(centers[1]);assert(await region.getByRole('button',{name:'Undo last centre move'}).isDisabled());
   // A sequence can be unwound, preserving coordinate text and all other fields.
   const undoMove=region.getByRole('button',{name:'Undo last centre move'});
+  const redoMove=region.getByRole('button',{name:'Redo centre move',exact:true});
+  assert(await redoMove.isDisabled());
   const recoveryStart=await page.evaluate(()=>draftFormState()),snapshots=[];
   for(const axis of ['X','Y','Z']){
    snapshots.push(await page.evaluate(()=>draftFormState()));
    await region.getByRole('button',{name:`Move ${axis} +`,exact:true}).click();
   }
-  for(const state of snapshots.reverse()){
+  const lastPlacement=await page.evaluate(()=>draftFormState());
+  for(const state of [...snapshots].reverse()){
    await undoMove.click();assert.equal(await page.evaluate(()=>draftFormState()),state);
   }
   assert(await undoMove.isDisabled());
+  await region.getByRole('button',{name:'Place centre on part'}).click();
+  for(const state of [...snapshots.slice(1),lastPlacement]){
+   await redoMove.click();assert.equal(await page.evaluate(()=>draftFormState()),state);
+  }
+  assert(await page.evaluate(()=>viewer.onPick===null));assert(await redoMove.isDisabled());
+  for(let i=0;i<3;i++)await undoMove.click();
+  assert.equal(await page.evaluate(()=>draftFormState()),recoveryStart);
+  // A fresh move chooses a new branch; old redo placements are discarded.
+  await region.getByRole('button',{name:'Move X +',exact:true}).click();
+  assert(await redoMove.isDisabled());await undoMove.click();
   // History is bounded: after 21 moves only the latest 20 remain recoverable.
   for(let i=0;i<21;i++)await region.getByRole('button',{name:'Move X +',exact:true}).click();
   for(let i=0;i<20;i++)await undoMove.click();
@@ -189,6 +206,7 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert(Math.abs(Number(await region.locator('[data-geometry="center_mm"][data-axis="0"]').inputValue())-Number(centers[0])-.4)<1e-6);
   await region.locator('[data-geometry="center_mm"][data-axis="0"]').fill(centers[0]);
   assert.equal(await page.evaluate(()=>draftFormState()),recoveryStart);
+  assert(await redoMove.isDisabled());
 
   await region.getByRole('button',{name:'Place centre on part'}).click();
   await page.getByRole('button',{name:'facet-01',exact:true}).click();assert(await page.evaluate(()=>viewer.onPick===null));assert(await page.locator('#cancel-placement').isHidden());await page.locator('#rationale').fill('Alternative pose for the same reinforcement.');

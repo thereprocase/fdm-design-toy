@@ -391,11 +391,12 @@ function addHelper(region={}) {
   const stepLabel=text('label','Move centre by',nudge),step=document.createElement('select');step.dataset.nudgeStep='';
   for(const value of [.1,.4,1,5]){const option=text('option',value+' mm',step);option.value=value;}step.value='1';stepLabel.append(step);
   const moves=text('div','',nudge);moves.className='nudge-buttons';
-  const status=text('p','Moves use design axes, independent of the print pose. Undo keeps up to 20 moves per helper; typing a centre clears its history. Clearance and bonding are not checked here.',nudge);status.setAttribute('role','status');status.dataset.nudgeStatus='';
-  const centreMoves=[];
-  const rememberCentreMove=before=>{centreMoves.push(before);if(centreMoves.length>20)centreMoves.shift();undo.disabled=false;};
+  const status=text('p','Moves use design axes, independent of the print pose. Undo and redo keep up to 20 moves per helper; typing a centre clears both histories. Clearance and bonding are not checked here.',nudge);status.setAttribute('role','status');status.dataset.nudgeStatus='';
+  const centreMoves=[],redoMoves=[];
+  const rememberCentreMove=before=>{centreMoves.push(before);if(centreMoves.length>20)centreMoves.shift();redoMoves.length=0;redo.disabled=true;undo.disabled=false;};
   const centres=()=>[...box.querySelectorAll('[data-geometry="center_mm"]')];
   const undo=text('button','Undo last centre move',nudge);undo.type='button';undo.className='secondary';undo.disabled=true;
+  const redo=text('button','Redo centre move',nudge);redo.type='button';redo.className='secondary';redo.disabled=true;
   for(let axis=0;axis<3;axis++)for(const sign of [-1,1]){
     const move=text('button',`Move ${'XYZ'[axis]} ${sign<0?'−':'+'}`,moves);move.type='button';move.className='secondary';
     move.onclick=()=>{
@@ -407,8 +408,9 @@ function addHelper(region={}) {
       status.textContent=`Moved centre ${sign<0?'−':'+'}${step.value} mm along design ${'XYZ'[axis]}. Geometry checks have not been rerun.`;
     };
   }
-  undo.onclick=()=>{if(!centreMoves.length)return;cancelSurfacePlacement();const before=centreMoves.pop();centres().forEach((f,i)=>f.value=before[i]);undo.disabled=!centreMoves.length;updateRegions();status.textContent=`Previous centre restored. ${centreMoves.length} earlier centre move(s) can still be undone. Geometry checks have not been rerun.`;};
-  box.addEventListener('input',event=>{if(event.target.matches('[data-geometry="center_mm"]')){cancelSurfacePlacement();centreMoves.length=0;undo.disabled=true;}});
+  undo.onclick=()=>{if(!centreMoves.length)return;cancelSurfacePlacement();redoMoves.push(centres().map(f=>f.value));redo.disabled=false;const before=centreMoves.pop();centres().forEach((f,i)=>f.value=before[i]);undo.disabled=!centreMoves.length;updateRegions();status.textContent=`Previous centre restored. ${centreMoves.length} earlier centre move(s) can still be undone. Geometry checks have not been rerun.`;};
+  redo.onclick=()=>{if(!redoMoves.length)return;cancelSurfacePlacement();centreMoves.push(centres().map(f=>f.value));const after=redoMoves.pop();centres().forEach((f,i)=>f.value=after[i]);redo.disabled=!redoMoves.length;undo.disabled=false;updateRegions();status.textContent=`Centre move restored. ${redoMoves.length} later centre move(s) can still be redone. Geometry checks have not been rerun.`;};
+  box.addEventListener('input',event=>{if(event.target.matches('[data-geometry="center_mm"]')){cancelSurfacePlacement();centreMoves.length=0;redoMoves.length=0;undo.disabled=true;redo.disabled=true;}});
   const view=text('button','View this helper',spatial);view.type='button';view.className='secondary';view.dataset.viewHelper='';view.disabled=true;view.title='Load the matching mesh and enter a valid box to preview this helper.';
   view.onclick=()=>{cancelSurfacePlacement();setActiveHelper(box);viewer.focusRegion(box.dataset.id);document.querySelector('.preview').scrollTop=0;byId('part-view').scrollIntoView({block:'center'});byId('part-view').focus({preventScroll:true});};
   const place=text('button','Place centre on part',spatial);place.type='button';place.className='secondary';
