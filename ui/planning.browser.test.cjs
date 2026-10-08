@@ -51,6 +51,15 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
    assert.equal(await page.locator('#draft-edit-state').innerText(),state);
   };
   const original=await download();assert.equal(original.massing.helper_regions.length,2);assert.match(await page.locator('#handoff-readiness').innerText(),/2 helper\(s\) without a box/);assert(await page.locator('#handoff').evaluate(e=>e.open));
+  assert.equal(await page.locator('#handoff-missing-boxes button').count(),2);
+  const beforeBoxNavigation=await page.evaluate(()=>draftFormState());
+  await page.locator('.helper-region').last().locator('.helper-editor').evaluate(e=>e.open=false);
+  await page.locator('#handoff-missing-boxes button').last().click();
+  assert(await page.locator('.helper-region').last().locator('[data-spatial]').evaluate(e=>e===document.activeElement&&!e.checked));
+  assert(await page.locator('.helper-region').last().locator('.helper-editor').evaluate(e=>e.open));
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeBoxNavigation);
+  await page.locator('#shell-only').check();assert(await page.locator('#handoff-missing-boxes button').first().isDisabled());
+  await page.locator('#shell-only').uncheck();assert(await page.locator('#handoff-missing-boxes button').first().isEnabled());
   assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since the last draft download/);
   assert.equal(await page.locator('#handoff-command').innerText(),`fdmgen massing spool-rack-g2-ef-facet-00-massing-plan.json --table orientation-table-${original.source.orientation_table_sha256.slice(0,12)}.json --template PROFILE.3mf --out out/massing`);
   await sourceDownload(await fs.readFile(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json')));
@@ -104,7 +113,7 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   // Restore multiple deletions without changing identity, order or export values.
   await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();
   await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();
-  assert.equal(await page.locator('.helper-region').count(),0);assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
+  assert.equal(await page.locator('#handoff-missing-boxes button:enabled').count(),0);assert.equal(await page.locator('.helper-region').count(),0);assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   await page.locator('#undo-remove').click();await page.locator('#undo-remove').click();
   assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since/);
   assert.deepEqual(await download(),original);assert(await page.locator('#undo-remove').isDisabled());
@@ -154,7 +163,7 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await upload(exact);await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
   assert.match(await page.locator('#handoff-command').innerText(),/massing DRAFT.json --table TABLE.json/);
   assert.match(await page.locator('#evidence-command').innerText(),/PART-POSE-massing.json/);
-  assert.match(await page.locator('#handoff-readiness').innerText(),/Export this draft/);
+  assert.match(await page.locator('#handoff-readiness').innerText(),/Export this draft/);assert.equal(await page.locator('#handoff-missing-boxes button').count(),0);
   assert.match(await page.locator('#handoff-snapshot').innerText(),/No export from this draft/);
   assert.match(await page.locator('#planning-pose').innerText(),/Planning pose: facet-00/);
   assert.match(await page.locator('#planning-pose-checks').innerText(),/Design-frame build direction/);

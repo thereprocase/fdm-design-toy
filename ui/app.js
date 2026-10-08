@@ -445,6 +445,7 @@ function addHelper(region={}) {
   box.append(editor);byId('helper-regions').append(box);updateRegions();return box;
 }
 function resetHandoff(){
+ byId('handoff-missing-boxes').replaceChildren();
  byId('handoff-command').textContent='fdmgen massing DRAFT.json --table TABLE.json --template PROFILE.3mf --out out/massing';
  byId('handoff-readiness').textContent='Export this draft to populate its filenames and geometry-input summary.';
  renderEvidenceHandoff(null);
@@ -488,6 +489,10 @@ function draftFormState(){
    fields:[...box.querySelectorAll('input,textarea')].map(field=>field.type==='checkbox'?field.checked:field.value)}))});
 }
 function updateDraftState(){
+ for(const button of byId('handoff-missing-boxes').children){
+  button.disabled=byId('shell-only').checked||![...byId('helper-regions').children].some(box=>box.dataset.id===button.dataset.helperId);
+ }
+
  const changed=hasDraftEdits();
  const label=byId('draft-edit-state');label.className=changed?'warning':'hint';
  label.textContent=draftCheckpointKind==='new'
@@ -615,6 +620,13 @@ byId('export').onclick=()=>{
     byId('export-status').textContent='Draft exported. It includes the source fingerprint and outstanding verification steps.';
     const incomplete=draft.massing.helper_regions.filter(h=>!h.geometry);
     byId('handoff-readiness').textContent=incomplete.length?`Last exported draft: ${incomplete.length} helper(s) without a box: ${incomplete.map(h=>h.name).join(', ')}. Enable their spatial controls and set centre/size, then save again before running the exporter.`:'Last exported draft: geometry inputs needed for export are present. The command still checks source fingerprints and helper geometry.';
+    byId('handoff-missing-boxes').replaceChildren();
+    for(const helper of incomplete){
+      const box=[...byId('helper-regions').children].find(box=>box.dataset.id===helper.id);
+      if(!box)continue;
+      const button=text('button',`Edit box for ${helperLabel(box)}`,byId('handoff-missing-boxes'));button.type='button';button.className='secondary';button.dataset.helperId=helper.id;
+      button.onclick=()=>{if(!box.isConnected||byId('shell-only').checked)return;setActiveHelper(box);const field=box.querySelector('[data-spatial]');field.focus({preventScroll:true});field.scrollIntoView({block:'center'});};
+    }
     byId('handoff').open=true;
   }catch(error){
     byId('export-status').textContent=error.message;
