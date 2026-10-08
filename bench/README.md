@@ -668,3 +668,23 @@ exact solution retains its null component for singular diagonal blocks.
 Hierarchy construction stays fixed; the relaxation is changed afterward.
 This is an experimental symmetry repair, not a convergence fix or SPD proof.
 Use `--audit-preconditioner` to record actual settings and sampled behavior.
+
+The paired `bracket-r1-compiled-jacobi-audit.json` and
+`bracket-r1-residual-jacobi-audit.json` receipts (harness `c9adc56`) use the
+same R1 banded theta=0.25 case, energy prolongation and coarse pseudoinverse.
+Physical-input hashes, inverse-block hashes, damping and iteration counts match.
+Both residual histories reproduce the earlier private controls exactly.
+
+| Relaxation | Full-space max symmetry gap | Free-DOF max symmetry gap | CG / final true residual |
+|---|---:|---:|---:|
+| Compiled block Jacobi | 2.014e-4 | 2.027e-4 | 150 cap / 13.8166 |
+| Residual block Jacobi | 1.560e-15 | 1.579e-15 | 150 cap / 13.8166 |
+
+Both have zero constrained-output leakage on these probes. The residual update
+repairs the observed symmetry defect but does not improve convergence in this
+case; both benchmark commands exit 2. Positive sampled energies still do not
+prove SPD. This result neither qualifies the bracket nor meets the solver gate.
+The default remains symmetric block Gauss-Seidel. Remote full suite: 282 passed,
+6 CUDA-only skips; controls cover preservation of an exact solution's null
+component, agreement with compiled Jacobi for nonsingular blocks, direct-solve
+accuracy and unchanged CG histories when auditing is enabled.
