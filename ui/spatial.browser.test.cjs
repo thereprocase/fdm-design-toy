@@ -6,10 +6,18 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   const page=await browser.newPage({viewport:{width:1300,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('dialog',dialog=>dialog.accept());
  await page.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
-  await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
+  await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));
   await page.getByRole('button',{name:'facet-00',exact:true}).click();
   await page.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);
   await page.waitForFunction(()=>document.querySelector('#mesh-status').textContent.startsWith('Mesh fingerprint matched'));
+  await page.locator('#keepout-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.keepout-render.json'));
+  await page.waitForFunction(()=>document.querySelectorAll('[data-keepout-preview]').length===2);
+  await page.locator('#keepout-options > summary').click();
+  await page.locator('[data-keepout-preview="crown_moulding"]').check();
+  await page.locator('[data-keepout-preview="spool_slide"]').check();
+  await page.locator('#keepout-options > summary').click();
+  await page.waitForFunction(()=>viewer.keepouts.length===2&&!viewer.pending);
+  const keepoutLines=await page.evaluate(()=>viewer.keepouts.map(x=>({id:x.id,lines:x.lines})));
   assert.deepEqual(await page.evaluate(()=>viewer.bed),[[0,0],[256,0],[256,256],[0,256]]);
   assert.deepEqual(await page.evaluate(()=>viewer.bedMargin),[[10,10],[246,10],[246,246],[10,246]]);
   await page.locator('#rationale').fill('Preserve loaded interfaces.');
@@ -72,6 +80,21 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   const hit=await page.evaluate(()=>{
     const v=viewer.vertices;let best=null,area=-1;for(let i=0;i<v.length;i+=9){const p=[0,3,6].map(j=>viewer.project(v[i+j],v[i+j+1],v[i+j+2]));const a=Math.abs((p[1][0]-p[0][0])*(p[2][1]-p[0][1])-(p[2][0]-p[0][0])*(p[1][1]-p[0][1]));if(a>area){area=a;best=[p.reduce((s,q)=>s+q[0],0)/3,p.reduce((s,q)=>s+q[1],0)/3];}}const r=viewer.canvas.getBoundingClientRect();return [best[0]+r.left,best[1]+r.top];
   });
+  // A point on a visible keep-out line outside the mesh must remain a miss.
+  const emptyConstraint=await page.evaluate(()=>{
+    for(const item of viewer.keepouts)for(const line of item.lines){
+      const v=transformMesh(line.flat(),viewer.R,viewer.t),p=viewer.project((v[0]+v[3])/2,(v[1]+v[4])/2,(v[2]+v[5])/2);
+      if(p[0]<140||p[0]>viewer.canvas.clientWidth-120||p[1]<130||p[1]>viewer.canvas.clientHeight-70)continue;
+      if(!pickSurface(viewer.vertices,viewer.project,p[0],p[1])){const r=viewer.canvas.getBoundingClientRect();return [p[0]+r.left,p[1]+r.top];}
+    }
+    return null;
+  });
+  assert(emptyConstraint,'The real overlay has a visible point outside the body');
+  await page.mouse.click(...emptyConstraint);
+  await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('No surface'));
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeOverlay.state);
+  assert(await page.evaluate(()=>!!viewer.onPick));
+  await page.evaluate(()=>window.pickCalls=0);
   const beforeAuxiliary=await page.evaluate(()=>({form:draftFormState(),yaw:viewer.yaw,pitch:viewer.pitch}));
   for(const button of ['right','middle']){
     await page.mouse.click(...hit,{button});
@@ -150,6 +173,8 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await cy.fill(centers[1]);assert(await region.getByRole('button',{name:'Undo last centre move'}).isDisabled());
   await region.getByRole('button',{name:'Place centre on part'}).click();
   await page.getByRole('button',{name:'facet-01',exact:true}).click();assert(await page.evaluate(()=>viewer.onPick===null));assert(await page.locator('#cancel-placement').isHidden());await page.locator('#rationale').fill('Alternative pose for the same reinforcement.');
+  assert.deepEqual(await page.evaluate(()=>viewer.keepouts.map(x=>({id:x.id,lines:x.lines}))),keepoutLines);
+  assert.deepEqual(await page.evaluate(()=>viewer.R),await page.evaluate(()=>selected.R_design_to_print));
   assert.deepEqual(await region.locator('[data-geometry="center_mm"]').evaluateAll(fields=>fields.map(f=>f.value)),centers);
   await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('0.5');await page.waitForFunction(()=>document.querySelector('#region-warnings').textContent.includes('0.84'));
   const warningState=await page.evaluate(()=>draftFormState());
@@ -256,6 +281,6 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.equal(await page.locator('.helper-region').nth(2).locator('[data-geometry="size_mm"][data-axis="0"]').inputValue(),'');
   if(process.env.FDM_PREVIEW_SCREENSHOT)await page.screenshot({path:process.env.FDM_PREVIEW_SCREENSHOT,fullPage:false});
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
-  console.log('PASS spatial click placement, design-frame persistence across poses, size screen, interface refs, sketch export/reopen, mobile, console');
+  console.log('PASS spatial click placement with real keep-out overlays, overlay-only miss, design-frame persistence across poses, size screen, interface refs, sketch export/reopen, mobile, console');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
