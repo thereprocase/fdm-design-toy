@@ -73,8 +73,10 @@ print Z upward on screen. **Top view** looks from print +Z. Camera changes do no
 change your print pose or draft.
 
 Orange dashed boxes and the highlighted helper are unclipped planning regions.
-Their displayed volume is not credited material. The ground rectangle marks
-print Z=0; it is not a bed-fit test. Size, gap and bounding-box warnings are planning
+Their displayed volume is not credited material. The ground rectangle shows the
+declared bed at print Z=0, with the print origin at a bed corner. Without bed
+dimensions it is only a labelled reference plane. Margins and exclusion zones
+are not drawn; use the recorded bed-fit check. Size, gap and bounding-box warnings are planning
 screens. Exporter checks, sliced evidence and physical testing remain separate.
 
 If a replacement STL is rejected, the previously matched mesh and camera remain

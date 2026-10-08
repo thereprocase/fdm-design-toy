@@ -52,3 +52,9 @@ test('preview scale gives a bounded physical length across camera zoom levels',(
  }
  assert.equal(previewScale(0,100),null);assert.equal(previewScale(Infinity,100),null);
 });
+
+test('declared bed footprint uses print-corner coordinates without inventing missing dimensions',()=>{
+ const {bedFootprint}=require('./viewer.js');
+ assert.deepEqual(bedFootprint({x_mm:256,y_mm:200,margin_mm:10}),[[0,0],[256,0],[256,200],[0,200]]);
+ for(const bed of [undefined,{}, {x_mm:256},{x_mm:0,y_mm:20},{x_mm:20,y_mm:-1},{x_mm:'256',y_mm:20}])assert.equal(bedFootprint(bed),null);
+});

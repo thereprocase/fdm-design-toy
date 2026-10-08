@@ -44,6 +44,10 @@ function designAxesInView(R,yaw,pitch){
     return [cy*x-sy*y,sp*yy-cp*z,cp*yy+sp*z];
   });
 }
+function bedFootprint(bed){
+  if(!Number.isFinite(bed?.x_mm)||bed.x_mm<=0||!Number.isFinite(bed?.y_mm)||bed.y_mm<=0)return null;
+  return [[0,0],[bed.x_mm,0],[bed.x_mm,bed.y_mm],[0,bed.y_mm]];
+}
 function previewScale(pixelsPerMm,maxPixels){
   if(!Number.isFinite(pixelsPerMm)||pixelsPerMm<=0||!Number.isFinite(maxPixels)||maxPixels<=0)return null;
   const limit=maxPixels/pixelsPerMm,power=10**Math.floor(Math.log10(limit));
@@ -54,7 +58,7 @@ function scalePanel(width,height){return {x:width-Math.min(100,width*.25)-24,y:h
 const AXIS_PANEL={x:8,y:8,width:122,height:116};
 class PartViewer {
   constructor(canvas) {
-    this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;this.focusId=null;
+    this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;this.focusId=null;this.bed=null;
     let start=null,down=null,dragged=false,pointer=null;
     const onOverlay=e=>{
       const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
@@ -76,6 +80,7 @@ class PartViewer {
     canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
     new ResizeObserver(()=>this.schedule()).observe(canvas);
   }
+  setBed(bed){this.bed=bedFootprint(bed);this.schedule();}
   set(vertices,R,t){this.focusId=null;this.R=R;this.t=t;this.vertices=transformMesh(vertices,R,t);this.schedule();}
   setRegions(regions){this.regions=regions;if(this.focusId&&!regions.some(r=>r.id===this.focusId&&r.active))this.frameAll();this.schedule();}
   focusRegion(id){if(!this.vertices||!this.regions.some(r=>r.id===id&&r.active))return;this.focusId=id;this.zoom=1;this.schedule();}
@@ -100,8 +105,9 @@ class PartViewer {
     const cy=Math.cos(this.yaw),sy=Math.sin(this.yaw),cp=Math.cos(this.pitch),sp=Math.sin(this.pitch);
     const project=(x,y,z)=>{x-=center[0];y-=center[1];z-=center[2];const xx=cy*x-sy*y,yy=sy*x+cy*y;return [width/2+scale*xx,height/2-scale*(cp*z-sp*yy),cp*yy+sp*z];};
     this.project=project;
-    // A ground rectangle at print Z=0 gives an orientation cue, not a printer fit test.
-    const pad=radius*.12,ground=[[lo[0]-pad,lo[1]-pad],[hi[0]+pad,lo[1]-pad],[hi[0]+pad,hi[1]+pad],[lo[0]-pad,hi[1]+pad]].map(p=>project(...p,0));
+    // The producer uses a bed-corner print origin. Missing dimensions get only a plane cue.
+    const pad=radius*.12,outline=this.bed||[[lo[0]-pad,lo[1]-pad],[hi[0]+pad,lo[1]-pad],[hi[0]+pad,hi[1]+pad],[lo[0]-pad,hi[1]+pad]];
+    const ground=outline.map(p=>project(...p,0));
     ctx.beginPath();ground.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle='#d7dfd1';ctx.fill();ctx.strokeStyle='#adbda8';ctx.stroke();
     const faces=[];
     for(let i=0;i<v.length;i+=9){const p=[project(v[i],v[i+1],v[i+2]),project(v[i+3],v[i+4],v[i+5]),project(v[i+6],v[i+7],v[i+8])];
@@ -141,7 +147,7 @@ class PartViewer {
       ctx.fillText(bar.mm.toLocaleString(undefined,{maximumSignificantDigits:3})+' mm',x,panel.y+16);
       ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x,y+4);ctx.moveTo(x,y);ctx.lineTo(x+bar.pixels,y);ctx.moveTo(x+bar.pixels,y-4);ctx.lineTo(x+bar.pixels,y+4);ctx.stroke();
     }
-    ctx.fillStyle='#344d40';ctx.font='11px system-ui';ctx.fillText('Bed plane: print Z = 0 · mm',14,height-15);
+    ctx.fillStyle='#344d40';ctx.font='11px system-ui';ctx.fillText(this.bed?`Declared bed: ${this.bed[2][0]} × ${this.bed[2][1]} mm`:'Reference plane: print Z = 0 · mm',14,height-15);
   }
 }
-if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView,previewScale};
+if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView,previewScale,bedFootprint};

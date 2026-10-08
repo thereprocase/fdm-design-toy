@@ -774,3 +774,8 @@ the producer's geometric fidelity note is retained on the cell.
 The pose identifier column stays visible while scrolling horizontally through
 comparison metrics, including on narrow screens. Its selected-row highlight and
 keyboard selection remain available beside the far-right fit results.
+
+The preview draws the declared rectangular bed at print Z=0 using the table
+producer's corner-origin convention. Its dimensions are labelled; absent/invalid
+dimensions retain a labelled reference-plane cue. This does not recalculate fit:
+margins and exclusion zones are not drawn, and BED-001 remains the recorded result.
