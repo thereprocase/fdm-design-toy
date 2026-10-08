@@ -160,3 +160,48 @@ def check_boxes(boxes: dict, keep_outs, extent_lo, extent_hi, *, tol_mm: float =
                                     f"KEEP-OUT PASS: helper {bid} stays out of {ko['id']}."), True, m,
                                    [f"move helper {bid} out of {ko['id']}"] if overlap else []))
     return out
+
+
+AXES = ("x", "y", "z")
+
+
+def render_items(keep_outs, interfaces, body_lo, body_hi, *, margin_mm: float = 10.0, step_mm: float = 1.0) -> dict:
+    """Bounded, render-only geometry for keep-outs in their (design = installed) frame.
+
+    Open box bounds (null) become the body's bounding box widened by margin_mm, and are listed as unbounded so a
+    viewer can say the drawn face is a clip, not a limit. A flange sweep becomes the same sampled discs the
+    KEEP-OUT check tests (flange_discs), drawn over the body's Z range plus margin, since the sweep applies along
+    the whole rod axis. Anything else is listed with rendered false and the reason. Not a clearance check.
+    """
+    lo = np.round(np.asarray(body_lo, float) - margin_mm, 6)
+    hi = np.round(np.asarray(body_hi, float) + margin_mm, 6)
+    items = []
+    for ko in keep_outs or []:
+        base = {"id": ko["id"], "type": ko.get("type"), "rule": ko.get("rule")}
+        if ko.get("type") == "box":
+            mn, mx = ko["min_mm"], ko["max_mm"]
+            items.append({**base, "rendered": True,
+                          "min_mm": [float(lo[k]) if v is None else float(v) for k, v in enumerate(mn)],
+                          "max_mm": [float(hi[k]) if v is None else float(v) for k, v in enumerate(mx)],
+                          "unbounded": [f"{s}_{AXES[k]}" for s, side in (("min", mn), ("max", mx))
+                                        for k, v in enumerate(side) if v is None],
+                          "original": {"min_mm": mn, "max_mm": mx}})
+        elif ko.get("type") == "flange_sweep" and ko.get("axis") == "Z" and interfaces:
+            cs, rs = flange_discs(ko, interfaces, step_mm)
+            items.append({**base, "rendered": True, "axis": "Z",
+                          "discs": [{"centre_xy_mm": [round(float(c[0]), 6), round(float(c[1]), 6)],
+                                     "radius_mm": round(float(r), 6)} for c, r in zip(cs, rs)],
+                          "z_min_mm": float(lo[2]), "z_max_mm": float(hi[2]), "unbounded": ["min_z", "max_z"],
+                          "method": {"sampler": "fdmgen.catalog.checks.keepout.flange_discs", "step_mm": step_mm,
+                                     "spool_diameter_mm": ko["spool_diameter_mm"], "rail_radius_mm": ko["rail_radius_mm"],
+                                     "clearance_mm": ko["clearance_mm"], "rod_interfaces": ko["rod_interfaces"],
+                                     "disc": "centre: spool resting on both rods at rail radius r; radius: spool radius "
+                                             "+ clearance"},
+                          "coverage": {"discs": len(rs), "sampled_spool_radii": len(rs) // len(ko["rail_radius_mm"]),
+                                       "note": f"spool radii every {step_mm} mm at both rail-radius ends, as the KEEP-OUT "
+                                               "check samples them; the envelope between samples is not drawn"}})
+        else:
+            items.append({**base, "rendered": False,
+                          "reason": f"no renderable geometry ({ko.get('type')}{', ' + ko['note'] if ko.get('note') else ''})"})
+    return {"clip": {"bbox_mm": [lo.tolist(), hi.tolist()], "margin_mm": margin_mm,
+                     "basis": "body bounding box in the design frame, widened by margin_mm"}, "items": items}

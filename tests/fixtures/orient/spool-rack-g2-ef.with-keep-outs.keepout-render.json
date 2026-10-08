@@ -1,0 +1,432 @@
+{
+ "schema": "fdmgen/keepout-render@0.1",
+ "units": "mm",
+ "frame": "design",
+ "scope": "render only: where the keep-outs are, for a viewer; the KEEP-OUT and KEEP-CLEAR checks decide clearance",
+ "table": {
+  "name": "spool-rack-g2-ef.with-keep-outs.orientation-table.json",
+  "sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a"
+ },
+ "mesh": {
+  "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+  "source": "spool-wall-rack",
+  "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e"
+ },
+ "problem": {
+  "name": "problem.yaml",
+  "sha256": "2926c74b693db4132ff4093023eebfce4b4b3af670a8c434186a830ef9f2e261",
+  "frames": {
+   "design": "installed",
+   "installed": "X out from the wall (wall plane X = 0), Y up, Z along the rods",
+   "print": "derived per orientation candidate; the handoff pose is a 180 deg turn about Z"
+  }
+ },
+ "installed_to_design": {
+  "R": [
+   [
+    1.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    1.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    1.0
+   ]
+  ],
+  "t_mm": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "source": "problem frames.design = installed (identity)"
+ },
+ "clip": {
+  "bbox_mm": [
+   [
+    -10.0,
+    -67.482418,
+    -10.0
+   ],
+   [
+    217.506042,
+    186.0,
+    34.0
+   ]
+  ],
+  "margin_mm": 10.0,
+  "basis": "body bounding box in the design frame, widened by margin_mm"
+ },
+ "items": [
+  {
+   "id": "crown_moulding",
+   "type": "box",
+   "rule": "For X from 0 to 25.4 mm, no bracket material may extend below Y=-32 mm. Farther out, downward design space is free of this moulding constraint.",
+   "rendered": true,
+   "min_mm": [
+    0.0,
+    -67.482418,
+    -10.0
+   ],
+   "max_mm": [
+    25.4,
+    -32.0,
+    34.0
+   ],
+   "unbounded": [
+    "min_y",
+    "min_z",
+    "max_z"
+   ],
+   "original": {
+    "min_mm": [
+     0.0,
+     null,
+     null
+    ],
+    "max_mm": [
+     25.4,
+     -32.0,
+     null
+    ]
+   }
+  },
+  {
+   "id": "spool_slide",
+   "type": "flange_sweep",
+   "rule": "Preserve axial flange sliding for 180\u2013220 mm spools, with at least 3.5 mm nominal clearance over the effective rail-radius interval 12.4\u201312.7 mm.",
+   "rendered": true,
+   "axis": "Z",
+   "discs": [
+    {
+     "centre_xy_mm": [
+      129.376842,
+      94.526315
+     ],
+     "radius_mm": 93.5
+    },
+    {
+     "centre_xy_mm": [
+      129.335811,
+      94.868246
+     ],
+     "radius_mm": 93.5
+    },
+    {
+     "centre_xy_mm": [
+      129.240217,
+      95.66486
+     ],
+     "radius_mm": 94.5
+    },
+    {
+     "centre_xy_mm": [
+      129.19931,
+      96.00575
+     ],
+     "radius_mm": 94.5
+    },
+    {
+     "centre_xy_mm": [
+      129.104002,
+      96.799985
+     ],
+     "radius_mm": 95.5
+    },
+    {
+     "centre_xy_mm": [
+      129.063215,
+      97.139875
+     ],
+     "radius_mm": 95.5
+    },
+    {
+     "centre_xy_mm": [
+      128.968182,
+      97.931817
+     ],
+     "radius_mm": 96.5
+    },
+    {
+     "centre_xy_mm": [
+      128.927511,
+      98.270743
+     ],
+     "radius_mm": 96.5
+    },
+    {
+     "centre_xy_mm": [
+      128.832743,
+      99.060477
+     ],
+     "radius_mm": 97.5
+    },
+    {
+     "centre_xy_mm": [
+      128.792183,
+      99.398473
+     ],
+     "radius_mm": 97.5
+    },
+    {
+     "centre_xy_mm": [
+      128.697671,
+      100.186078
+     ],
+     "radius_mm": 98.5
+    },
+    {
+     "centre_xy_mm": [
+      128.657219,
+      100.523179
+     ],
+     "radius_mm": 98.5
+    },
+    {
+     "centre_xy_mm": [
+      128.562952,
+      101.30873
+     ],
+     "radius_mm": 99.5
+    },
+    {
+     "centre_xy_mm": [
+      128.522604,
+      101.644965
+     ],
+     "radius_mm": 99.5
+    },
+    {
+     "centre_xy_mm": [
+      128.428576,
+      102.428534
+     ],
+     "radius_mm": 100.5
+    },
+    {
+     "centre_xy_mm": [
+      128.388328,
+      102.763935
+     ],
+     "radius_mm": 100.5
+    },
+    {
+     "centre_xy_mm": [
+      128.294529,
+      103.545589
+     ],
+     "radius_mm": 101.5
+    },
+    {
+     "centre_xy_mm": [
+      128.254378,
+      103.880184
+     ],
+     "radius_mm": 101.5
+    },
+    {
+     "centre_xy_mm": [
+      128.160801,
+      104.659989
+     ],
+     "radius_mm": 102.5
+    },
+    {
+     "centre_xy_mm": [
+      128.120743,
+      104.993804
+     ],
+     "radius_mm": 102.5
+    },
+    {
+     "centre_xy_mm": [
+      128.027381,
+      105.771822
+     ],
+     "radius_mm": 103.5
+    },
+    {
+     "centre_xy_mm": [
+      127.987414,
+      106.104884
+     ],
+     "radius_mm": 103.5
+    },
+    {
+     "centre_xy_mm": [
+      127.894259,
+      106.881173
+     ],
+     "radius_mm": 104.5
+    },
+    {
+     "centre_xy_mm": [
+      127.854379,
+      107.213506
+     ],
+     "radius_mm": 104.5
+    },
+    {
+     "centre_xy_mm": [
+      127.761425,
+      107.988123
+     ],
+     "radius_mm": 105.5
+    },
+    {
+     "centre_xy_mm": [
+      127.72163,
+      108.319752
+     ],
+     "radius_mm": 105.5
+    },
+    {
+     "centre_xy_mm": [
+      127.62887,
+      109.09275
+     ],
+     "radius_mm": 106.5
+    },
+    {
+     "centre_xy_mm": [
+      127.589156,
+      109.423696
+     ],
+     "radius_mm": 106.5
+    },
+    {
+     "centre_xy_mm": [
+      127.496585,
+      110.195128
+     ],
+     "radius_mm": 107.5
+    },
+    {
+     "centre_xy_mm": [
+      127.45695,
+      110.525413
+     ],
+     "radius_mm": 107.5
+    },
+    {
+     "centre_xy_mm": [
+      127.364561,
+      111.295326
+     ],
+     "radius_mm": 108.5
+    },
+    {
+     "centre_xy_mm": [
+      127.325003,
+      111.624971
+     ],
+     "radius_mm": 108.5
+    },
+    {
+     "centre_xy_mm": [
+      127.23279,
+      112.393413
+     ],
+     "radius_mm": 109.5
+    },
+    {
+     "centre_xy_mm": [
+      127.193308,
+      112.722437
+     ],
+     "radius_mm": 109.5
+    },
+    {
+     "centre_xy_mm": [
+      127.101266,
+      113.489454
+     ],
+     "radius_mm": 110.5
+    },
+    {
+     "centre_xy_mm": [
+      127.061855,
+      113.817876
+     ],
+     "radius_mm": 110.5
+    },
+    {
+     "centre_xy_mm": [
+      126.969979,
+      114.58351
+     ],
+     "radius_mm": 111.5
+    },
+    {
+     "centre_xy_mm": [
+      126.930638,
+      114.911348
+     ],
+     "radius_mm": 111.5
+    },
+    {
+     "centre_xy_mm": [
+      126.838923,
+      115.67564
+     ],
+     "radius_mm": 112.5
+    },
+    {
+     "centre_xy_mm": [
+      126.79965,
+      116.002913
+     ],
+     "radius_mm": 112.5
+    },
+    {
+     "centre_xy_mm": [
+      126.708092,
+      116.765903
+     ],
+     "radius_mm": 113.5
+    },
+    {
+     "centre_xy_mm": [
+      126.668885,
+      117.092625
+     ],
+     "radius_mm": 113.5
+    }
+   ],
+   "z_min_mm": -10.0,
+   "z_max_mm": 34.0,
+   "unbounded": [
+    "min_z",
+    "max_z"
+   ],
+   "method": {
+    "sampler": "fdmgen.catalog.checks.keepout.flange_discs",
+    "step_mm": 1.0,
+    "spool_diameter_mm": [
+     180.0,
+     220.0
+    ],
+    "rail_radius_mm": [
+     12.4,
+     12.7
+    ],
+    "clearance_mm": 3.5,
+    "rod_interfaces": [
+     "rear_seat",
+     "front_seat"
+    ],
+    "disc": "centre: spool resting on both rods at rail radius r; radius: spool radius + clearance"
+   },
+   "coverage": {
+    "discs": 42,
+    "sampled_spool_radii": 21,
+    "note": "spool radii every 1.0 mm at both rail-radius ends, as the KEEP-OUT check samples them; the envelope between samples is not drawn"
+   }
+  }
+ ]
+}
