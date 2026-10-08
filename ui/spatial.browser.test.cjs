@@ -25,6 +25,18 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
     assert(Math.abs(axes[0])<1e-9&&axes[1]<0); // Print Z points up in both side views.
     assert.deepEqual(await page.evaluate(()=>({form:draftFormState(),pose:selected.id,vertices:Array.from(viewer.vertices)})),beforeViews);
   }
+  const beforeGeometryLayout=await page.evaluate(()=>draftFormState());
+  for(const width of [1300,390]){
+    await page.setViewportSize({width,height:844});
+    const centreGroup=region.getByRole('group',{name:'Box centre — design frame'});
+    const sizeGroup=region.getByRole('group',{name:'Box dimensions — design frame'});
+    assert.equal(await centreGroup.locator('input').count(),3);
+    assert.equal(await sizeGroup.locator('input').count(),3);
+    const centreZ=await centreGroup.locator('[data-axis="2"]').boundingBox();
+    const sizeX=await sizeGroup.locator('[data-axis="0"]').boundingBox();
+    assert(sizeX.y>=centreZ.y+centreZ.height,'Dimensions start below every centre coordinate');
+    assert.deepEqual(await page.evaluate(()=>draftFormState()),beforeGeometryLayout);
+  }
   await page.setViewportSize({width:390,height:844});
   assert(await page.locator('#view-x').isVisible());assert(await page.locator('#view-y').isVisible());
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

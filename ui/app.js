@@ -229,10 +229,15 @@ function addHelper(region={}) {
   const toggleLabel=text('label','',box),toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.spatial='';toggle.checked=!!region.geometry;toggleLabel.append(toggle,document.createTextNode(' Place a box-shaped planning region'));
   const spatial=text('div','',box);spatial.className='spatial';spatial.hidden=!toggle.checked;
   text('p','Design-frame millimetres. Centre and size stay attached to the part across print poses.',spatial);
-  const fields=text('div','',spatial);fields.className='geometry-grid';
-  for(const key of ['center_mm','size_mm'])for(let axis=0;axis<3;axis++){
-    const label=text('label',`${key==='center_mm'?'Centre':'Size'} ${'XYZ'[axis]}, mm`,fields),field=document.createElement('input');
-    field.type='number';field.step='0.1';field.dataset.geometry=key;field.dataset.axis=axis;field.value=region.geometry?.[key]?.[axis]??(key==='center_mm'?0:10);label.append(field);
+  for(const key of ['center_mm','size_mm']){
+    const group=text('div','',spatial);group.className='geometry-group';group.setAttribute('role','group');
+    const title=key==='center_mm'?'Box centre — design frame':'Box dimensions — design frame';group.setAttribute('aria-label',title);
+    text('h4',title,group);
+    const fields=text('div','',group);fields.className='geometry-grid';
+    for(let axis=0;axis<3;axis++){
+      const label=text('label',`${key==='center_mm'?'Centre':'Size'} ${'XYZ'[axis]}, mm`,fields),field=document.createElement('input');
+      field.type='number';field.step='0.1';field.dataset.geometry=key;field.dataset.axis=axis;field.value=region.geometry?.[key]?.[axis]??(key==='center_mm'?0:10);label.append(field);
+    }
   }
   const nudge=text('div','',spatial);nudge.className='nudge-controls';
   const stepLabel=text('label','Move centre by',nudge),step=document.createElement('select');step.dataset.nudgeStep='';

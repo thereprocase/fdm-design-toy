@@ -723,3 +723,8 @@ helper-edit remedy. They retain the strand-model FAIL and link to the bracket
 bridge-model investigation (#9) and coupon work (#12). This is not a claim that
 helpers can never improve a bridge; a changed design needs new slices and checks,
 and physical behaviour remains a separate question.
+
+Helper box centre coordinates and dimensions have separate labelled design-frame groups.
+They remain separate on narrow screens, so a centre coordinate never shares a row
+with a size field. The spatial browser check covers desktop/mobile ordering and
+unchanged draft data across layout changes.
