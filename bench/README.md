@@ -567,3 +567,9 @@ not measured anisotropy or either dimensional modulus basis. It is not a complet
 card uncertainty or orientation sweep. Full remote suite: 258 passed, 6 CUDA-only
 skips; card matrices checked against the independently invoked card API after
 normalization. Source and card hashes match the published files.
+
+The additive `--strength-thresholds 0 .08 .25` option sweeps symmetric
+nodal block-strength filtering with every other case input fixed. Zero retains
+the original unfiltered default; each row records method, threshold and block
+size. This changes the AMG hierarchy, not the stiffness matrix or boundary
+conditions. Direct-reference controls exercise all three thresholds.
