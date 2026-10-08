@@ -1053,3 +1053,8 @@ millimetres, so several helpers can be compared without opening every editor.
 The summary updates after geometry edits and undo, distinguishes an unplaced box
 from incomplete geometry, and describes planning geometry only. Clearance,
 bonding and slice evidence still come from the backend checks.
+
+If draft export stops on an incomplete field, its explanation appears beside the
+focused field as well as at the export controls. The helper editor opens when
+needed. Editing that field clears the inline error; export again to validate the
+rest of the draft. Failed export does not mark the draft as saved.

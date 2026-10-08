@@ -18,10 +18,14 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.equal(await page.evaluate(()=>document.activeElement.id),'rationale');
   assert.equal(await page.locator('#rationale').getAttribute('aria-invalid'),'true');
   assert.match(await page.locator('#export-status').innerText(),/Choice rationale/);
+  assert.match(await page.locator('#draft-field-error').innerText(),/Choice rationale/);
+  assert.equal(await page.locator('#rationale').getAttribute('aria-errormessage'),'draft-field-error');
   await page.locator('#rationale').fill('Keep the seat load in the layer plane.');
   assert.equal(await page.locator('#rationale').getAttribute('aria-invalid'),null);
   await page.locator('#export').click();
   assert.equal(await page.evaluate(()=>document.activeElement.dataset.key),'name');
+  assert.match(await page.locator('#draft-field-error').innerText(),/Helper 1 name/);
+  assert.equal(await page.locator('.helper-region').first().locator('#draft-field-error').count(),1);
   assert.equal(await page.locator('.helper-region [data-key="name"]').getAttribute('aria-invalid'),'true');
 
   const fill=async(box,name)=>{for(const [key,value] of Object.entries({name,location:'Rear seat to mounting plate',purpose:'Transfer the seat load',keep_clear:'Rod bore and washer seats'}))await box.locator(`[data-key="${key}"]`).fill(value);};
@@ -40,6 +44,7 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await fill(added,'Mount backing');
   const download=async()=>{const pending=page.waitForEvent('download');await page.locator('#export').click();const file=await pending;assert.equal(file.suggestedFilename(),'spool-rack-g2-ef-facet-00-massing-plan.json');return JSON.parse(await fs.readFile(await file.path(),'utf8'));};
   assert.equal(await page.locator('[data-export-error]').count(),0);
+  assert.equal(await page.locator('#draft-field-error').count(),0);
   const sourceDownload=async expected=>{
    await page.locator('#handoff').evaluate(e=>e.open=true);
    const state=await page.locator('#draft-edit-state').innerText(),pending=page.waitForEvent('download');
@@ -113,6 +118,8 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await page.locator('#export').click();
   assert(await page.locator('.helper-editor').first().evaluate(e=>e.open));
   assert.equal(await page.evaluate(()=>document.activeElement.dataset.key),'name');
+  assert.match(await page.locator('#draft-field-error').innerText(),/Helper 1 name/);
+  assert.equal(await page.locator('.helper-region').first().locator('#draft-field-error').count(),1);
   await page.locator('.helper-region').first().locator('[data-key="name"]').fill('Seat rib');
   await page.locator('#expand-helpers').click();assert.equal(await page.locator('.helper-editor[open]').count(),2);
   await page.locator('#view-top').click();assert.match(await page.locator('#draft-edit-state').innerText(),/No edits since/);
@@ -137,10 +144,19 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.equal(await first.locator('[data-geometry="size_mm"]').first().inputValue(),'');
   assert(await first.locator('[data-spatial]').isChecked());assert(await first.locator('[data-interface-id]').first().isChecked());
   assert.equal(await first.locator('[data-clearance]').inputValue(),'1.7');
+  await page.setViewportSize({width:390,height:844});
   await page.locator('#export').click(); // Invalid box must not checkpoint failed export.
   assert.equal(await page.evaluate(()=>document.activeElement.dataset.geometry),'size_mm');
-  assert.equal(await first.locator('[data-geometry="size_mm"]').first().getAttribute('aria-errormessage'),'export-status');
+  assert.equal(await first.locator('[data-geometry="size_mm"]').first().getAttribute('aria-errormessage'),'draft-field-error');
   assert.equal(await first.locator('[data-geometry="size_mm"]').first().inputValue(),'');
+  assert.match(await page.locator('#draft-field-error').innerText(),/three finite millimetre values/);
+  assert(await page.locator('#draft-field-error').evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}),'Inline geometry error is visible beside the focused field on mobile');
+  await page.locator('#export').click();assert.equal(await page.locator('#draft-field-error').count(),1);
+  await first.locator('[data-geometry="size_mm"]').first().fill('9');
+  assert.equal(await page.locator('#draft-field-error').count(),0);
+  assert.equal(await first.locator('[aria-invalid]').count(),0);
+  await first.locator('[data-geometry="size_mm"]').first().fill('');
+  await page.setViewportSize({width:1200,height:900});
   assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   await page.locator('#walls').fill('6');assert.match(await page.locator('#draft-edit-state').innerText(),/Changes since/);
   await page.locator('#walls').fill('7');await page.locator('.helper-region').first().getByRole('button',{name:'Remove region'}).click();

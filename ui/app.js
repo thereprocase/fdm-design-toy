@@ -642,6 +642,7 @@ function invalidDraftField(){
  return null;
 }
 function clearDraftError(){
+ byId('draft-field-error')?.remove();
  for(const f of document.querySelectorAll('[data-export-error]')){f.removeAttribute('aria-invalid');f.removeAttribute('aria-errormessage');delete f.dataset.exportError;}
 }
 document.addEventListener('input',event=>{if(event.target.hasAttribute('data-export-error'))clearDraftError();});
@@ -692,7 +693,13 @@ byId('export').onclick=()=>{
   }catch(error){
     byId('export-status').textContent=error.message;
     const field=invalidDraftField();
-    if(field){const helper=field.closest('.helper-region');if(helper)setActiveHelper(helper);if(field.matches('input,textarea')){field.dataset.exportError='';field.setAttribute('aria-invalid','true');field.setAttribute('aria-errormessage','export-status');}field.focus();field.scrollIntoView({block:'center'});}
+    if(field){
+      const helper=field.closest('.helper-region');if(helper)setActiveHelper(helper);
+      const explanation=document.createElement('p');explanation.id='draft-field-error';explanation.className='warning';explanation.textContent=error.message;explanation.setAttribute('role','alert');
+      (field.closest('.geometry-group')||field.closest('label')||field).after(explanation);
+      if(field.matches('input,textarea')){field.dataset.exportError='';field.setAttribute('aria-invalid','true');field.setAttribute('aria-errormessage',explanation.id);}
+      field.focus({preventScroll:true});field.scrollIntoView({block:'center'});
+    }
   }
 };
 
