@@ -69,3 +69,5 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 #interface-items label{margin-top:12px}
 
 #planning-helper{max-width:100%}
+
+.workbench .preview > #camera-controls{order:-1;margin:0;flex-shrink:0}

@@ -49,6 +49,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const miss=await p.evaluate(()=>{const rect=viewer.canvas.getBoundingClientRect();for(const item of viewer.interfaces)for(const line of item.lines){const d=line[0].map((x,k)=>(x+line[1][k])/2),v=transformMesh(d,viewer.R,viewer.t),q=viewer.project(...v);if(q[0]>140&&q[0]<rect.width-10&&q[1]>110&&q[1]<rect.height-70&&!pickSurface(viewer.vertices,viewer.project,q[0],q[1]))return [rect.left+q[0],rect.top+q[1]];}return null;});
  assert(miss,'a visible cylinder line outside the body is available for a pick-miss control');
  await p.evaluate(()=>{window.interfacePick='not called';viewer.onPick=point=>window.interfacePick=point;});await p.mouse.click(...miss);assert.equal(await p.evaluate(()=>window.interfacePick),null);await p.evaluate(()=>viewer.onPick=null);
+ const cameraWork=await p.evaluate(()=>workSnapshot());
+ for(const width of [390,1440]){
+  await p.setViewportSize({width,height:900});
+  const gap=await p.evaluate(()=>document.getElementById('camera-controls').getBoundingClientRect().top-document.getElementById('part-view').getBoundingClientRect().bottom);
+  assert(gap>=0&&gap<=24,'camera controls stay beside canvas even with long open overlay controls');
+  await p.locator('#part-view').focus();await p.keyboard.press('Tab');assert(await p.locator('#view-iso').evaluate(e=>e===document.activeElement));
+  await p.locator('#view-top').click();await p.locator('#zoom-in').click();await p.locator('#view-iso').click();assert.deepEqual(await p.evaluate(()=>workSnapshot()),cameraWork);
+ }
+ await p.setViewportSize({width:390,height:844});
  const retained=await p.evaluate(()=>({geometry:interfaceGeometry,lines:viewer.interfaces,work:workSnapshot()}));
  for(const edit of [g=>g.table.sha256='0'.repeat(64),g=>g.items[0].base_radius_mm+=1,g=>g.items.pop()]){const bad=structuredClone(geometry);edit(bad);await upload(bad);assert.match(await p.locator('#interface-status').innerText(),/retained/);assert.deepEqual(await p.evaluate(()=>({geometry:interfaceGeometry,lines:viewer.interfaces,work:workSnapshot()})),retained);}
  assert.match(await p.locator('#interface-visible-names').innerText(),/no helper extra clearance/);
