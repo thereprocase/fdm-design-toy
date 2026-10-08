@@ -14,6 +14,12 @@ const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=requi
  await page.locator('#review-draft').setInputFiles(path.join(inputs,'browser-draft.json'));
  await page.locator('#review-receipt').setInputFiles(path.join(inputs,'spool-rack-g2-ef-facet-01-massing.json'));
  await page.waitForFunction(()=>!document.querySelector('#review-bundle').disabled);
+ await page.locator('#review-mesh').setInputFiles(process.env.FDM_PREVIEW_MESH);
+ await page.waitForFunction(()=>document.querySelector('#review-mesh-status').textContent.startsWith('Body fingerprint matched'));
+ await page.locator('#review-top').click();await page.locator('#review-show-helpers').uncheck();await page.locator('#review-show-helpers').check();
+ await page.locator('#review-mesh').setInputFiles({name:'wrong.stl',mimeType:'application/octet-stream',buffer:Buffer.from('not the body')});
+ await page.waitForFunction(()=>document.querySelector('#review-mesh-status').textContent.includes('Previously matched preview retained'));
+ assert(await page.locator('#review-preview-controls').isVisible());
  await page.locator('#review-bundle').setInputFiles((await fs.readdir(dir)).map(f=>path.join(dir,f)));
  await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('All five'));
  assert.match(await page.locator('#bundle-status').innerText(),/2 FAIL, 0 NOT_CHECKED, 3 PASS/);

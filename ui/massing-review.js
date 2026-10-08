@@ -1,12 +1,31 @@
 'use strict';
 const el=id=>document.getElementById(id);
 let bundleGeneration=0,matchedReportHash=null;
+const reviewViewer=new PartViewer(el('review-canvas'));
+let reviewMeshRequest=0,reviewMeshReady=false;
+function clearReviewMesh(){++reviewMeshRequest;reviewMeshReady=false;reviewViewer.clear();reviewViewer.setRegions([]);el('review-mesh').value='';el('review-preview-controls').hidden=true;el('review-show-helpers').checked=true;el('review-mesh-status').textContent='Load the body STL whose fingerprint is recorded in this draft.';}
+function showReviewHelpers(){reviewViewer.setRegions(el('review-show-helpers').checked?saved.massing.helper_regions.filter(h=>h.geometry).map(h=>({...h,geometry:Plan.geometry(h.geometry)})):[]);reviewViewer.showAllLabels=true;reviewViewer.schedule();}
+el('review-show-helpers').onchange=showReviewHelpers;
+el('review-iso').onclick=()=>reviewViewer.view('iso');el('review-top').onclick=()=>reviewViewer.view('top');
+el('review-zoom-in').onclick=()=>reviewViewer.zoomBy(1.25);el('review-zoom-out').onclick=()=>reviewViewer.zoomBy(.8);
+el('review-mesh').onchange=async event=>{
+ const file=event.target.files[0];if(!file||!saved||!matchedReport)return;const request=++reviewMeshRequest,draft=saved;
+ try{
+  if(file.size>100*1024*1024)throw Error('Preview supports STL files up to 100 MB.');
+  if(draft.source.mesh.frame!=='design')throw Error('Preview needs a design-frame body mesh.');
+  Plan.validatePose(draft.orientation);for(const h of draft.massing.helper_regions)Plan.geometry(h.geometry);
+  const raw=await file.arrayBuffer(),hash=await EvidenceBundle.digest(raw);if(request!==reviewMeshRequest||draft!==saved)return;
+  if(hash!==draft.source.mesh.sha256)throw Error('STL fingerprint differs from the saved draft.');
+  const vertices=parseSTL(raw);reviewViewer.set(vertices,draft.orientation.R_design_to_print,draft.orientation.t_mm);reviewViewer.view('iso');showReviewHelpers();reviewMeshReady=true;
+  el('review-preview-controls').hidden=false;el('review-mesh-status').textContent='Body fingerprint matched. Showing saved pose '+draft.orientation.id+' and planning helper boxes; no toolpaths are drawn.';
+ }catch(error){if(request===reviewMeshRequest)el('review-mesh-status').textContent=error.message+(reviewMeshReady?' Previously matched preview retained.':'');}
+};
 let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0,matchedSlice=null,mechanicsGeneration=0,shellGeneration=0,shellBaselineGeneration=0,matchedShell=null,matchedShellBaseline=null;
 function add(tag,value,parent){const n=document.createElement(tag);n.textContent=value;parent.append(n);return n;}
 el('review-draft').onchange=async e=>{
  const file=e.target.files[0];if(!file)return;const request=++generation;++receiptGeneration;
  // Clear old results immediately, so they cannot be mistaken for this revision.
- clearSlice();matchedReportHash=null;el('review-bundle').disabled=true;matchedReport=null;saved=null;digest=null;el('review-workspace').hidden=true;el('review-receipt').disabled=true;el('review-receipt').value='';
+ clearReviewMesh();clearSlice();matchedReportHash=null;el('review-bundle').disabled=true;matchedReport=null;saved=null;digest=null;el('review-workspace').hidden=true;el('review-receipt').disabled=true;el('review-receipt').value='';
  try{const raw=await file.arrayBuffer(),d=MassingReview.draft(JSON.parse(new TextDecoder().decode(raw))),h=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',raw)),b=>b.toString(16).padStart(2,'0')).join('');if(request!==generation)return;saved=d;digest=h;el('review-receipt').disabled=false;el('review-status').textContent='Draft loaded. Open its matching export receipt.';}catch(err){if(request===generation)el('review-status').textContent=err.message;}
 };
 el('review-receipt').onchange=async e=>{
@@ -18,7 +37,7 @@ function helperName(id){
  return helpers.filter(other=>other.name.trim()===h.name.trim()).length>1?`${h.name} [${h.id}]`:h.name;
 }
 function render(r,reportHash){
- clearSlice();matchedReport=r;el('review-bundle').disabled=false;el('review-slice').disabled=false;
+ clearReviewMesh();clearSlice();matchedReport=r;el('review-bundle').disabled=false;el('review-slice').disabled=false;
  el('review-workspace').hidden=false;el('review-title').textContent=`${r.plan.problem} · ${r.plan.candidate_id}`;
  const hashes=el('review-input-hashes');hashes.replaceChildren();
  for(const [label,value] of [['Saved draft — calculated',digest],['Export report — calculated',reportHash],['Orientation table — recorded',r.plan.table_sha256],['Template 3MF — recorded',r.template_3mf_sha256],['Project 3MF — recorded',r.project_3mf_sha256]]){add('dt',label,hashes);add('code',value,add('dd','',hashes));}

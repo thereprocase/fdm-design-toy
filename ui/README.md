@@ -962,3 +962,9 @@ new browser draft, massing export report, and the six-file evidence bundle
 The regular remote suite reviews these original bytes, retains both bridge
 failures, rejects the root table during revision, then restores the same massing
 and pose against the enriched table. This is workflow and slicer evidence only.
+
+Helper review includes an optional read-only saved-plan preview. Load the exact
+design-frame STL pinned by the draft to view its recorded pose and helper boxes;
+these are planning boxes, not clipped modifiers or toolpaths. A rejected mesh
+retains the matched preview. Accepting another export or draft clears it. Camera
+and visibility controls do not change the saved draft.
