@@ -2,6 +2,7 @@
 const byId = id => document.getElementById(id);
 let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draftRequest = 0;
 const decisions = new Map();
+let renderedPoseNotes=null;
 let proposalOrigin=null,sourceTableBytes=null,referencePose=null,orientationEvidenceBundle=null,orientationRoad=null;
 const removedHelpers=[];
 let draftCheckpoint=null,draftCheckpointKind='new',workNotesCheckpoint=null;
@@ -116,6 +117,8 @@ function renderComparison(){
    `Reference: ${referencePose.id}. Selected for planning: ${selected?.id||'none'}.`;
  if(panel.hidden)return;
  byId('reference-name').textContent=`Reference: ${referencePose.id}`;byId('comparison-name').textContent=`Selected: ${selected.id}`;
+ const notesRow=text('tr','',byId('comparison-rows'));text('th','Your planning notes · not measured evidence',notesRow).scope='row';
+ const notes=poseNotes();for(const candidate of [referencePose,selected]){const cell=text('td',notes[candidate.id]||'No note recorded.',notesRow);cell.dataset.comparisonNote=candidate.id;cell.style.whiteSpace='pre-wrap';cell.style.overflowWrap='anywhere';}
  const sliceKeys=['t_shell_thin_fraction','t_bridge_span_external_mm','t_bridge_span_internal_mm'];
  const differentKinds=sliceKeys.some(key=>{const a=comparisonSliceKind(referencePose.columns?.[key]),b=comparisonSliceKind(selected.columns?.[key]);return a&&b&&a!==b;});
  let sliceNote=byId('comparison-slice-context');
@@ -530,6 +533,7 @@ function draftFormState(){
    fields:[...box.querySelectorAll('input,textarea')].map(field=>field.type==='checkbox'?field.checked:field.value)}))});
 }
 function updateDraftState(){
+ renderPoseNotes();
  for(const button of byId('handoff-missing-boxes').children){
   button.disabled=byId('shell-only').checked||![...byId('helper-regions').children].some(box=>box.dataset.id===button.dataset.helperId);
  }
@@ -651,6 +655,20 @@ function workFieldKey(field){
 function poseNotes(){
  const notes=new Map(decisions);if(selected)notes.set(selected.id,byId('rationale').value);
  return Object.fromEntries([...notes].filter(([,note])=>note!=='').sort(([a],[b])=>a.localeCompare(b)));
+}
+function renderPoseNotes(){
+ const notes=poseNotes(),entries=Object.entries(notes),signature=JSON.stringify([selected?.id,notes]);
+ for(const cell of document.querySelectorAll('[data-comparison-note]'))cell.textContent=notes[cell.dataset.comparisonNote]||'No note recorded.';
+ if(signature===renderedPoseNotes)return;renderedPoseNotes=signature;
+ byId('pose-notes-title').textContent=`Your pose notes (${entries.length})`;
+ const list=byId('pose-notes-list');list.replaceChildren();
+ if(!entries.length){text('p','No notes yet. Record why you would choose or reject a pose in the rationale field.',list);return;}
+ for(const [id,note] of entries){
+  const item=text('section','',list),button=text('button','Edit note for '+id,item);button.type='button';button.className='secondary';
+  if(id===selected?.id)text('span',' Selected for planning',item).className='hint';
+  const body=text('p',note,item);body.style.whiteSpace='pre-wrap';body.style.overflowWrap='anywhere';
+  button.onclick=()=>{const candidate=analysis?.candidates.find(c=>c.id===id);if(!candidate)return;choose(candidate);byId('rationale').focus({preventScroll:true});byId('rationale').scrollIntoView({block:'center'});};
+ }
 }
 function workSnapshot(){
  if(!analysis||!selected||!fingerprint)throw Error('Open an orientation table and choose a pose first.');

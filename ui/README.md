@@ -1085,3 +1085,11 @@ Nothing is saved automatically. A snapshot checkpoint only records a requested
 file download, not that the browser retained it. Complete the required fields
 and **Export planning draft** before running the exporter; existing validation
 and evidence requirements still apply.
+
+**Your pose notes** beside the rationale field lists the notes recorded while
+comparing orientations. Opening the list does not change the plan. **Edit note
+for …** explicitly selects that pose and focuses its rationale. The pinned
+reference comparison also shows each pose’s note, labelled as planning intent,
+separate from measured evidence. Editing notes does not alter ranks or verdicts.
+Work snapshots preserve all these notes; backend planning drafts include only
+the selected pose’s rationale.
