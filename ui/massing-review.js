@@ -119,7 +119,7 @@ function renderMechanics(r){
  el('mechanics-sampling').textContent+=' '+[['baseline','Shell-only'],['project','Project']].map(([key,label])=>{
   const caps=r.inputs[key].provenance.sampling?.caps;
   return `${label} road-end/turn caps: ${caps===true?'enabled':caps===false?'disabled':'not recorded'}.`;
- }).join(' ')+' Raster-model changes can alter thresholded domains and transferred loads; equal sampling steps do not establish equivalent mechanics.';
+ }).join(' ')+' Raster-model changes can alter deposition and mechanics; equal sampling steps do not establish equivalent models.';
  el('mechanics-sampling').textContent+=' '+[['baseline','Shell-only'],['project','Project']].map(([key,label])=>{const sampling=r.inputs[key].provenance.sampling;return `${label} sampling fraction: ${sampling?.step_frac??'not recorded'}; original recorded fraction: ${sampling?.recorded_step_frac??'not recorded'}. ${sampling?.purpose||''}`;}).join(' ');
  el('mechanics-sampling-provenance').textContent=JSON.stringify(Object.fromEntries(['baseline','project'].map(key=>[key,r.inputs[key].provenance.sampling??'Not recorded'])),null,2);
  el('mechanics-rows').replaceChildren();el('mechanics-audits').replaceChildren();
