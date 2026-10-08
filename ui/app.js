@@ -55,6 +55,9 @@ function shellSummary(candidate) {
   const c=shellColumn(candidate);
   return c?`${c.verdict} · ${(100*c.value).toLocaleString(undefined,{maximumFractionDigits:3})}% thin · T${c.provisional?' · provisional':''}`:'Not checked';
 }
+function validBridgeColumn(c){
+ return c?.rule==='BRG-001'&&c.level==='T'&&c.unit==='mm'&&['PASS','FAIL'].includes(c.verdict)&&Number.isFinite(c.value)&&c.value>=0&&Number.isFinite(c.limit_mm)&&c.limit_mm>0;
+}
 function renderComparison(){
  byId('pin-reference').disabled=!selected;byId('clear-reference').disabled=!referencePose;
  const panel=byId('reference-comparison');panel.hidden=!referencePose||!selected;
@@ -64,11 +67,12 @@ function renderComparison(){
    `Reference: ${referencePose.id}. Selected for planning: ${selected?.id||'none'}.`;
  if(panel.hidden)return;
  byId('reference-name').textContent=`Reference: ${referencePose.id}`;byId('comparison-name').textContent=`Selected: ${selected.id}`;
- for(const [key,label] of [['F_L_max','Layer failure · design corner'],['F_L_max_vendor_corner','Layer failure · vendor corner'],['ovh_fail_mm2','Overhang area'],['contact_mm2','Bed contact'],['height_mm','Print height'],['t_support_segments','Support segments · T'],['t_shell_thin_fraction','Thin shell fraction · T'],['t_bridge_span_external_mm','External bridge strand maximum · T'],['t_bridge_span_internal_mm','Internal bridge strand maximum · T']]){
+ for(const [key,label,ceiling] of [['F_L_max','Layer failure · design corner'],['F_L_max_vendor_corner','Layer failure · vendor corner'],['ovh_fail_mm2','Overhang area'],['contact_mm2','Bed contact'],['height_mm','Print height'],['t_support_segments','Support segments · T'],['t_shell_thin_fraction','Thin shell fraction · T'],['t_bridge_span_external_mm','External bridge strand maximum · T'],['t_bridge_span_internal_mm','Internal bridge strand maximum · T'],['t_bridge_span_external_mm','External bridge ceiling maximum · T',true],['t_bridge_span_internal_mm','Internal bridge ceiling maximum · T',true]]){
    const row=text('tr','',byId('comparison-rows'));text('th',label,row).scope='row';
    for(const candidate of [referencePose,selected]){
      const column=candidate.columns?.[key],cell=text('td','',row);
-     text('span',key==='t_shell_thin_fraction'?shellSummary(candidate):formatted(column),cell);
+     text('span',ceiling?(validBridgeColumn(column)&&Number.isFinite(column.ceiling_span_mm)&&column.ceiling_span_mm>=0?`${metricNumber(column.ceiling_span_mm)} mm · supplementary`:'Not recorded'):key==='t_shell_thin_fraction'?shellSummary(candidate):formatted(column),cell);
+     if(ceiling)text('p','Independent maximum over evaluated roads; may occur on a different road from the strand maximum. The recorded verdict uses the strand model.',cell).className='hint';
      if(column){const details=text('details','',cell);text('summary','Context',details);
        text('p',[column.rule,column.level,column.fidelity||'Method and settings not supplied.'].filter(Boolean).join(' · '),details);}
    }
@@ -85,7 +89,7 @@ function renderBridge(candidate) {
   for(const [key,label] of [['t_bridge_span_external_mm','External bridges'],['t_bridge_span_internal_mm','Internal bridges']]){
     const c=candidate.columns?.[key],section=text('article','',panel);
     text('h4',label,section);
-    const valid=c?.rule==='BRG-001'&&c.level==='T'&&c.unit==='mm'&&['PASS','FAIL'].includes(c.verdict)&&Number.isFinite(c.value)&&c.value>=0&&Number.isFinite(c.limit_mm)&&c.limit_mm>0;
+    const valid=validBridgeColumn(c);
     text('p',valid?`${c.verdict} · ${c.value.toLocaleString(undefined,{maximumFractionDigits:3})} mm longest unsupported strand run; recorded limit ${c.limit_mm.toLocaleString()} mm · T${c.provisional?' · provisional':''}`:'Not checked',section);
     if(valid&&c.verdict==='FAIL'){
       const note=text('p','This tool provides no verified helper-edit remedy for this bridge failure. The recorded FAIL uses the strand model. Changing helper boxes does not establish a fix; revised geometry needs fresh slicing and checks.',section);note.className='warning';note.dataset.bridgeRemedy='';

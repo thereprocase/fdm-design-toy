@@ -111,6 +111,9 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 53.95 mm/);
  assert.match(await page.locator('#failed-checks').innerText(),/External bridge span · BRG-001 · T/);
  assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: not recorded/);
+ await page.locator('#pin-reference').click();
+ const ceilingRow=label=>page.locator('#comparison-rows tr').filter({has:page.getByRole('rowheader',{name:label,exact:true})});
+ assert.deepEqual(await ceilingRow('Internal bridge ceiling maximum · T').locator('td > span').allTextContents(),['Not recorded','Not recorded']);
  await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.equal(await page.locator('#pose-bridges details').count(),0);
  // Synthetic additive column coverage; no legacy receipt is changed.
  const ceilingTable=JSON.parse(fs.readFileSync(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json')));
@@ -130,9 +133,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: 15.678 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122.1 mm/);
  assert.equal(JSON.parse(await page.locator('#pose-bridges pre').first().textContent()).receipt.sha256,'3dda4f12515dc2969f64e3270af297e22ac2b46ec04cc3698f49fa443787a237');
+ await page.locator('#pin-reference').click();
  await page.getByRole('button',{name:'facet-01',exact:true}).click();
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: 52.2 mm/);
+ assert.deepEqual(await ceilingRow('External bridge ceiling maximum · T').locator('td > span').allTextContents(),['2 mm · supplementary','52.2 mm · supplementary']);
+ assert.deepEqual(await ceilingRow('Internal bridge ceiling maximum · T').locator('td > span').allTextContents(),['15.678 mm · supplementary','15.647 mm · supplementary']);
+ assert.match(await ceilingRow('Internal bridge ceiling maximum · T').innerText(),/may occur on a different road/);
+ assert.match(await page.locator('#comparison-rows').innerText(),/FAIL · 122.1 mm/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  const beforeReviewJump=await page.evaluate(()=>draftFormState());
  for(const width of [1366,390]){
