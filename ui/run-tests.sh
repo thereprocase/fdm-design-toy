@@ -14,7 +14,7 @@ if [[ ! -x "$CHROMIUM_PATH" ]]; then
   exit 2
 fi
 node --test ui/bridge-locations.test.cjs ui/orient-bundle.test.cjs ui/keepout-render.test.cjs ui/plan.test.cjs ui/viewer.test.cjs ui/coupon-evidence.test.cjs ui/massing-review-model.test.cjs ui/evidence-bundle.test.cjs
-for check in orient-bundle planning toolpath coupons spatial capabilities massing-review review-edit keep-outs proposal mechanics shell-review bundle enriched-review unsaved; do
+for check in orient-bundle planning toolpath coupons spatial capabilities massing-review review-edit keep-outs proposal mechanics shell-review bundle enriched-review bridge-review unsaved; do
   node "ui/$check.browser.test.cjs"
 done
 node ui/browser.test.cjs

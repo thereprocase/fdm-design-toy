@@ -68,5 +68,5 @@
   for(const e of manifest.receipts){const r=receipts.get(e.check+'/'+e.slice_kind),vs=r.helpers?.map(h=>h.verdict);const v=e.check==='massing-evidence'?(vs.includes('FAIL')?'FAIL':vs.length&&vs.every(v=>v==='PASS')?'PASS':'NOT_CHECKED'):r.result.verdict;if(v!==e.verdict)throw Error('Manifest verdict differs from receipt: '+e.path);}
   return {manifest,slice,project,baseline,bridges};
  }
- const api={load,digest};if(typeof module==='object')module.exports=api;else root.EvidenceBundle=api;
+ const api={load,digest,bridge};if(typeof module==='object')module.exports=api;else root.EvidenceBundle=api;
 })(globalThis);

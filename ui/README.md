@@ -968,3 +968,14 @@ design-frame STL pinned by the draft to view its recorded pose and helper boxes;
 these are planning boxes, not clipped modifiers or toolpaths. A rejected mesh
 retains the matched preview. Accepting another export or draft clears it. Camera
 and visibility controls do not change the saved draft.
+
+In helper review, **Saved geometry → Locate a worst bridge road** accepts a
+pose-bound bridge receipt after the matching project or baseline shell check is
+loaded. It verifies the slice/pose context and optional coordinate frames, then
+offers each recorded maximum separately. The computed receipt hash and complete
+source stay visible; this optional import does not replace bundle measurements.
+Dashed lines show the full road, solid lines its bounded unsupported run, and a
+dot the ceiling witness. Lines are drawn through the body for location only.
+Slicer role labels do not establish open-air/core geometry or a helper remedy.
+Changing evidence or slice kind clears the overlay; a rejected import retains
+the accepted one. Legacy receipts remain readable without invented locations.

@@ -2,9 +2,9 @@
 const el=id=>document.getElementById(id);
 let bundleGeneration=0,matchedReportHash=null;
 const reviewViewer=new PartViewer(el('review-canvas'));
-let reviewMeshRequest=0,reviewMeshReady=false;
+let reviewMeshRequest=0,reviewMeshReady=false,bridgeLocationRequest=0;
 function clearReviewMesh(){++reviewMeshRequest;reviewMeshReady=false;reviewViewer.clear();reviewViewer.setRegions([]);el('review-mesh').value='';el('review-preview-controls').hidden=true;el('review-show-helpers').checked=true;el('review-mesh-status').textContent='Load the body STL whose fingerprint is recorded in this draft.';}
-function showReviewHelpers(){reviewViewer.setRegions(el('review-show-helpers').checked?saved.massing.helper_regions.filter(h=>h.geometry).map(h=>({...h,geometry:Plan.geometry(h.geometry)})):[]);reviewViewer.showAllLabels=true;reviewViewer.schedule();}
+function showReviewHelpers(){reviewViewer.setRegions(el('review-show-helpers').checked?saved.massing.helper_regions.filter(h=>h.geometry).map(h=>({...h,geometry:Plan.geometry(h.geometry)})):[]);reviewViewer.showAllLabels=false;reviewViewer.schedule();}
 el('review-show-helpers').onchange=showReviewHelpers;
 el('review-iso').onclick=()=>reviewViewer.view('iso');el('review-top').onclick=()=>reviewViewer.view('top');
 el('review-zoom-in').onclick=()=>reviewViewer.zoomBy(1.25);el('review-zoom-out').onclick=()=>reviewViewer.zoomBy(.8);
@@ -17,8 +17,28 @@ el('review-mesh').onchange=async event=>{
   const raw=await file.arrayBuffer(),hash=await EvidenceBundle.digest(raw);if(request!==reviewMeshRequest||draft!==saved)return;
   if(hash!==draft.source.mesh.sha256)throw Error('STL fingerprint differs from the saved draft.');
   const vertices=parseSTL(raw);reviewViewer.set(vertices,draft.orientation.R_design_to_print,draft.orientation.t_mm);reviewViewer.view('iso');showReviewHelpers();reviewMeshReady=true;
-  el('review-preview-controls').hidden=false;el('review-mesh-status').textContent='Body fingerprint matched. Showing saved pose '+draft.orientation.id+' and planning helper boxes; no toolpaths are drawn.';
+  el('review-preview-controls').hidden=false;el('review-mesh-status').textContent='Body fingerprint matched. Showing saved pose '+draft.orientation.id+' and planning helper boxes. Optional road witnesses are labelled separately.';
  }catch(error){if(request===reviewMeshRequest)el('review-mesh-status').textContent=error.message+(reviewMeshReady?' Previously matched preview retained.':'');}
+};
+function clearBridgeLocation(){
+ ++bridgeLocationRequest;reviewViewer.setRoadWitness(null);el('review-bridge').value='';el('bridge-location-buttons').replaceChildren();el('bridge-location-hide').hidden=true;el('bridge-location-selected').textContent='';el('bridge-location-provenance').hidden=true;el('bridge-location-status').textContent='No road receipt loaded.';
+}
+el('bridge-location-kind').onchange=clearBridgeLocation;
+el('bridge-location-hide').onclick=()=>{reviewViewer.setRoadWitness(null);el('bridge-location-hide').hidden=true;el('bridge-location-selected').textContent='Road hidden. The source receipt remains loaded.';};
+el('review-bridge').onchange=async event=>{
+ const file=event.target.files[0];if(!file)return;const request=++bridgeLocationRequest,kind=el('bridge-location-kind').value,draft=saved,shell=kind==='project'?matchedShell:matchedShellBaseline;
+ try{
+  if(!shell?._receipt)throw Error('Load the matching '+(kind==='project'?'project':'baseline')+' shell check first.');
+  if(file.size>20*1024*1024)throw Error('Bridge receipt exceeds 20 MB.');
+  const bytes=await file.arrayBuffer(),hash=await EvidenceBundle.digest(bytes),r=EvidenceBundle.bridge(JSON.parse(new TextDecoder().decode(bytes)),shell._receipt),roads=BridgeLocations.locations(r,draft);
+  if(request!==bridgeLocationRequest||draft!==saved)return;
+  reviewViewer.setRoadWitness(null);el('bridge-location-buttons').replaceChildren();el('bridge-location-hide').hidden=true;el('bridge-location-selected').textContent='';
+  el('bridge-location-status').textContent=(kind==='project'?'Project':'Shell-only baseline')+' bridge receipt matched the current shell G-code and pose. '+(roads.length?'Choose a recorded maximum below.':'No location geometry recorded; measurements remain in the receipt.');
+  el('bridge-location-source').textContent=JSON.stringify({receipt_sha256:hash,receipt:r},null,2);el('bridge-location-provenance').hidden=false;
+  for(const road of roads){const button=add('button',road.role+' '+road.model+' · '+road.value_mm+' mm',el('bridge-location-buttons'));button.type='button';button.className='secondary';
+   button.onclick=()=>{reviewViewer.setRoadWitness(road.source.design_mm);el('bridge-location-hide').hidden=false;el('bridge-location-selected').textContent=(kind==='project'?'Project':'Shell-only baseline')+' · '+road.role+' '+road.model+' · '+road.value_mm+' mm · road '+road.road_index+' · slicer role '+road.source.role+'. Dashed: full road; solid: bounded unsupported run; dot: ceiling witness. Drawn through the body for location only. Slicer roles do not prove open-air or core geometry, or a helper remedy. '+(reviewMeshReady?'':'Load the matching STL to display it.');};
+  }
+ }catch(error){if(request===bridgeLocationRequest)el('bridge-location-status').textContent=error.message+' Previously accepted road evidence, if any, is retained.';}
 };
 let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0,matchedSlice=null,mechanicsGeneration=0,shellGeneration=0,shellBaselineGeneration=0,matchedShell=null,matchedShellBaseline=null;
 function add(tag,value,parent){const n=document.createElement(tag);n.textContent=value;parent.append(n);return n;}
@@ -208,6 +228,7 @@ el('review-shell-baseline').onchange=async e=>{
 };
 
 function clearBundle(){
+ clearBridgeLocation();
  ++bundleGeneration;el('review-bundle').value='';showReviewSection('bundle-results',!(true));
  el('bundle-status').textContent='No evidence bundle loaded. Select its manifest and all five receipt files together.';
 }

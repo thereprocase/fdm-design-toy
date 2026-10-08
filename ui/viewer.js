@@ -85,13 +85,14 @@ class PartViewer {
     canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
     new ResizeObserver(()=>this.schedule()).observe(canvas);
   }
+  setRoadWitness(witness){this.roadWitness=witness;this.schedule();}
   setKeepouts(items){this.keepouts=items;this.schedule();}
   setBed(bed){this.bed=bedFootprint(bed);this.bedMargin=bedInset(bed);this.schedule();}
   set(vertices,R,t){this.focusId=null;this.R=R;this.t=t;this.vertices=transformMesh(vertices,R,t);this.schedule();}
   setRegions(regions){this.regions=regions;if(this.focusId&&!regions.some(r=>r.id===this.focusId&&r.active))this.frameAll();this.schedule();}
   focusRegion(id){if(!this.vertices||!this.regions.some(r=>r.id===id&&r.active))return;this.focusId=id;this.zoom=1;this.schedule();}
   frameAll(){this.focusId=null;this.zoom=1;this.schedule();}
-  clear(){this.focusId=null;this.vertices=null;this.onPick=null;this.canvas.style.cursor='';this.schedule();}
+  clear(){this.roadWitness=null;this.focusId=null;this.vertices=null;this.onPick=null;this.canvas.style.cursor='';this.schedule();}
   zoomBy(factor){this.zoom=Math.max(.5,Math.min(8,this.zoom*factor));this.schedule();}
   view(name){
     const angles={top:[0,Math.PI/2],'print-x':[Math.PI/2,0],'print-y':[0,0],iso:[-.65,.65]};
@@ -141,6 +142,14 @@ class PartViewer {
       ctx.strokeStyle=region.active?'#175caa':'#ad501c';ctx.lineWidth=region.active?3:2;ctx.setLineDash(region.active?[]:[5,3]);ctx.beginPath();
       for(let i=0;i<8;i++)for(let a=0;a<3;a++){const j=i^(1<<a);if(j>i){ctx.moveTo(points[i][0],points[i][1]);ctx.lineTo(points[j][0],points[j][1]);}}
       ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';ctx.fillStyle=region.active?'#174d89':'#84360f';if(region.active||this.showAllLabels)ctx.fillText((region.active?'Editing: ':'')+(region.previewName||region.name||'Planning region'),points[7][0]+5,points[7][1]-5);
+    }
+    if(this.roadWitness){
+      const w=this.roadWitness,point=p=>project(...transformMesh(p,this.R,this.t));
+      const line=(a,b,dash,width)=>{a=point(a);b=point(b);ctx.setLineDash(dash);ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();};
+      ctx.strokeStyle='#9c163c';line(w.road_start,w.road_end,[6,4],2);
+      if(w.run_start)line(w.run_start,w.run_end,[],4);
+      if(w.witness){const p=point(w.witness);ctx.setLineDash([]);ctx.fillStyle='#9c163c';ctx.beginPath();ctx.arc(p[0],p[1],6,0,Math.PI*2);ctx.fill();}
+      ctx.setLineDash([]);
     }
     // Directions follow both the design-to-print rotation and camera, without translation.
     ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(AXIS_PANEL.x,AXIS_PANEL.y,AXIS_PANEL.width,AXIS_PANEL.height);
