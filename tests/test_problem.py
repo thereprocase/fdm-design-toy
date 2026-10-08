@@ -11,11 +11,11 @@ yaml = pytest.importorskip("yaml")
 from fdmgen.cli import main
 from fdmgen.problem import lint_problem, lint_problem_file
 from fdmgen.problem import spool_bracket as gen
+from fdmgen.problem.lint import _source_root
 
 REPO = Path(__file__).resolve().parents[1]
 PROBLEM = REPO / "problems" / "spool-rack-g2-ef" / "problem.yaml"
 FIX = json.loads((REPO / "tests" / "fixtures" / "g2_interface_loads.json").read_text())
-SOURCE = REPO.parent / gen.SOURCE_REPO
 
 
 def _p():
@@ -86,9 +86,9 @@ def test_source_hashes(tmp_path, monkeypatch):
     assert any("NOT checked" in f.message for f in warn)
 
 
-@pytest.mark.skipif(not SOURCE.is_dir(), reason="spool-wall-rack checkout not next to this repository")
+@pytest.mark.skipif(_source_root(_p()) is None, reason="spool-wall-rack source unavailable via SPOOL_RACK_ROOT or sibling checkout")
 def test_committed_problem_is_exactly_what_the_generator_writes():
-    assert gen.build(SOURCE) == _p()
+    assert gen.build(_source_root(_p())) == _p()
 
 
 def test_cli_lint_json_and_exit_codes(tmp_path, capsys):

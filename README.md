@@ -48,6 +48,13 @@ Their numbers come with stated evidence levels; treat anything tagged *guess* or
 
 ## Quickstart
 
+Run full tests on a test worker. For bracket source checks, set `SPOOL_RACK_ROOT`
+to the matching part checkout, or place it beside this repository. A mesh-only
+fixture is insufficient: `generated_by.source.files` in
+[`problem.yaml`](problems/spool-rack-g2-ef/problem.yaml) lists every required file
+and its SHA-256. Problem lint checks those pins; generator parity uses the same
+source-root resolution. A source-dependent test skip is not a passing parity check.
+
 ```bash
 pip install -e '.[geom,dev]'            # numpy, pyyaml; geometry extras for meshes and raster checks
 pytest -q
