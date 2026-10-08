@@ -1119,3 +1119,16 @@ The repeated solve segments are about 1.66/1.67 s, excluding setup; they do not
 establish the optimiser's iteration budget. Unit known answers and actual cube
 replays in both cycle precisions cover the controls: default 35 iterations,
 five sweeps 19, with independent direct-solution checks.
+
+Matching pure-FP64 five-sweep controls are retained for
+[shell-only](receipts/amg-transfer-bracket-gpu-fp64-sweeps5-tol6.json) and the
+[helper project](receipts/amg-transfer-project-gpu-fp64-sweeps5-tol6.json).
+Input packs, source hashes, hierarchy, rtol, sweep count and graph settings match
+the FP32-cycle receipts above; only cycle precision changes. Both pure-FP64 runs
+also stop at 38 iterations, with physical relative residuals 6.724e-7 and
+7.739e-7. Across all three load scales, mixed versus pure relative differences
+are below 3.2e-12 in compliance and maximum displacement, with zero iteration
+penalty. Both still have strict `accepted: false`. This establishes metric
+agreement for this nominal occupancy pair and these stopping settings, not
+production Warp 1.17 parity, the required stiffness-floor/material sweep,
+pointwise displacement error, or physical qualification.

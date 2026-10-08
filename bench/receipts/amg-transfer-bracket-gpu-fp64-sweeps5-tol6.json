@@ -1,0 +1,454 @@
+{
+  "schema": "fdmgen/amg-transfer-gpu@0.1",
+  "version_boundary": {
+    "used": "1.18.0",
+    "production_gate_pin": "1.17.0",
+    "gate_eligible": false,
+    "reason": "Reusable Warp CG interface tested in the existing 1.18 environment; compatibility/parity with the production 1.17 pin is not established"
+  },
+  "input_sha256": "4ab436ae82e8ee7799ba916fc392a0f9373dc6c6a0f0b64a86abf78dcd2ba5a3",
+  "input_schema": "fdmgen/amg-transfer@0.1",
+  "input_provenance": {
+    "case": "slice-derived bracket",
+    "reference_sha256": "5985928e3c43129e57b281cad15d1525fd67977dcb35a889b23472bc8f9eba20",
+    "occupancy_sha256": "fa54793f6d4e073b96b612fdd6dc3f2231e3d5e935b478266fbd08f26306da9b",
+    "occupancy": {
+      "schema": "fdmgen/occupancy@0.1",
+      "gcode_sha256": "494c9ec43d5dc7417ce4c392d49ec6b4f4e65422ab68f5c046a950e38b01d4c6",
+      "table_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+      "pose": "facet-00",
+      "grid_receipt": "bracket-h08-grid.json",
+      "grid_receipt_sha256": "5985928e3c43129e57b281cad15d1525fd67977dcb35a889b23472bc8f9eba20",
+      "grid_frame": "solver print grid of the receipt (installed -> print by installed_to_print)",
+      "grid": {
+        "shape": [
+          272,
+          304,
+          32
+        ],
+        "h_mm": [
+          0.8,
+          0.8,
+          0.8
+        ],
+        "origin_print_mm": [
+          41.69395370483399,
+          5.2,
+          -9.177843387890312e-15
+        ]
+      },
+      "installed_to_print": {
+        "R": [
+          [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "t_mm": [
+          250.0,
+          182.0,
+          0.0
+        ]
+      },
+      "pose_R_design_to_print": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "pose_t_mm": [
+        24.246979,
+        68.741209,
+        0.0
+      ],
+      "indexing": "C order, axes x y z",
+      "accounting": {
+        "credited_input_mm3": 69589.02618972989,
+        "deposited_inside_grid_mm3": 69589.02618973004,
+        "clipped_outside_grid_mm3": 0.0,
+        "saturation_excess_mm3": 122.19631621905823,
+        "excluded": {
+          "thick_bridge_mm3": 1847.8255459497,
+          "thick_bridge_segments": 2548,
+          "support_and_aux_mm3": 0.0,
+          "nonobject_mm3": 75.52585088770712
+        },
+        "threshold": 0.5,
+        "solid_cells": 142588
+      },
+      "density_kind": {
+        "density": "raw: deposited volume / cell volume, exceeds 1 where beads overlap",
+        "density_capped": "min(raw, 1)",
+        "solid_mask": "raw density >= 0.5"
+      },
+      "note": "approximate bead raster of the slicer's credited roads; not a measured print",
+      "sampling": {
+        "step_frac": "1/12",
+        "step_mm": 0.06666666666666667,
+        "caps": false,
+        "samples_across_0p42_bead": 7,
+        "recorded_step_frac": "1/3",
+        "identical_to_source_density": false,
+        "source_npz": "seed-shell-only-h08.npz",
+        "source_npz_sha256": "0cf52c01c50c590831215d5a7e5a331966df13964089f63e7804e10e956ef7b4",
+        "generator": "private occupancy_resample.py: unchanged producer, deposit step_frac bound to 1/K",
+        "purpose": "sampling-step sensitivity of the paired mechanics comparison; not a new recorded grid"
+      }
+    },
+    "material": {
+      "model": "transversely isotropic",
+      "card_id": "polymaker-polylite-asa-t0",
+      "card_tier": "T0",
+      "card_sha256": "351ed3474077d717154c49fa10d6c7737a61cc8fbbc93e7b598ec9fa017ade5b",
+      "modulus_basis": "sustained_effective",
+      "constants": {
+        "E_p": 1000.0,
+        "E_z": 870.0,
+        "nu_p": 0.38,
+        "nu_pz": 0.36,
+        "G_z": 278.40000000000003
+      },
+      "card_parameters": {
+        "E_p": {
+          "short_term": {
+            "value": 2379,
+            "unit": "MPa",
+            "tag": "V",
+            "note": "vendor tensile modulus (XY)"
+          },
+          "sustained_effective": {
+            "value": 1000,
+            "unit": "MPa",
+            "tag": "policy",
+            "note": "planning value for movement gates at sustained ~85 F; not a demonstrated lifetime law"
+          }
+        },
+        "E_z_over_E_p": {
+          "value": 0.87,
+          "interval": [
+            0.85,
+            0.92
+          ],
+          "unit": "1",
+          "tag": "V",
+          "borrowed": true,
+          "note": "E_z is not published for PolyLite ASA; ratio borrowed from another grade (Bambu ASA, annealed specimens)"
+        },
+        "nu_p": {
+          "value": 0.38,
+          "interval": [
+            0.33,
+            0.4
+          ],
+          "unit": "1",
+          "tag": "H"
+        },
+        "nu_pz": {
+          "value": 0.36,
+          "interval": [
+            0.33,
+            0.4
+          ],
+          "unit": "1",
+          "tag": "H"
+        },
+        "G_z_over_E_z": {
+          "value": 0.32,
+          "interval": [
+            0.2,
+            0.36
+          ],
+          "unit": "1",
+          "tag": "H"
+        }
+      },
+      "poisson_convention": "nu_p = -eps_y/eps_x and nu_pz = -eps_z/eps_x under uniaxial in-plane stress sigma_x, so eps_z = -nu_pz/E_p * sigma_x and nu_zp = nu_pz * E_z/E_p (same as fdmgen.fem.element.ti_C). In-plane shear G_p = E_p / (2 (1 + nu_p)). Voigt order xx, yy, zz, yz, xz, xy, engineering shear.",
+      "C_grid_MPa": [
+        [
+          1629.7588146225396,
+          905.1211334631193,
+          793.9243997404283,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          905.1211334631193,
+          1629.7588146225396,
+          793.9243997404283,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          793.9243997404283,
+          793.9243997404283,
+          1367.3142439974042,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          278.40000000000003,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          278.40000000000003,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          362.3188405797102
+        ]
+      ],
+      "C_sha256": "16bf88d0e1d15e73d5ccd125fdbac39cd997ea7d75b6bec74d0988d10897380e",
+      "voigt_order": [
+        "xx",
+        "yy",
+        "zz",
+        "yz",
+        "xz",
+        "xy"
+      ],
+      "shear_convention": "engineering",
+      "layer_axis_grid": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "law": "C_cell = min(raw_density, 1)^power * C_grid",
+      "power": 1,
+      "stiffness_floor": 0,
+      "evidence": "nominal card and uncalibrated homogenisation assumption"
+    },
+    "audit": {
+      "status": "ready",
+      "reasons": [],
+      "cells": 206912,
+      "active_nodes": 288357,
+      "face_components": 1,
+      "face_component_cell_counts": [
+        206912
+      ],
+      "node_connected_components": 1,
+      "restrained_rigid_modes": 6,
+      "original_fixed_dofs": 7216,
+      "retained_fixed_dofs": 7216,
+      "missing_fixed_dofs": 0,
+      "missing_loaded_dofs": 0,
+      "loaded_fixed_dofs": 0,
+      "missing_load_l1_N": 0.0,
+      "original_resultant_grid_N": [
+        4.51166881632048e-14,
+        117.72000000000254,
+        0.0
+      ],
+      "retained_resultant_grid_N": [
+        4.51166881632048e-14,
+        117.72000000000254,
+        0.0
+      ]
+    },
+    "grid": {
+      "shape": [
+        272,
+        304,
+        32
+      ],
+      "h_mm": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "origin_print_mm": [
+        41.69395370483399,
+        5.2,
+        -9.177843387890312e-15
+      ]
+    },
+    "installed_to_print": {
+      "R": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "t_mm": [
+        250.0,
+        182.0,
+        0.0
+      ]
+    },
+    "bc": {
+      "seat_nodes": {
+        "rear_seat": 2912,
+        "front_seat": 2996
+      },
+      "clamped_nodes": 6436,
+      "wall_nodes": 6124
+    },
+    "domain_policy": "all positive-density cells; capped p1; no floor/filter/load transfer"
+  },
+  "source_sha256": {
+    "amg_transfer_gpu.py": "dc5348ae6e2bda582b33d635d1fffcf4dd0fba7f6f2f8323a09c88a03253d2c5",
+    "amg_transfer.py": "1b21c90021b5f25a155b02183c18ce9fbe4ca18d8ed533f7838388eb5e0d6cd3"
+  },
+  "device": "NVIDIA GeForce RTX 3080 Ti",
+  "levels": [
+    865071,
+    83682,
+    2490,
+    90
+  ],
+  "cycle_precision": "fp64",
+  "physical_and_outer_precision": "fp64",
+  "graph": true,
+  "check_every": 1,
+  "maxiter": 40,
+  "sweeps": 5,
+  "requested_relative_tolerance": 1e-06,
+  "reference_solve": {
+    "iterations": 98,
+    "true_relative_residual": 1.0544563127082776e-09,
+    "compliance_N_mm": 384.5029350706369,
+    "max_displacement_mm": 6.337447017362914
+  },
+  "cpu_export_timings_s": {
+    "assembly": 12.135533615015447,
+    "hierarchy_and_export_matrices": 57.336326101009035,
+    "cpu_reference_solve": 56.74304409898468
+  },
+  "timings_s": {
+    "read_and_validation": 12.79268189900904,
+    "upload": 0.8377462170028593,
+    "buffers_probes_solver_setup": 1.3834003710071556
+  },
+  "timing_scope": "solve includes graph capture and scalar checks; excludes export, transfer, validation, upload and setup; not optimiser throughput",
+  "probe_relative_errors_vs_cpu_fp64": [
+    1.4480747471693931e-15,
+    6.024450098532208e-16
+  ],
+  "probe_scope": "includes cycle quantization and arithmetic, not only rounding",
+  "cpu_cycle_reference": "FP64 cycle recomputed with matching pre/post sweep count",
+  "operator_contract_tests": [
+    {
+      "alias": "separate",
+      "relative_error": 9.078562045310794e-17
+    },
+    {
+      "alias": "x",
+      "relative_error": 9.078562045310794e-17
+    },
+    {
+      "alias": "y",
+      "relative_error": 9.078562045310794e-17
+    }
+  ],
+  "beta_zero_ignores_nan_y": true,
+  "runs": [
+    {
+      "accepted": false,
+      "requested_tolerance_met": true,
+      "true_relative_residual_cpu_physical": 6.724031306518605e-07,
+      "compliance_N_mm": 384.50293507110223,
+      "max_displacement_mm": 6.337447016666795,
+      "relative_reference_compliance_error": 1.2101430968414206e-12,
+      "relative_reference_max_displacement_error": 1.0984213538733911e-10,
+      "relative_direct_displacement_error": null,
+      "scale": 1.0,
+      "iterations": 38,
+      "recursive_residual": 1.2040941234253054e-06,
+      "absolute_tolerance": 1.7907346527140011e-06,
+      "relative_scaled_solution_error_vs_first": 0.0,
+      "solve_s_including_graph_capture_and_scalar_checks": 2.2225779529835563
+    },
+    {
+      "accepted": false,
+      "requested_tolerance_met": true,
+      "true_relative_residual_cpu_physical": 6.724031306518605e-07,
+      "compliance_N_mm": 96.12573376777556,
+      "max_displacement_mm": 3.1687235083333976,
+      "relative_reference_compliance_error": 1.2101430968414206e-12,
+      "relative_reference_max_displacement_error": 1.0984213538733911e-10,
+      "relative_direct_displacement_error": null,
+      "scale": 0.5,
+      "iterations": 38,
+      "recursive_residual": 6.020470617126527e-07,
+      "absolute_tolerance": 8.953673263570006e-07,
+      "relative_scaled_solution_error_vs_first": 0.0,
+      "solve_s_including_graph_capture_and_scalar_checks": 2.214961909019621
+    },
+    {
+      "accepted": false,
+      "requested_tolerance_met": true,
+      "true_relative_residual_cpu_physical": 6.724031306518605e-07,
+      "compliance_N_mm": 384.50293507110223,
+      "max_displacement_mm": 6.337447016666795,
+      "relative_reference_compliance_error": 1.2101430968414206e-12,
+      "relative_reference_max_displacement_error": 1.0984213538733911e-10,
+      "relative_direct_displacement_error": null,
+      "scale": 1.0,
+      "iterations": 38,
+      "recursive_residual": 1.2040941234253054e-06,
+      "absolute_tolerance": 1.7907346527140011e-06,
+      "relative_scaled_solution_error_vs_first": 0.0,
+      "solve_s_including_graph_capture_and_scalar_checks": 2.211143485008506
+    }
+  ],
+  "accepted": false,
+  "requested_tolerance_met": true,
+  "acceptance_scope": "accepted and exit status retain true residual <1e-8, metric and reuse checks; requested_tolerance_met only observes true residual <= requested rtol and is not the solver gate",
+  "establishes": "transfer accuracy and reusable solver state on the supplied operator",
+  "does_not_establish": [
+    "production Warp 1.17 parity",
+    "P0-H gate",
+    "all floor/material cases",
+    "optimiser iteration time",
+    "physical qualification"
+  ]
+}
