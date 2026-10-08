@@ -748,9 +748,25 @@ all free DOFs have tentative aggregate support. One-thread CPU setup took 63.57 
 and the instrumented solve 65.04 s, including a diagnostic residual matvec per
 iteration and lazy coarse factorization. Assembly took 9.43 s separately.
 
-This meets the iteration/residual thresholds for this one case, not the complete
-solver gate: GPU timing, mixed-precision parity, the other stiffness floors and
-material cases, and the zero-ersatz comparison remain unproven. The four-cell
+The follow-up receipts `bracket-h08-constraint-strength-emin1e-4.json` and
+`bracket-h08-constraint-strength-emin1e-6.json` change only the stiffness floor.
+Source, mask, load, restraints, density pattern, material matrix and active-DOF
+hashes match the initial control.
+
+| E_min | CG iterations | True relative residual | ≤40 iterations and ≤1e-6 residual |
+|---|---:|---:|---|
+| 1e-3 | 38 | 7.4639e-7 | Yes |
+| 1e-4 | 43 | 8.2644e-7 | No: iteration count |
+| 1e-6 | 99 | 3.7709e-5 | No: both |
+
+The 1e-6 case returned solver status 0, but the harness marked it unconverged
+and exited 2 because the true residual failed. Its best callback residual was
+3.7619e-5. Setup took 63.65 / 63.29 s and instrumented solves 73.94 / 171.95 s
+for the two follow-ups. The unfiltered 0.8 mm domain therefore still fails the
+floor sweep; R1 voxel-hinge removal is not a sufficient explanation or remedy.
+This is a failure of this measured configuration, not proof that every solver
+must fail. GPU timing, mixed-precision parity, the remaining material cases and
+the zero-ersatz comparison remain unproven. The four-cell
 bands are 3.2 mm wide here versus 6.4 mm at 1.6 mm spacing, so comparing these
 receipts is not a pure mesh-resolution study. The band field still has no fixed
 slicer shell and cannot choose an optimiser floor.
