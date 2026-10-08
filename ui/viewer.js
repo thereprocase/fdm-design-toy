@@ -95,7 +95,7 @@ class PartViewer {
     const cancel=e=>{if(e.pointerId===pointer)start=down=pointer=null;};
     canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
     canvas.addEventListener('pointermove',e=>{if(!start||e.pointerId!==pointer)return;if(down&&Math.hypot(e.clientX-down[0],e.clientY-down[1])>=4)dragged=true;this.yaw+=(e.clientX-start[0])*.01;this.pitch=Math.max(-1.5,Math.min(1.5,this.pitch+(e.clientY-start[1])*.01));start=[e.clientX,e.clientY];this.schedule();});
-    canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
+    canvas.addEventListener('keydown',e=>{if(!this.vertices||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
     new ResizeObserver(()=>this.schedule()).observe(canvas);
   }
   setRoadWitness(witness){this.roadWitness=witness;this.schedule();}

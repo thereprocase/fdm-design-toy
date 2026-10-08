@@ -23,6 +23,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const pendingWork=await p.evaluate(()=>workSnapshot());await p.locator('#preview-helper-clearance').check();await p.locator('#interface-options').evaluate(e=>e.open=false);
  assert(await p.locator('#interface-visibility').isVisible());assert.match(await p.locator('#interface-visible-names').innerText(),/Load the matched STL and select a pose to draw/);assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);assert.deepEqual(await p.evaluate(()=>workSnapshot()),pendingWork);
  await p.locator('#interface-options').evaluate(e=>e.open=true);await p.locator('#preview-helper-clearance').uncheck();
+ const emptyArrow=await p.evaluate(()=>{const before=[viewer.yaw,viewer.pitch],e=new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true,cancelable:true});viewer.canvas.dispatchEvent(e);return {before,after:[viewer.yaw,viewer.pitch],prevented:e.defaultPrevented};});assert.deepEqual(emptyArrow.after,emptyArrow.before);assert.equal(emptyArrow.prevented,false);
  await p.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);await p.waitForFunction(()=>viewer.interfaces.length===1);
  assert.equal(await p.evaluate(()=>viewer.interfaces[0].base_radius_mm),13.6);assert.deepEqual(await p.evaluate(()=>workSnapshot()),before);
  for(const field of await helper.locator('[data-interface-id]').all())await field.setChecked((await field.getAttribute('data-interface-id'))==='rear_seat');
@@ -50,6 +51,11 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert(miss,'a visible cylinder line outside the body is available for a pick-miss control');
  await p.evaluate(()=>{window.interfacePick='not called';viewer.onPick=point=>window.interfacePick=point;});await p.mouse.click(...miss);assert.equal(await p.evaluate(()=>window.interfacePick),null);await p.evaluate(()=>viewer.onPick=null);
  const cameraWork=await p.evaluate(()=>workSnapshot());
+ for(const modifier of ['altKey','ctrlKey','metaKey','shiftKey'])for(const key of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown']){
+  const result=await p.evaluate(({modifier,key})=>{const before=[viewer.yaw,viewer.pitch],e=new KeyboardEvent('keydown',{key,[modifier]:true,bubbles:true,cancelable:true});viewer.canvas.dispatchEvent(e);return {before,after:[viewer.yaw,viewer.pitch],prevented:e.defaultPrevented};},{modifier,key});assert.deepEqual(result.after,result.before);assert.equal(result.prevented,false);
+ }
+ await p.locator('#part-view').focus();const yaw=await p.evaluate(()=>viewer.yaw);await p.keyboard.press('ArrowLeft');assert(Math.abs(await p.evaluate(()=>viewer.yaw)-(yaw-.15))<1e-12);assert.deepEqual(await p.evaluate(()=>workSnapshot()),cameraWork);
+
  for(const width of [390,1440]){
   await p.setViewportSize({width,height:900});
   const gap=await p.evaluate(()=>document.getElementById('camera-controls').getBoundingClientRect().top-document.getElementById('part-view').getBoundingClientRect().bottom);
