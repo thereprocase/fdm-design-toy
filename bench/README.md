@@ -506,3 +506,28 @@ limit, weak-axis compliance, band contrast, and a small TI contrast solve agains
 a dense direct reference. These checks do not establish full bracket accuracy,
 GPU or mixed-precision performance, realistic contact, the zero-ersatz gap, or
 physical qualification.
+
+Measured R1 contrast result (`receipts/bracket-r1-ti-bands-emin003.json`, harness
+`516af9b`): energy-smoothed aggregation, six rigid-body candidates, one CPU thread,
+`E_min=1e-3`, fixed grid-Z TI axis and per-case seed 0:
+
+| Field | Ez/Ep | CG iterations | True relative residual | Setup / solve seconds | Converged at 1e-6 |
+|---|---:|---:|---:|---:|---|
+| Uniform rho 0.5 | 1.0 | 26 | 4.48e-7 | 8.92 / 5.64 | yes |
+| Uniform rho 0.5 | 0.7 | 27 | 4.56e-7 | 8.90 / 5.90 | yes |
+| Four-cell rho 0/1 bands | 1.0 | 150 (cap) | 3.07e-3 | 8.88 / 32.72 | **no** |
+| Four-cell rho 0/1 bands | 0.7 | 150 (cap) | 1.68e-3 | 8.92 / 32.92 | **no** |
+
+The benchmark exited 2 as intended: both band cases failed the residual target.
+Their compliance values are unconverged iterates, not accuracy or stiffness
+comparison evidence. The uniform field has one stiffness value (0.125875); the
+bands have stiffness 0.001 and 1, a real 1,000:1 contrast. This demonstrates a
+limitation of the tested default aggregation configuration on a deliberately
+segmented field; the uniform-density result is insufficient evidence for an
+optimisation solver. It does not prove failure for every heterogeneous field,
+constitutive law, AMG configuration or GPU implementation. The observed timings
+include diagnostic work on a shared CPU worker and are not GPU gate measurements.
+Next investigation: aggregation strength and interpolation that preserve motion
+of stiff regions separated by soft bands, tested against this unchanged receipt
+before any claim of improvement. Full remote validation of the harness: 253 tests
+passed, 6 CUDA-only skips; the small direct-reference test passed separately.
