@@ -173,8 +173,12 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await region.getByRole('button',{name:'Place centre on part'}).click();assert(await page.evaluate(()=>!!viewer.onPick));
   await second.locator('[data-key="name"]').focus();assert(await page.evaluate(()=>viewer.onPick===null));
   await second.getByRole('button',{name:'Remove region'}).click();assert.equal(await page.locator('#preview-helper').inputValue(),'');
+  const beforeDuplicateViewport=page.viewportSize();await page.setViewportSize({width:390,height:844});
   await region.getByRole('button',{name:'Duplicate region'}).click();
+  assert.equal(await page.locator('.helper-region').count(),2,'Pointer activation duplicates an unselected helper on mobile');
   const copy=page.locator('.helper-region').nth(1),copyId=await copy.getAttribute('data-id');
+  assert(await copy.locator('[data-key="name"]').evaluate(e=>{const r=e.getBoundingClientRect();return e===document.activeElement&&r.top>=0&&r.bottom<=innerHeight;}),'Duplicated helper name is focused and visible on mobile');
+  await page.setViewportSize(beforeDuplicateViewport);
   assert.notEqual(copyId,firstId);assert.equal(await copy.locator('[data-key="name"]').inputValue(),'Seat backing copy');
   assert(await copy.locator('[data-key="name"]').evaluate(e=>e===document.activeElement));
   assert.deepEqual(await copy.locator('[data-geometry]').evaluateAll(fields=>fields.map(f=>f.value)),await region.locator('[data-geometry]').evaluateAll(fields=>fields.map(f=>f.value)));

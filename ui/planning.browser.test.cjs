@@ -112,7 +112,10 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   const first=page.locator('.helper-region').first();
   await first.locator('[data-spatial]').check();await first.locator('[data-geometry="size_mm"]').first().fill('');
   await first.locator('[data-interface-id]').first().check();await first.locator('[data-clearance]').fill('1.7');
+  await page.setViewportSize({width:390,height:844});
   await first.getByRole('button',{name:'Remove region'}).click();await page.locator('#undo-remove').click();
+  assert(await first.locator('[data-key="name"]').evaluate(e=>{const r=e.getBoundingClientRect();return e===document.activeElement&&r.top>=0&&r.bottom<=innerHeight;}),'Restored helper name is focused and visible on mobile');
+  await page.setViewportSize({width:1200,height:900});
   assert.equal(await first.locator('[data-geometry="size_mm"]').first().inputValue(),'');
   assert(await first.locator('[data-spatial]').isChecked());assert(await first.locator('[data-interface-id]').first().isChecked());
   assert.equal(await first.locator('[data-clearance]').inputValue(),'1.7');

@@ -301,8 +301,10 @@ function addHelper(region={}) {
   const z=text('p','',spatial);z.className='hint';z.dataset.printZ='';
   toggle.onchange=()=>{if(!toggle.checked)cancelSurfacePlacement();spatial.hidden=!toggle.checked;updateRegions();};
   box.addEventListener('input',updateRegions);
-  box.addEventListener('focusin',()=>setActiveHelper(box,false));
-  const duplicate=text('button','Duplicate region',box);duplicate.type='button';duplicate.className='secondary';
+  // List actions choose their resulting selection on activation. Selecting on
+  // focus can reveal preview controls and move the button between down/up.
+  box.addEventListener('focusin',event=>{if(!event.target.closest('.helper-list-action'))setActiveHelper(box,false);});
+  const duplicate=text('button','Duplicate region',box);duplicate.type='button';duplicate.className='secondary helper-list-action';
   duplicate.onclick=()=>{
     const copy=addHelper();
     const source=[...box.querySelectorAll('input,textarea')],target=[...copy.querySelectorAll('input,textarea')];
@@ -311,9 +313,9 @@ function addHelper(region={}) {
     copy.querySelector('legend').textContent=name.value;
     copy.querySelector('.spatial').hidden=!copy.querySelector('[data-spatial]').checked;
     box.parentNode.insertBefore(copy,box.nextSibling);
-    setActiveHelper(copy);name.focus({preventScroll:true});copy.scrollIntoView({block:'nearest'});
+    setActiveHelper(copy);name.focus({preventScroll:true});name.scrollIntoView({block:'center'});
   };
-  const remove=text('button','Remove region',box);remove.type='button';remove.className='secondary';remove.onclick=()=>{
+  const remove=text('button','Remove region',box);remove.type='button';remove.className='secondary helper-list-action';remove.onclick=()=>{
     const name=box.querySelector('[data-key="name"]').value.trim()||'Unnamed helper';
     removedHelpers.push({box,index:[...byId('helper-regions').children].indexOf(box)});
     if(removedHelpers.length>20)removedHelpers.shift();
@@ -415,7 +417,7 @@ byId('undo-remove').onclick=()=>{
  const entry=removedHelpers.pop();if(!entry)return;
  const parent=byId('helper-regions');parent.insertBefore(entry.box,parent.children[entry.index]||null);
  setActiveHelper(entry.box);
- const name=entry.box.querySelector('[data-key="name"]');name.focus({preventScroll:true});entry.box.scrollIntoView({block:'nearest'});
+ const name=entry.box.querySelector('[data-key="name"]');name.focus({preventScroll:true});name.scrollIntoView({block:'center'});
  byId('undo-remove').disabled=!removedHelpers.length;
  byId('remove-status').textContent=`Restored ${name.value.trim()||'unnamed helper'}. ${removedHelpers.length} earlier removal(s) can still be undone.`;
 };

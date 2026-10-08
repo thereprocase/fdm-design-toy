@@ -808,3 +808,5 @@ pose differs. A report mismatch directs users to its matching bundle or to rerun
 do not override a bundle manifest's report fingerprint.
 
 The review summary exposes current SHA-256 input fingerprints in an expandable panel. Draft and export-report hashes are calculated from opened bytes; table, template and project hashes are recorded provenance, not browser verification of those files. Rejected replacement reports retain the previously matched identities.
+
+Add, duplicate and undo-remove actions focus and reveal the helper name, including on small screens. Duplicate and Remove choose their resulting selection on activation, so button focus does not shift the controls during a pointer click. Undo still preserves incomplete field values and the helper’s original position.
