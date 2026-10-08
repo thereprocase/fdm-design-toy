@@ -4,7 +4,7 @@ let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draf
 const decisions = new Map();
 let proposalOrigin=null,sourceTableBytes=null,referencePose=null,orientationEvidenceBundle=null,orientationRoad=null;
 const removedHelpers=[];
-let draftCheckpoint=null,draftCheckpointKind='new';
+let draftCheckpoint=null,draftCheckpointKind='new',workNotesCheckpoint=null;
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
 byId('review-poses').onclick=()=>document.querySelector('.candidates').scrollIntoView({block:'start'});
 const viewer = new PartViewer(byId('part-view'));
@@ -546,8 +546,8 @@ function updateDraftState(){
   :'No export from this draft is recorded in this session. Export it to populate the commands below, or substitute your saved file paths in the templates.';
 
 }
-function checkpointDraft(kind){draftCheckpointKind=kind;draftCheckpoint=draftFormState();updateDraftState();}
-function hasDraftEdits(){return draftCheckpoint!==null&&draftFormState()!==draftCheckpoint;}
+function checkpointDraft(kind){draftCheckpointKind=kind;draftCheckpoint=draftFormState();workNotesCheckpoint=kind==='snapshot'?JSON.stringify(poseNotes()):null;updateDraftState();}
+function hasDraftEdits(){return draftCheckpoint!==null&&(draftFormState()!==draftCheckpoint||draftCheckpointKind==='snapshot'&&JSON.stringify(poseNotes())!==workNotesCheckpoint);}
 function allowDraftReplacement(action){return !hasDraftEdits()||confirm(`Discard current draft edits and ${action}? Cancel to download your draft or save unfinished work first.`);}
 window.addEventListener('beforeunload',event=>{if(hasDraftEdits()){event.preventDefault();event.returnValue='';}});
 document.addEventListener('input',event=>{
@@ -648,11 +648,15 @@ function workFieldKey(field){
  if(field.hasAttribute('data-spatial'))return 'spatial';
  return field.dataset.geometry+':'+field.dataset.axis;
 }
+function poseNotes(){
+ const notes=new Map(decisions);if(selected)notes.set(selected.id,byId('rationale').value);
+ return Object.fromEntries([...notes].filter(([,note])=>note!=='').sort(([a],[b])=>a.localeCompare(b)));
+}
 function workSnapshot(){
  if(!analysis||!selected||!fingerprint)throw Error('Open an orientation table and choose a pose first.');
  return {schema:'fdmgen.work-snapshot.v0.1',orientation_table_sha256:fingerprint,pose:selected.id,
   walls:byId('walls').value,skin:byId('skin').value,rationale:byId('rationale').value,shell_only:byId('shell-only').checked,
-  proposal:proposalOrigin,
+  proposal:proposalOrigin,pose_notes:poseNotes(),
   helpers:[...byId('helper-regions').children].map(box=>({id:box.dataset.id,fields:Object.fromEntries(
    [...box.querySelectorAll('input,textarea')].map(f=>[workFieldKey(f),f.type==='checkbox'?f.checked:f.value]))}))};
 }
@@ -663,6 +667,10 @@ function validateWorkSnapshot(raw){
  const candidate=analysis.candidates.find(c=>c.id===raw.pose);if(!candidate)fail('Snapshot pose is absent from this table.');
  const numeric=value=>{if(typeof value!=='string')return false;const field=document.createElement('input');field.type='number';field.value=value;return field.value===value&&(value===''||Number.isFinite(Number(value)));};
  if(!numeric(raw.walls)||!numeric(raw.skin)||typeof raw.rationale!=='string'||typeof raw.shell_only!=='boolean')fail('Invalid snapshot shell inputs or notes.');
+ if(Object.hasOwn(raw,'pose_notes')){
+  const notes=raw.pose_notes;
+  if(!notes||typeof notes!=='object'||Array.isArray(notes)||Object.entries(notes).some(([id,note])=>typeof note!=='string'||!analysis.candidates.some(c=>c.id===id))||(notes[raw.pose]??'')!==raw.rationale)fail('Snapshot pose notes are invalid or disagree with the selected rationale.');
+ }
  if(raw.proposal!==null&&(!raw.proposal||typeof raw.proposal!=='object'||Array.isArray(raw.proposal)||typeof raw.proposal.generator!=='string'||!raw.proposal.generator.trim()))fail('Invalid proposal metadata.');
  if(!Array.isArray(raw.helpers)||raw.helpers.length>1000)fail('Invalid snapshot helper list (maximum 1000).');
  const texts=['name','location','purpose','keep_clear'].map(k=>'text:'+k);
@@ -690,6 +698,7 @@ byId('work-file').onchange=async event=>{
   if(!allowDraftReplacement('reopen this work snapshot')){byId('work-status').textContent='Snapshot replacement cancelled. Current edits are unchanged.';return;}
   clearRemovalHistory();clearDraftError();clearReviewContext();cancelSurfacePlacement();
   proposalOrigin=raw.proposal;renderProposal();choose(candidate);
+  decisions.clear();for(const [id,note] of Object.entries(raw.pose_notes||{}))decisions.set(id,note);
   byId('walls').value=raw.walls;byId('skin').value=raw.skin;byId('rationale').value=raw.rationale;decisions.set(candidate.id,raw.rationale);
   byId('shell-only').checked=raw.shell_only;byId('helper-panel').hidden=raw.shell_only;byId('helper-regions').replaceChildren();
   for(const helper of raw.helpers){const box=addHelper({id:helper.id,geometry:{center_mm:[0,1,2].map(a=>helper.fields['center_mm:'+a]),size_mm:[0,1,2].map(a=>helper.fields['size_mm:'+a])}});
@@ -697,7 +706,7 @@ byId('work-file').onchange=async event=>{
    box.querySelector('legend').textContent=helper.fields['text:name'].trim()||'Helper region';box.querySelector('.spatial').hidden=!helper.fields.spatial;
   }
   resetHandoff();byId('draft-status').textContent='';byId('export-status').textContent='';updateRegions();checkpointDraft('snapshot');
-  byId('work-status').textContent='Unfinished work restored. Required fields may still be incomplete; export a planning draft to validate them. No checks were rerun.';
+  byId('work-status').textContent='Unfinished work restored. '+(Object.hasOwn(raw,'pose_notes')?'Comparison notes restored for all recorded poses. ':'Legacy snapshot: only the selected pose rationale was saved. ')+ 'Required fields may still be incomplete; export a planning draft to validate them. No checks were rerun.';
  }catch(error){if(openRequest===draftRequest)byId('work-status').textContent='Could not reopen work: '+error.message;}
  finally{event.target.value='';}
 };

@@ -1077,7 +1077,10 @@ edits. Keep the snapshot and **Download exact source table** file together.
 This separate `fdmgen.work-snapshot.v0.1` browser format is not accepted by the
 massing CLI. It preserves the selected pose, shell fields, all helper inputs
 (including hidden helpers in shell-only mode), and historical proposal metadata.
-It excludes other poses’ notes, meshes, receipts, camera and undo history.
+Comparison rationale notes for other poses are included too; snapshot edit tracking
+also notices changes to these notes after returning to the saved pose. Older
+snapshots without `pose_notes` restore only the selected pose’s note, explicitly
+labelled on reopen. It excludes meshes, receipts, camera and undo history.
 Nothing is saved automatically. A snapshot checkpoint only records a requested
 file download, not that the browser retained it. Complete the required fields
 and **Export planning draft** before running the exporter; existing validation
