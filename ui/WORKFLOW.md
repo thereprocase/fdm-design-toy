@@ -378,8 +378,9 @@ fdmgen interface-render TABLE.json --problem PROBLEM.yaml --out interface-render
 ```
 
 The worker needs the matching part source checkout (or `SPOOL_RACK_ROOT` for the
-bracket adapter). The problem must explicitly declare the supported frame
-relationship. Exit 1 leaves no output file; read the terminal error. Generating
+bracket adapter). Use the problem file the table was built from: the command
+refuses mismatched keep-out declarations. The problem must explicitly declare
+the supported frame relationship. Exit 1 leaves no output file; read the terminal error. Generating
 this file does not run a clearance check.
 
 Open **Optional: locate interface models** beside the part preview and load the
