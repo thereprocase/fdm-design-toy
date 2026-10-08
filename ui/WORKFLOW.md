@@ -417,7 +417,10 @@ physical bore ends.
 
 In a helper’s settings, **Show selected interfaces on part** displays only that
 helper’s selected references using the loaded base models. If a required file is
-missing, it takes you to the interface or mesh loader. It does not include the
+missing, it takes you to the interface or mesh loader. Loading matching interface
+geometry resumes that request for the same active helper and points to the mesh
+loader if needed; switching helpers cancels the pending request. An ordinary
+interface import leaves the models unselected. It does not include the
 helper’s extra clearance. With no selected references, it hides the overlays.
 
 For the active helper, opt into **Preview active helper’s requested clearance**

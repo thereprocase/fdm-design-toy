@@ -12,7 +12,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const before=await p.evaluate(()=>workSnapshot());await locate.click();assert(await p.locator('#interface-file').evaluate(e=>e===document.activeElement));assert.deepEqual(await p.evaluate(()=>workSnapshot()),before);
  await p.locator('#interface-options').evaluate(e=>e.open=true);
  const upload=async g=>{await p.locator('#interface-file').setInputFiles({name:'interfaces.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(g))});await p.waitForFunction(()=>document.getElementById('interface-file').value==='');};
+ const wrong=structuredClone(geometry);wrong.table.sha256='0'.repeat(64);await upload(wrong);assert.equal(await p.evaluate(()=>interfaceGeometry),null);
  await upload(geometry);assert.match(await p.locator('#interface-status').innerText(),/fingerprints matched/);
+ assert.deepEqual(await p.locator('[data-interface-preview]:checked').evaluateAll(fields=>fields.map(f=>f.dataset.interfacePreview)),checkedBefore);assert(await p.locator('#mesh-file').evaluate(e=>e===document.activeElement));assert.deepEqual(await p.evaluate(()=>workSnapshot()),before);
+
  await locate.click();assert(await p.locator('#mesh-file').evaluate(e=>e===document.activeElement));assert.deepEqual(await p.evaluate(()=>workSnapshot()),before);
  await p.locator('#hide-interfaces').click();
  await p.locator('[data-interface-preview="rear_seat"]').check();assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);assert.match(await p.locator('#interface-visible-names').innerText(),/load the matched STL/);
@@ -52,6 +55,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  if(process.env.FDM_INTERFACE_SCREENSHOT)await p.locator('.preview').screenshot({path:process.env.FDM_INTERFACE_SCREENSHOT});
  await p.locator('#hide-interfaces').click();assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);assert.deepEqual(await p.evaluate(()=>workSnapshot()),retained.work);
  await p.locator('[data-interface-preview="mount_upper"]').check();await p.locator('#table-file').setInputFiles([]);await p.locator('#table-file').setInputFiles(root+'.orientation-table.json');await p.waitForFunction(()=>interfaceGeometry===null);assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);
+ // Switching helpers cancels the pending locate request; a plain import stays opt-in.
+ await p.locator('#draft-file').setInputFiles([]);await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));await p.locator('.helper-region').first().locator('[data-locate-interfaces]').click();
+ await p.locator('.helper-region').nth(1).locator('[data-key="name"]').focus();const switched=await p.evaluate(()=>workSnapshot());await upload(geometry);
+ assert.equal(await p.locator('[data-interface-preview]:checked').count(),0);assert.match(await p.locator('#interface-status').innerText(),/Choose the interface models/);assert.deepEqual(await p.evaluate(()=>workSnapshot()),switched);
  assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS real producer interface import/frame binding, mesh gate, pose persistence, overlay-only pick miss, malformed retention, explicit visibility, no draft mutation and mobile');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

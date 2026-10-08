@@ -33,7 +33,7 @@ byId('return-helper').onclick=()=>{
  target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
  document.querySelector('.preview').scrollTop=0;
 };
-let interfaceGeometry=null,interfaceRequest=0;
+let interfaceGeometry=null,interfaceRequest=0,pendingInterfaceHelper=null;
 function helperClearancePreview(){
  const status=byId('helper-clearance-status'),off='Optional purple dotted envelope: base radius plus the active helper’s requested gap. This does not run KEEP-CLEAR.';
  const stop=message=>{status.textContent=message;return [];};
@@ -62,6 +62,7 @@ function updateInterfaceVisibility(){
  if(requested)byId('interface-visible-names').textContent+=' '+(ready&&envelopes.length?`Purple dotted requested-clearance envelope shown for ${helperLabel(activeHelper)}: ${envelopes.map(item=>item.id).join(', ')}. Preview only, no clearance verdict.`:byId('helper-clearance-status').textContent);
 }
 function showHelperInterfaces(box){
+ pendingInterfaceHelper=null;
  cancelSurfacePlacement();setActiveHelper(box);byId('interface-options').open=true;
  const refs=[...box.querySelectorAll('[data-interface-id]:checked')].map(input=>input.dataset.interfaceId);
  let target=byId('part-view');
@@ -69,6 +70,7 @@ function showHelperInterfaces(box){
   for(const input of byId('interface-items').querySelectorAll('[data-interface-preview]'))input.checked=false;
   updateInterfaceVisibility();byId('interface-status').textContent='This helper has no selected interface references. Interface overlays hidden; no draft fields changed.';
  }else if(!interfaceGeometry){
+  pendingInterfaceHelper=box;
   byId('interface-status').textContent='Load the interface-render JSON for this table to locate this helper’s selected interfaces. Helper references and clearance are unchanged.';target=byId('interface-file');
  }else{
   const missing=[];
@@ -81,7 +83,7 @@ function showHelperInterfaces(box){
  target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
 }
 function clearInterfaces(){
- interfaceRequest++;interfaceGeometry=null;byId('preview-helper-clearance').checked=false;updateInterfaceVisibility();byId('interface-file').value='';byId('interface-items').replaceChildren();byId('interface-source').textContent='';byId('interface-provenance').hidden=true;byId('interface-status').textContent='No interface geometry loaded.';
+ pendingInterfaceHelper=null;interfaceRequest++;interfaceGeometry=null;byId('preview-helper-clearance').checked=false;updateInterfaceVisibility();byId('interface-file').value='';byId('interface-items').replaceChildren();byId('interface-source').textContent='';byId('interface-provenance').hidden=true;byId('interface-status').textContent='No interface geometry loaded.';
 }
 function renderInterfaceOptions(){
  const list=byId('interface-items');list.replaceChildren();
@@ -91,7 +93,7 @@ function renderInterfaceOptions(){
  }
  byId('interface-source').textContent=JSON.stringify(interfaceGeometry,null,2);byId('interface-provenance').hidden=false;updateInterfaceVisibility();
 }
-byId('hide-interfaces').onclick=()=>{byId('preview-helper-clearance').checked=false;for(const input of byId('interface-items').querySelectorAll('input'))input.checked=false;updateInterfaceVisibility();byId('part-view').focus({preventScroll:true});};
+byId('hide-interfaces').onclick=()=>{pendingInterfaceHelper=null;byId('preview-helper-clearance').checked=false;for(const input of byId('interface-items').querySelectorAll('input'))input.checked=false;updateInterfaceVisibility();byId('part-view').focus({preventScroll:true});};
 byId('interface-file').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;const request=++interfaceRequest,tableHash=fingerprint;
  try{
@@ -100,6 +102,8 @@ byId('interface-file').onchange=async event=>{
   if(tableHash!==fingerprint)throw Error('The table changed; reopen the interface geometry.');
   InterfaceRender.validate(data,analysis,fingerprint);interfaceGeometry=data;renderInterfaceOptions();
   byId('interface-status').textContent='Table and mesh fingerprints matched. Choose the interface models to draw; helper references and clearance checks are unchanged.';
+  const resume=pendingInterfaceHelper;pendingInterfaceHelper=null;
+  if(resume?.isConnected&&resume===activeHelper&&!byId('shell-only').checked){showHelperInterfaces(resume);byId('interface-status').textContent='Table and mesh fingerprints matched. '+byId('interface-status').textContent;}
  }catch(error){if(request===interfaceRequest)byId('interface-status').textContent=error.message+(interfaceGeometry?' Previously matched interface geometry and visibility are retained.':'');}
  finally{if(request===interfaceRequest)event.target.value='';}
 };
@@ -969,7 +973,7 @@ function stopSurfacePlacement(){
 byId('cancel-placement').onclick=stopSurfacePlacement;
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&viewer.onPick){event.preventDefault();stopSurfacePlacement();}});
 function setActiveHelper(box,expand=true){
- if(activeHelper!==box)cancelSurfacePlacement();
+ if(activeHelper!==box){pendingInterfaceHelper=null;cancelSurfacePlacement();}
  if(box&&expand)box.querySelector('.helper-editor').open=true;
  activeHelper=box;byId('return-helper').hidden=!box;updateRegions();
 }
