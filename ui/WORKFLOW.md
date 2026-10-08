@@ -270,6 +270,15 @@ sampling block records the resampling and its original source; separate h/3
 controls exist. Check these blocks before comparing receipts with different
 sampling steps.
 
+To inspect the nominal anisotropic material model on the **same grid and density
+law**, select `bench/receipts/occupancy-ti-density-p1-h08.json` in the mechanics
+input. It reports **−1.706%**. The physical model is transversely isotropic, using
+the T0 card's `sustained_effective` basis: in-plane E 1,000 MPa, through-layer E
+870 MPa, and through-layer G 278.4 MPa. Its isotropic auxiliary preconditioner
+only helps solve those equations; it does not make the physical model isotropic.
+This comparison changes the whole constitutive tensor, including Poisson ratios,
+and is not a sweep of material uncertainty or evidence of physical strength.
+
 For a contrasting audit, select
 `bench/receipts/occupancy-connected-sensitivity-r1.json` in the same input. The
 older thresholded model retained only 1,978 of 2,071 original restrained components.

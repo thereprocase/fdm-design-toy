@@ -127,7 +127,7 @@ const MassingReview = (() => {
  }
  function mechanics(report, sliced, r){
   slice(report,sliced);
-  if(r?.schema==='fdmgen/density-weighted-mechanics-pilot@0.1')return weightedMechanics(report,sliced,r);
+  if(isWeighted(r))return weightedMechanics(report,sliced,r);
   if(r?.schema!=='fdmgen/seat-load-transfer-pilot@0.1')throw Error('Expected a seat-load-transfer mechanics pilot receipt.');
   if(typeof r.method!=='string'||typeof r.establishes!=='string'||!Array.isArray(r.does_not_establish)||!r.does_not_establish.every(x=>typeof x==='string'))throw Error('Mechanics receipt needs method and evidence scope.');
   mechanicsInputs(report,sliced,r.inputs,r.reference_sha256);
@@ -147,10 +147,45 @@ const MassingReview = (() => {
   }
   return r;
  }
+ function isWeighted(r){return ['fdmgen/density-weighted-mechanics-pilot@0.1','fdmgen/ti-density-mechanics-pilot@0.1'].includes(r?.schema);}
+ function tiMaterial(r){
+  const m=r.material,k=m?.constants,positive=x=>Number.isFinite(x)&&x>0;
+  if(m?.model!=='transversely isotropic'||!hash(m.card_sha256)||!hash(m.C_sha256)||typeof m.card_id!=='string'||!['T0','T1','T2'].includes(m.card_tier)||!['short_term','sustained_effective'].includes(m.modulus_basis)||m.law!=='C_cell = min(raw_density, 1)^power * C_grid'||![1,3].includes(m.power)||m.stiffness_floor!==0||typeof m.evidence!=='string')throw Error('Incomplete TI card, basis or density law.');
+  if(!k||!['E_p','E_z','G_z'].every(key=>positive(k[key]))||!['nu_p','nu_pz'].every(key=>Number.isFinite(k[key]))||Math.abs(k.nu_p)>=1||1-k.nu_p-2*k.nu_pz*k.nu_pz*k.E_z/k.E_p<=0)throw Error('TI constants are not positive definite.');
+  if(JSON.stringify(m.voigt_order)!==JSON.stringify(['xx','yy','zz','yz','xz','xy'])||m.shear_convention!=='engineering')throw Error('Unsupported TI tensor convention.');
+  const C=m.C_grid_MPa,near=(a,b)=>Math.abs(a-b)<=1e-8*Math.max(1,Math.abs(a),Math.abs(b));
+  if(!Array.isArray(C)||C.length!==6||!C.every(row=>Array.isArray(row)&&row.length===6&&row.every(Number.isFinite)))throw Error('TI receipt needs its complete tensor.');
+  // Verify the declared compliance law against C, not merely its diagonal.
+  const S=Array.from({length:6},()=>Array(6).fill(0));
+  S[0][0]=S[1][1]=1/k.E_p;S[2][2]=1/k.E_z;
+  S[0][1]=S[1][0]=-k.nu_p/k.E_p;
+  S[0][2]=S[2][0]=S[1][2]=S[2][1]=-k.nu_pz/k.E_p;
+  S[3][3]=S[4][4]=1/k.G_z;S[5][5]=2*(1+k.nu_p)/k.E_p;
+  for(let i=0;i<6;i++)for(let j=0;j<6;j++)if(!near(C[i][j],C[j][i])||!near(S[i].reduce((v,s,n)=>v+s*C[n][j],0),i===j?1:0))throw Error('TI tensor disagrees with its declared constants.');
+  const mat=R=>Array.isArray(R)&&R.length===3&&R.every(row=>Array.isArray(row)&&row.length===3&&row.every(Number.isFinite));
+  const G=r.installed_to_print?.R,R=r.cases?.project?.provenance?.pose_R_design_to_print;
+  for(const Q of [G,R]){
+   if(!mat(Q))throw Error('TI frame rotations are missing.');
+   const det=Q[0][0]*(Q[1][1]*Q[2][2]-Q[1][2]*Q[2][1])-Q[0][1]*(Q[1][0]*Q[2][2]-Q[1][2]*Q[2][0])+Q[0][2]*(Q[1][0]*Q[2][1]-Q[1][1]*Q[2][0]);
+   if(!near(det,1))throw Error('TI frame rotation is not proper.');
+   for(let i=0;i<3;i++)for(let j=0;j<3;j++)if(!near(Q.reduce((s,row)=>s+row[i]*row[j],0),i===j?1:0))throw Error('TI frame rotation is not orthogonal.');
+  }
+  const axis=G.map(row=>row.reduce((v,x,j)=>v+x*R[2][j],0));
+  if(!Array.isArray(m.layer_axis_grid)||m.layer_axis_grid.length!==3||!m.layer_axis_grid.every(Number.isFinite)||!axis.every((v,i)=>near(v,m.layer_axis_grid[i])&&near(Math.abs(v),i===2?1:0)))throw Error('TI layer axis does not match the grid-aligned pose.');
+  const p=r.preconditioner,s=r.solver;
+  if(p?.role!=='auxiliary inverse only; physical equations remain TI'||p.model!=='isotropic'||p.E_MPa!==1000||p.nu!==.3||p.density_law!=='same weights as physical operator'||s?.method!=='CG'||s.rtol!==1e-9||s.atol!==0||s.acceptance_true_relative_residual!==1e-8||!Number.isSafeInteger(s.maxiter)||s.maxiter<1||!hash(r.fixed_sha256))throw Error('Unsupported TI solver or auxiliary preconditioner provenance.');
+  if(r.domain_policy!=='all positive-density cells')throw Error('Unsupported TI domain policy.');
+  for(const c of Object.values(r.cases||{}))if(c.solve?.status==='solved'){
+   const v=c.solve;
+   for(const key of ['physical_CSR_sha256','auxiliary_CSR_sha256'])if(!['data','indices','indptr'].every(k=>hash(v[key]?.[k])))throw Error('Missing TI operator hashes.');
+   for(const key of ['active_ids_sha256','rhs_sha256','B_sha256'])if(!hash(v[key]))throw Error('Missing TI solve provenance.');
+  }
+ }
  function weightedMechanics(report,sliced,r){
   mechanicsInputs(report,sliced,r.cases,r.reference_sha256);
   const m=r.material,nonnegative=v=>Number.isFinite(v)&&v>=0;
-  if(!m||m.law!=='E/E0 = min(raw_density, 1)^power'||!Number.isFinite(m.E0_MPa)||m.E0_MPa<=0||!Number.isFinite(m.nu)||m.nu<=-1||m.nu>=.5||!Number.isFinite(m.power)||m.power<=0||m.stiffness_floor!==0||typeof m.evidence!=='string')throw Error('Unsupported or incomplete density-weighted material law.');
+  if(r.schema==='fdmgen/ti-density-mechanics-pilot@0.1')tiMaterial(r);
+  else if(!m||m.law!=='E/E0 = min(raw_density, 1)^power'||!Number.isFinite(m.E0_MPa)||m.E0_MPa<=0||!Number.isFinite(m.nu)||m.nu<=-1||m.nu>=.5||!Number.isFinite(m.power)||m.power<=0||m.stiffness_floor!==0||typeof m.evidence!=='string')throw Error('Unsupported or incomplete density-weighted material law.');
   if(!['largest face component of positive-density cells','all positive-density cells'].includes(r.domain_policy)||r.load_policy!=='original full-body nodal loads and restraints; no transfer or deletion'||!hash(r.load_sha256))throw Error('Unsupported density-weighted domain or load policy.');
   if(typeof r.establishes!=='string'||!Array.isArray(r.does_not_establish)||!r.does_not_establish.every(x=>typeof x==='string'))throw Error('Weighted mechanics needs evidence scope.');
   if(JSON.stringify(r.grid)!==JSON.stringify(r.cases.project.provenance.grid)||JSON.stringify(r.installed_to_print)!==JSON.stringify(r.cases.project.provenance.installed_to_print))throw Error('Weighted mechanics grid or transform differs from occupancy provenance.');
@@ -174,7 +209,7 @@ const MassingReview = (() => {
   return r;
  }
  function mechanicsCaseReasons(r,name){
-  const reasons=[],weighted=r.schema==='fdmgen/density-weighted-mechanics-pilot@0.1';
+  const reasons=[],weighted=isWeighted(r);
   const label={full_solid:'Full-body context',baseline:'Shell-only',project:'Project'}[name];
    const c=weighted?r.cases[name]:null,a=weighted?c.audit:r.audits[name],v=weighted?c.solve:r.solves?.[name];
    const note=message=>reasons.push(`${label}: ${message}`);
@@ -204,7 +239,7 @@ const MassingReview = (() => {
   return reasons;
  }
  function mechanicsReasons(r){
-  const weighted=r.schema==='fdmgen/density-weighted-mechanics-pilot@0.1';
+  const weighted=isWeighted(r);
   const reasons=['full_solid','baseline','project'].flatMap(name=>mechanicsCaseReasons(r,name));
   if(weighted){
    const base=r.cases.baseline.provenance.sampling,project=r.cases.project.provenance.sampling;

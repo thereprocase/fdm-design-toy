@@ -78,6 +78,20 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.doesNotMatch(await page.locator('#mechanics-audits').innerText(),/Removed \d+ cells/);
  assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),JSON.parse(fs.readFileSync(h08)));
  }
+ const tiPath=path.join(__dirname,'../bench/receipts/occupancy-ti-density-p1-h08.json');
+ await page.locator('#review-mechanics').setInputFiles(tiPath);
+ await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('-1.706%'));
+ assert.match(await page.locator('#mechanics-model').innerText(),/Physical material: transversely isotropic/);
+ assert.match(await page.locator('#mechanics-model').innerText(),/basis sustained_effective/);
+ assert.match(await page.locator('#mechanics-model').innerText(),/E through-layer 870 MPa/);
+ assert.match(await page.locator('#mechanics-model').innerText(),/Auxiliary preconditioner only: isotropic E 1,000 MPa/);
+ assert.match(await page.locator('#mechanics-model').innerText(),/physical equations remain TI/);
+ assert.match(await page.locator('#mechanics-audits').innerText(),/Original fixed DOFs: 7216; retained: 7216/);
+ assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),JSON.parse(fs.readFileSync(tiPath)));
+ const badTI=JSON.parse(fs.readFileSync(tiPath));badTI.material.constants.E_z=1000;
+ await page.locator('#review-mechanics').setInputFiles({name:'wrong-ti.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(badTI))});
+ await page.waitForFunction(()=>document.querySelector('#mechanics-status').textContent.includes('tensor disagrees'));
+ assert.match(await page.locator('#mechanics-comparison').innerText(),/-1.706%/);
  const badWeighted=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p3-sf16-r1.json')));
  badWeighted.cases.project.audit.missing_load_l1_N=1;
  await page.locator('#review-mechanics').setInputFiles({name:'synthetic-lost-load.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(badWeighted))});

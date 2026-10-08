@@ -354,6 +354,18 @@ requires successful retained-domain audits, no recorded lost load or restraints,
 and converged solves. The browser pairs recorded inputs; it does not rerun FE,
 verify NPZ bytes, calibrate the law or establish physical movement/strength.
 
+The separate `fdmgen/ti-density-mechanics-pilot@0.1` schema records nominal TI
+physics and an isotropic auxiliary preconditioner. The importer checks the tensor
+against the declared constants and engineering-shear convention, verifies the
+layer normal is grid-aligned, and requires the card hash/basis, operator hashes,
+and supported solver/preconditioner provenance. The display separates physical
+in-plane/through-layer moduli and Poisson ratios from the auxiliary inverse.
+It retains the same slice, sampling, load, restraint and convergence gates.
+The browser checks consistency of recorded data; hashes alone do not verify the
+underlying matrix or material-card bytes. The measured example is
+`bench/receipts/occupancy-ti-density-p1-h08.json` (−1.706% compliance); it is not a
+strength rating, card-corner bound or validated sustained-life prediction.
+
 Weighted receipts may instead declare **all positive-density cells**. This
 unfiltered policy requires identical raw and retained audits and no fragment-removal
 record. The page says that no fragments were removed; it does not manufacture

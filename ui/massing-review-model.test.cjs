@@ -180,3 +180,18 @@ test('all-positive policy requires unchanged audits and no fragment-removal reco
  const lost=make();lost.cases.project.audit.retained_fixed_dofs--;lost.cases.project.raw_audit=structuredClone(lost.cases.project.audit);
  Review.mechanics(seedReport,seedSlice,lost);assert(!Review.mechanicsComparable(lost));
 });
+
+test('real TI pair retains physical tensor, basis and auxiliary inverse distinction',()=>{
+ const read=()=>JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-ti-density-p1-h08.json')));
+ const r=read(),before=JSON.stringify(r);
+ assert.equal(Review.mechanics(seedReport,seedSlice,r),r);assert(Review.mechanicsComparable(r));assert.equal(JSON.stringify(r),before);
+ for(const mutate of [r=>delete r.material.modulus_basis,r=>r.material.constants.E_z=1000,r=>r.material.C_grid_MPa[0][1]+=20,r=>r.material.layer_axis_grid=[1,0,0],r=>r.material.shear_convention='tensor',r=>r.preconditioner.role='physical material',r=>r.preconditioner.E_MPa=870,r=>delete r.cases.project.solve.physical_CSR_sha256,r=>r.material.card_sha256='unknown',r=>r.solver.acceptance_true_relative_residual=.1]){
+  const bad=read();mutate(bad);assert.throws(()=>Review.mechanics(seedReport,seedSlice,bad));
+ }
+ const lost=read();for(const a of [lost.cases.project.audit,lost.cases.project.raw_audit]){a.retained_fixed_dofs--;a.missing_fixed_dofs=1;}
+ Review.mechanics(seedReport,seedSlice,lost);assert(!Review.mechanicsComparable(lost));
+ const sampling=read();sampling.cases.project.provenance.sampling.caps=true;
+ Review.mechanics(seedReport,seedSlice,sampling);assert(!Review.mechanicsComparable(sampling));
+ const wrong=read();wrong.cases.baseline.provenance.gcode_sha256='a'.repeat(64);
+ assert.throws(()=>Review.mechanics(seedReport,seedSlice,wrong),/G-code differs/);
+});

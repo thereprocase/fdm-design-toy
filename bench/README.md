@@ -967,9 +967,10 @@ because tensor rotation is not implemented here.
 The new `fdmgen/ti-density-mechanics-pilot@0.1` receipt records the card hash,
 actual constants and 6x6 tensor, modulus basis, physical and auxiliary matrix
 hashes, source hashes, input provenance, solver settings and recomputed true
-residual. It is deliberately a different schema from the isotropic pilot; the
-current browser importer does not accept it. Copying these numbers into an
-isotropic receipt would misstate the material model.
+residual. It is deliberately a different schema from the isotropic pilot. The browser
+mechanics review accepts it with explicit card/basis/tensor validation and a
+separate auxiliary-preconditioner label. Copying these numbers into an isotropic
+receipt would misstate the material model.
 
 Without `--solve`, the command audits the domains. With it, exit 2 means the paired
 comparison was not established; inspect the case audits and solves. Completed
