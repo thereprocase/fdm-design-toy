@@ -116,7 +116,9 @@ With a selected pose and matching STL, use **Save preview image** beneath the
 canvas to download a PNG of the current camera and visible overlays. Its footer
 includes the pose, exact table and mesh fingerprints, and planning-only scope.
 Visible interface and keep-out overlays also carry their names and line-style
-meanings; requested clearance envelopes name the helper and extra gaps.
+meanings; requested clearance envelopes name the helper and extra gaps. A shown
+bridge location adds its role, model, span, slice kind, receipt and G-code hashes.
+That road belongs to the recorded slice and does not check current helper edits.
 It can show unsaved helper edits. The image is an illustration, not a check
 receipt, editable plan or physical result; keep the corresponding source receipts
 when discussing evidence. Save a draft or work snapshot separately to preserve

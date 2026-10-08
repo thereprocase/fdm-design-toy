@@ -162,6 +162,14 @@ byId('save-preview').onclick=()=>{
   if(baseModels.length)overlayNotes.push('Blue dash-dot: base interface models '+baseModels.map(item=>item.id).join(', ')+'. Axial ends are drawing clips.');
   if(clearanceModels.length)overlayNotes.push('Purple dotted: '+helperLabel(activeHelper)+' requested clearance; '+clearanceModels.map(item=>`${item.id} +${item.extra_clearance_mm} mm`).join(', ')+'. No clearance verdict.');
   if(viewer.keepouts.length)overlayNotes.push('Magenta dashed: keep-outs '+viewer.keepouts.map(item=>item.id).join(', ')+'. Clipped/sampled display, not a clearance result.');
+  if(orientationRoad&&viewer.roadWitness){
+   const source=orientationEvidenceBundle?.receipts.find(item=>item.entry.pose===selected.id&&item.entry.check==='bridge-check')?.entry;
+   overlayNotes.push(`Recorded bridge location: ${orientationRoad.role} ${orientationRoad.model}, ${orientationRoad.value_mm} mm; ${source?.slice_kind||'slice kind not recorded'}.`,
+    'Dashed: full road; solid: unsupported run; dot: ceiling witness. Drawn through the body. Slicer roles do not establish a helper remedy.',
+    `Bridge receipt SHA256: ${source?.sha256||'not recorded'}`,
+    `G-code SHA256: ${source?.gcode_sha256||'not recorded'}`,
+    'Recorded slice only; not a check of current helper edits.');
+  }
   const picture=previewImageCanvas(byId('part-view'),[
    'PLANNING PREVIEW - not a check receipt or print qualification',
    `Pose: ${selected.id}`,
@@ -438,7 +446,7 @@ async function loadOrientationTable(file,request,bundle=null){
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';return false;}
     if(!bundle)byId('orientation-bundle-files').value='';
-    clearOrientationBundle();clearKeepouts();clearInterfaces();byId('save-preview').disabled=true;byId('preview-save-status').hidden=true;fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('download-work-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    clearOrientationBundle();clearKeepouts();clearInterfaces();byId('save-preview').disabled=true;byId('preview-save-status').hidden=true;fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('download-work-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;byId('mesh-file').value='';mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
