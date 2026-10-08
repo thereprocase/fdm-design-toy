@@ -1,0 +1,28 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
+ await p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+ await p.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));
+ const box=p.locator('.helper-region').first(),checks=box.locator('[data-interface-id]'),status=box.locator('[data-interface-coverage]'),all=box.getByRole('button',{name:'Select all interfaces',exact:true});
+ const count=await checks.count();assert(count>0);
+ assert.equal(await box.locator('[data-interface-id]:checked').count(),0);
+ assert.match(await status.innerText(),/no KEEP-CLEAR check for this helper/);
+ const before=await p.evaluate(()=>draftFormState());
+ await all.click();assert.equal(await box.locator('[data-interface-id]:checked').count(),count);assert(await all.isDisabled());
+ assert(await checks.first().evaluate(e=>e===document.activeElement));
+ assert.notEqual(await p.evaluate(()=>draftFormState()),before);
+ assert.match(await status.innerText(),/Clearance is blank.*0 mm extra clearance/);
+ assert.equal(await box.locator('[data-clearance]').inputValue(),'');
+ assert.equal(await p.evaluate(()=>planInput().helper_regions[0].keep_clear.clearance_mm),null);
+ assert.equal(await p.evaluate(()=>planInput().helper_regions[0].keep_clear.interface_ids.length),count);
+ await checks.first().uncheck();assert(await all.isEnabled());assert.match(await status.innerText(),new RegExp(`${count-1} of ${count}`));
+ await box.locator('[data-clearance]').fill('1.2');assert.match(await status.innerText(),/Requested extra clearance: 1.2 mm/);
+ await box.locator('[data-clearance]').fill('-1');assert.match(await status.innerText(),/nonnegative clearance/);
+ await box.locator('[data-clearance]').fill('0');assert.match(await status.innerText(),/Requested extra clearance: 0 mm/);assert.doesNotMatch(await status.innerText(),/blank/);
+ await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));
+ await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===6);
+ assert.equal(await box.locator('[data-interface-id]:checked').count(),count);
+ assert(await box.getByRole('button',{name:'Select all interfaces',exact:true}).isDisabled());
+ assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ console.log('PASS interface selection defaults, select-all, focus, draft intent, clearance semantics, reopen and mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

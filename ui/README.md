@@ -1058,3 +1058,9 @@ If draft export stops on an incomplete field, its explanation appears beside the
 focused field as well as at the export controls. The helper editor opens when
 needed. Editing that field clears the inline error; export again to validate the
 rest of the draft. Failed export does not mark the draft as saved.
+
+Each helper shows how many interfaces are selected for exporter KEEP-CLEAR checks.
+**Select all interfaces** selects the table's declarations without changing the
+clearance field. A blank clearance remains unspecified in the draft; the exporter
+uses 0 mm extra clearance, which the UI now states explicitly. Reopened drafts
+keep their saved selections. This summary is planning intent, not a geometry check.

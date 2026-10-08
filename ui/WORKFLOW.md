@@ -78,6 +78,11 @@ if you want no helper regions in this draft. Helpers request 100% infill; sparse
 infill receives no structural credit. Otherwise, give each helper a name,
 location, load-carrying purpose and interface constraints. Select the applicable
 interface and keep-out references, and enter the required clearance when known.
+**Select all interfaces** records every declared interface for that helper; you can
+uncheck individual entries. KEEP-CLEAR runs only for selected interfaces. A blank
+clearance is exported as unspecified, which the exporter evaluates with **0 mm
+extra clearance**. The live summary states the selected count and this default;
+it does not establish clearance, printed fit or assembly access.
 Part keep-outs can be drawn with the optional table-pinned geometry import (see below). Expand each constraint to read its
 rule, declared frame and model; inspect the exporter’s KEEP-OUT results after
 export. A visible helper box does not establish clearance.

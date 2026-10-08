@@ -362,6 +362,9 @@ function addHelper(region={}) {
     wrapper.append(field);
   }
   const refs=text('div','',box);refs.className='interface-refs';text('p','Keep these interfaces clear:',refs);
+  const allInterfaces=text('button','Select all interfaces',refs);allInterfaces.type='button';allInterfaces.className='secondary helper-list-action';allInterfaces.dataset.selectInterfaces='';
+  const coverage=text('p','',refs);coverage.className='hint';coverage.dataset.interfaceCoverage='';coverage.setAttribute('role','status');
+  allInterfaces.onclick=()=>{const checks=[...box.querySelectorAll('[data-interface-id]')];for(const check of checks)check.checked=true;updateRegions();checks[0]?.focus({preventScroll:true});};
   for(const item of analysis?.interfaces||[]){const label=text('label','',refs),check=document.createElement('input');check.type='checkbox';check.dataset.interfaceId=item.id;check.checked=region.keep_clear?.interface_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));
     const info=text('details','',refs);info.dataset.interfaceDetail=item.id;
     text('summary',item.id+' declaration',info);
@@ -556,6 +559,16 @@ function helperLabel(box){
 function invalidGeometryField(box){
  return [...box.querySelectorAll('[data-geometry]')].find(f=>f.value===''||!Number.isFinite(Number(f.value))||f.dataset.geometry==='size_mm'&&Number(f.value)<=0);
 }
+function updateInterfaceCoverage(box){
+ const checks=[...box.querySelectorAll('[data-interface-id]')],count=checks.filter(f=>f.checked).length;
+ box.querySelector('[data-select-interfaces]').disabled=!checks.length||count===checks.length;
+ const status=box.querySelector('[data-interface-coverage]'),show=message=>{if(status.textContent!==message)status.textContent=message;};
+ if(!checks.length){show('This table declares no interfaces to select. No KEEP-CLEAR checks can be requested here.');return;}
+ if(!count){show(`0 of ${checks.length} interfaces selected. The exporter will produce no KEEP-CLEAR check for this helper. Select the interfaces it must keep clear.`);return;}
+ const raw=box.querySelector('[data-clearance]').value,value=Number(raw);
+ const clearance=raw===''?'Clearance is blank: the exporter uses 0 mm extra clearance.':!Number.isFinite(value)||value<0?'Enter a finite, nonnegative clearance before exporting.':`Requested extra clearance: ${value} mm.`;
+ show(`${count} of ${checks.length} interfaces selected for exporter KEEP-CLEAR checks. ${clearance} Checks cover the modelled interface geometry; printed fit and assembly access remain separate.`);
+}
 function helperGeometrySummary(box){
  const prefix='Edit helper settings — ';
  if(!box.querySelector('[data-spatial]').checked)return prefix+'no box placed';
@@ -576,7 +589,7 @@ function updateRegions(){
  };
 
  refreshHelperSelector();
- for(const box of editors.values())box.querySelector('.helper-editor > summary').textContent=helperGeometrySummary(box);
+ for(const box of editors.values()){updateInterfaceCoverage(box);box.querySelector('.helper-editor > summary').textContent=helperGeometrySummary(box);}
  for(const box of editors.values())box.querySelector('[data-box-volume]').textContent=byId('shell-only').checked?'Helper omitted from this shell-only plan.':'Enter a valid box to show its unclipped volume.';
  if(!byId('shell-only').checked)for(const box of byId('helper-regions').children){const r=regionInput(box),z=box.querySelector('[data-print-z]');z.textContent='';if(!r.geometry)continue;
   try{Plan.geometry(r.geometry);
