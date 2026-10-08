@@ -719,7 +719,8 @@ no draft fields and does not establish clearance; inspect KEEP-CLEAR after expor
 Box helpers have **Move X/Y/Z** controls with an explicit step in millimetres
 (0.1, 0.4, 1 or 5). They move the centre in the design frame and preserve box size
 and references. **Undo last centre move** restores the previous coordinates;
-typing a centre clears that undo to avoid restoring
+up to 20 moves per helper can be undone in reverse order. Typing a centre clears
+that helper’s history to avoid restoring
 an obsolete position. Incomplete centres must be filled first. Moves update the
 preview and draft only; export and geometry checks are still required.
 
@@ -735,8 +736,9 @@ focusing an export error opens the relevant editor automatically.
 
 Successful surface placement also supports **Undo last centre move**. The previous
 coordinate text is restored exactly, including blank fields; an unsuccessful pick
-does not overwrite this one-step history. Another successful pick or axis move
-replaces the history with that move's starting centre. Undo does not rerun checks.
+does not change the history. Successful picks and axis moves share the same
+20-move history for that helper. Duplicates start with no move history; loading
+another draft or table clears it. Undo does not rerun checks.
 
 The helper-planning entry repeats the selected pose and its design-frame build
 direction, recorded fit/stability status and failed-check count. It identifies the

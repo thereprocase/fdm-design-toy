@@ -171,6 +171,25 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await region.getByRole('button',{name:'Move X +',exact:true}).click();
   assert.equal(await cy.inputValue(),'');assert.match(await region.locator('[data-nudge-status]').innerText(),/Complete all three/);
   await cy.fill(centers[1]);assert(await region.getByRole('button',{name:'Undo last centre move'}).isDisabled());
+  // A sequence can be unwound, preserving coordinate text and all other fields.
+  const undoMove=region.getByRole('button',{name:'Undo last centre move'});
+  const recoveryStart=await page.evaluate(()=>draftFormState()),snapshots=[];
+  for(const axis of ['X','Y','Z']){
+   snapshots.push(await page.evaluate(()=>draftFormState()));
+   await region.getByRole('button',{name:`Move ${axis} +`,exact:true}).click();
+  }
+  for(const state of snapshots.reverse()){
+   await undoMove.click();assert.equal(await page.evaluate(()=>draftFormState()),state);
+  }
+  assert(await undoMove.isDisabled());
+  // History is bounded: after 21 moves only the latest 20 remain recoverable.
+  for(let i=0;i<21;i++)await region.getByRole('button',{name:'Move X +',exact:true}).click();
+  for(let i=0;i<20;i++)await undoMove.click();
+  assert(await undoMove.isDisabled());
+  assert(Math.abs(Number(await region.locator('[data-geometry="center_mm"][data-axis="0"]').inputValue())-Number(centers[0])-.4)<1e-6);
+  await region.locator('[data-geometry="center_mm"][data-axis="0"]').fill(centers[0]);
+  assert.equal(await page.evaluate(()=>draftFormState()),recoveryStart);
+
   await region.getByRole('button',{name:'Place centre on part'}).click();
   await page.getByRole('button',{name:'facet-01',exact:true}).click();assert(await page.evaluate(()=>viewer.onPick===null));assert(await page.locator('#cancel-placement').isHidden());await page.locator('#rationale').fill('Alternative pose for the same reinforcement.');
   assert.deepEqual(await page.evaluate(()=>viewer.keepouts.map(x=>({id:x.id,lines:x.lines}))),keepoutLines);
@@ -218,6 +237,14 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await second.locator('[data-key="name"]').fill('Second helper');await second.locator('[data-spatial]').check();
   assert(await second.evaluate(e=>e.classList.contains('active-helper')));assert.match(await page.locator('#active-helper-status').innerText(),/Second helper/);
   assert(await page.evaluate(()=>viewer.regions.filter(r=>r.active).length===1&&viewer.regions.find(r=>r.active).name==='Second helper'));
+  const independentStart=await page.evaluate(()=>draftFormState());
+  await region.getByRole('button',{name:'Move X +',exact:true}).click();
+  await second.getByRole('button',{name:'Move Y +',exact:true}).click();
+  await second.getByRole('button',{name:'Undo last centre move'}).click();
+  assert(await second.getByRole('button',{name:'Undo last centre move'}).isDisabled());
+  assert(await region.getByRole('button',{name:'Undo last centre move'}).isEnabled());
+  await region.getByRole('button',{name:'Undo last centre move'}).click();
+  assert.equal(await page.evaluate(()=>draftFormState()),independentStart);
   const firstId=await region.getAttribute('data-id');await page.locator('#preview-helper').selectOption(firstId);
   assert(await region.locator('[data-key="name"]').evaluate(e=>e===document.activeElement));assert(await region.evaluate(e=>e.classList.contains('active-helper')));
   await region.getByRole('button',{name:'Place centre on part'}).click();assert(await page.evaluate(()=>!!viewer.onPick));
