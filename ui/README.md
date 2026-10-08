@@ -711,6 +711,11 @@ Reference pose comparisons include supplementary bridge ceiling maxima beside st
 
 ## Edit and navigate helpers
 
+Interface selectors have expandable declarations with recorded model, axis,
+support restriction and frame, plus the complete source dimensions. Absent
+frame metadata is labelled rather than inferred. Opening a declaration changes
+no draft fields and does not establish clearance; inspect KEEP-CLEAR after export.
+
 Box helpers have **Move X/Y/Z** controls with an explicit step in millimetres
 (0.1, 0.4, 1 or 5). They move the centre in the design frame and preserve box size
 and references. **Undo last centre move** restores the previous coordinates;

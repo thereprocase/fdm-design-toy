@@ -256,7 +256,13 @@ function addHelper(region={}) {
     wrapper.append(field);
   }
   const refs=text('div','',box);refs.className='interface-refs';text('p','Keep these interfaces clear:',refs);
-  for(const item of analysis?.interfaces||[]){const label=text('label','',refs),check=document.createElement('input');check.type='checkbox';check.dataset.interfaceId=item.id;check.checked=region.keep_clear?.interface_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));}
+  for(const item of analysis?.interfaces||[]){const label=text('label','',refs),check=document.createElement('input');check.type='checkbox';check.dataset.interfaceId=item.id;check.checked=region.keep_clear?.interface_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));
+    const info=text('details','',refs);info.dataset.interfaceDetail=item.id;
+    text('summary',item.id+' declaration',info);
+    text('p',`Model: ${item.type||'not supplied'}. Axis: ${item.axis||'not supplied'}. Support: ${item.support||'not supplied'}. Frame: ${item.frame||'not declared in this interface'}.`,info);
+    text('p','Recorded interface data, not a clearance check. Selecting this reference records planning intent; inspect KEEP-CLEAR results after export.',info).className='hint';
+    const raw=text('pre',JSON.stringify(item,null,2),info);raw.style.whiteSpace='pre-wrap';raw.style.overflowWrap='anywhere';
+  }
   const keepOutRefs=text('div','',box);keepOutRefs.className='interface-refs';
   text('p',analysis?.keep_outs?.length?'Keep-outs to track for this helper (global constraints still apply):':'This table has no keep-out declarations. Use a newer table to record keep-out references.',keepOutRefs);
   if(analysis?.keep_outs?.length)text('p','Keep-outs are not drawn in the preview. Selecting a reference records intent; use the exporter’s KEEP-OUT results to inspect the modelled geometry check.',keepOutRefs).className='hint';

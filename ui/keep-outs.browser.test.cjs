@@ -8,6 +8,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));await page.getByRole('button',{name:'facet-00',exact:true}).click();
  await page.locator('#rationale').fill('Track assembly clearance while planning rear-seat reinforcement.');
  const box=page.locator('.helper-region').first();
+ const beforeDetails=await page.evaluate(()=>draftFormState());
+ const declaration=box.locator('[data-interface-detail="rear_seat"]');
+ await declaration.locator('summary').focus();await declaration.locator('summary').press('Enter');
+ assert.match(await declaration.innerText(),/Model: rod_seat. Axis: Z. Support: forbidden/);
+ assert.match(await declaration.innerText(),/Frame: not declared in this interface/);
+ const originalTable=JSON.parse(await fs.readFile(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json')));
+ assert.deepEqual(JSON.parse(await declaration.locator('pre').textContent()),originalTable.interfaces.find(i=>i.id==='rear_seat'));
+ assert.equal(await page.evaluate(()=>draftFormState()),beforeDetails);
  for(const [key,value]of Object.entries({name:'Rear seat backing',location:'Below rear seat',purpose:'Transfer seat load',keep_clear:'Retain moulding and spool-slide clearance; validate with backend'}))await box.locator(`[data-key="${key}"]`).fill(value);
  await box.locator('[data-spatial]').check();
  for(let i=0;i<3;i++){await box.locator(`[data-geometry="center_mm"][data-axis="${i}"]`).fill(String([90,-18,12][i]));await box.locator(`[data-geometry="size_mm"][data-axis="${i}"]`).fill(String([16,10,20][i]));}

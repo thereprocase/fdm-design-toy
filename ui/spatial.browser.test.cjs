@@ -19,7 +19,7 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await region.locator('[data-interface-id="rear_seat"]').check();await region.locator('[data-spatial]').check();
   const checkReturn=async selector=>{
     const state=await page.evaluate(()=>draftFormState());
-    await region.locator('.helper-editor summary').click();
+    await region.locator('.helper-editor > summary').click();
     assert.equal(await region.locator('.helper-editor').evaluate(e=>e.open),false);
     await page.locator('#return-helper').focus();await page.keyboard.press('Enter');
     assert(await region.locator('.helper-editor').evaluate(e=>e.open));
