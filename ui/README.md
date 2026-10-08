@@ -4,6 +4,17 @@ Start with the [user workflow guide](WORKFLOW.md) for pose selection, helper edi
 exact-file handoff and evidence review. This page contains technical contracts,
 evidence scope and verification details.
 
+Jump to the interaction reference:
+
+- [Compare and select poses](#compare-and-select-poses)
+- [Edit and navigate helpers](#edit-and-navigate-helpers)
+- [Control the geometry preview](#control-the-geometry-preview)
+- [Save inputs and recover rejected imports](#save-inputs-and-recover-rejected-imports)
+- [Import an evidence bundle](#import-an-evidence-bundle),
+  [navigate the review](#navigate-the-matched-review), and
+  [interpret bridge evidence](#interpret-bridge-evidence)
+- [Run UI checks on a test worker](#run-all-ui-checks-on-a-test-worker)
+
 Open `ui/index.html` directly in Chromium or serve this directory over localhost.
 The current prototype imports an orientation JSON, compares candidates, records
 a choice rationale, and exports a massing planning draft. No build step or network
@@ -512,7 +523,7 @@ one verdict, with the visible and total counts stated. Opening another matched
 export resets this view to items needing attention. An empty view is explicitly
 not a qualified result; complete receipts and helper editing remain available.
 
-### Import an evidence bundle
+## Import an evidence bundle
 
 After loading the saved draft and its export report, select `evidence-bundle.json`
 and all five receipt JSON files together in **Evidence bundle**. Generate them in
@@ -546,6 +557,27 @@ against the provisional 18 mm limit. The seeded helpers did not reduce this
 maximum strand span. Both shell screens report 0.22% thin samples; neither equal screen
 values nor successful bundle import establishes printed performance.
 
+Review keeps draft, export report and full bundle inputs visible. Expand **Optional: load individual receipts or a mechanics pilot** for the manual route and its status messages; those controls preserve the same pairing checks.
+
+Bundle pairing errors identify whether the export report, orientation table or
+pose differs. A report mismatch directs users to its matching bundle or to rerun
+`fdmgen evidence` with the current report and matching inputs. Identical 3MF bytes
+do not override a bundle manifest's report fingerprint.
+
+The review summary exposes current SHA-256 input fingerprints in an expandable panel. Draft and export-report hashes are calculated from opened bytes; table, template and project hashes are recorded provenance, not browser verification of those files. Rejected replacement reports retain the previously matched identities.
+
+An incomplete bundle selection lists every missing receipt filename and asks for the manifest and all five receipts together. Each picker selection replaces the selected files; a rejected set leaves previously verified results intact.
+
+Bundle import errors identify the selected filename when JSON is malformed or the document is not an object, so the damaged or unrelated file can be replaced without discarding the previous verified review.
+
+When a bundle producer withholds paired shell or bridge deltas, review shows its
+first reason in the bundle summary and the full reason list verbatim as text.
+Producer-withheld shell comparisons do not display a numeric delta in the bundle
+view. These manifest notes are labelled producer-reported; receipt validation
+remains separate, and manifest numeric deltas are not promoted as validated results.
+
+## Navigate the matched review
+
 **Revise this draft** returns any matched export to the orientation workspace,
 including shell-only plans with no helper edit buttons. Load the exact original
 table to restore the saved plan; the general action focuses wall/skin controls,
@@ -556,6 +588,8 @@ Review section buttons jump directly to export checks, helpers, slice evidence,
 bundle/bridge results, shell results, mechanics and next steps. Unloaded sections
 are disabled and labelled; replacing an export disables its old evidence links.
 Navigation places keyboard focus on the section heading.
+
+## Interpret bridge evidence
 
 Bridge displays distinguish the strand span (unsupported run along an individual
 road, used for the recorded verdict) from an optional ceiling span (twice the
@@ -575,16 +609,70 @@ These are separate maxima, not necessarily measurements of the same road. All
 recorded strand verdicts remain unchanged; the smaller ceiling measurement does
 not establish physical performance. Existing pinned tables and drafts are untouched.
 
-The workspace asks before a valid replacement table or saved draft discards edits
-since the last open/download checkpoint. Cancel preserves the current form,
-including incomplete numeric fields. Invalid incoming files leave it intact
-without a discard prompt. Browsers that support departure warnings also warn
-before leaving an edited plan. This is not autosave: export the draft to keep it.
-
 Both bridge views label the figures as independent maxima over evaluated roads
 of each type; adjacent values need not describe the same road. Draft export also
 focuses a missing choice rationale, marks it invalid, and clears that marker on
 edit, including for shell-only plans.
+
+Failed BRG-001 toolpath screens now state that this workspace supplies no verified
+helper-edit remedy. They retain the strand-model FAIL and link to the bracket
+bridge-model investigation (#9) and coupon work (#12). This is not a claim that
+helpers can never improve a bridge; a changed design needs new slices and checks,
+and physical behaviour remains a separate question.
+
+Bridge failure guidance links directly to the [owner decision record](https://github.com/thereprocase/fdm-design-toy/issues/17#issuecomment-6049963530),
+including bracket infill policy and coupon printing. That navigation does not
+change the recorded strand verdict or establish a helper-edit remedy.
+
+## Compare and select poses
+
+Pose buttons retain keyboard focus after selection. Use Tab or Shift+Tab to move
+between them, and Enter or Space to select; selection updates the detail panel
+without moving focus away from the comparison table.
+
+Use **Use selected pose as reference** to keep one pose beside subsequent choices
+in **Side-by-side measurements**. This compares recorded strength, geometry,
+support, shell and bridge values without calculating a winner. Expand each
+cell's Context to inspect its method and settings; unchecked values stay unchecked.
+The reference survives filtering, but clears when a new table is accepted. It is
+view state only: the selected pose remains the one saved in the planning draft.
+
+The pose table includes print height beside its shell and fit results, so sorting
+by height leaves the compared measurement visible. Missing heights remain
+**Not checked** and sort after measured values; sorting does not choose a pose.
+
+Pose filters display the producer's declared feasibility scope as text, or state
+that it was not supplied. Only explicit true flags pass the feasible-only filter;
+missing flags read **Fit not recorded**. Other check verdicts remain independent.
+
+Bed fit (BED-001) has its own pose-table column, separate from combined feasibility
+(BED-001 plus BED-002 in the bracket tables). A pose can fit the bed while failing
+contact/stability. Missing or unchecked bed-fit evidence stays **Not checked**;
+the producer's geometric fidelity note is retained on the cell.
+
+The pose identifier column stays visible while scrolling horizontally through
+comparison metrics, including on narrow screens. Its selected-row highlight and
+keyboard selection remain available beside the far-right fit results.
+
+An empty pose filter offers **Show all poses**. It clears visibility filters while
+keeping sort order, selected pose and draft fields. Keyboard focus returns to the
+selected row, or the first row without selecting it when no pose was chosen.
+
+Pose measurements below 0.001 in magnitude use scientific notation instead of
+rounding a nonzero value to zero. Exact zero remains zero. This changes display
+formatting only; source values, sort order and exported evidence remain intact.
+
+The material-corner range is withheld when either corner is explicitly
+**NOT_CHECKED**, even if the producer retained a numeric value. Individual values
+and the summary therefore agree about missing evidence; raw data is preserved.
+
+**Review selected pose** beside the comparison controls moves to the selected
+pose's evidence and planning action. It preserves the current choice and draft,
+and places keyboard focus on the detail heading. It is disabled until selection.
+
+Reference pose comparisons include supplementary bridge ceiling maxima beside strand maxima. These are independent per-measure maxima, potentially on different roads; the strand verdict remains authoritative for the recorded screen. Missing ceiling measurements remain explicitly unrecorded.
+
+## Edit and navigate helpers
 
 Box helpers have **Move X/Y/Z** controls with an explicit step in millimetres
 (0.1, 0.4, 1 or 5). They move the centre in the design frame and preserve box size
@@ -603,16 +691,103 @@ Folding changes presentation only: every helper remains in the preview and draft
 and it does not mark the plan edited. Selecting a helper from the preview or
 focusing an export error opens the relevant editor automatically.
 
-Draft downloads use the part and pose identifiers, for example
-`spool-rack-g2-ef-facet-00-massing-plan.json`. Filename segments use safe ASCII
-letters, digits and hyphens, limited to 64 characters each, with `part`/`pose`
-fallbacks. Names help identify files; exact content hashes still control receipt
-pairing. Repeated downloads can have the same suggested name.
+Successful surface placement also supports **Undo last centre move**. The previous
+coordinate text is restored exactly, including blank fields; an unsuccessful pick
+does not overwrite this one-step history. Another successful pick or axis move
+replaces the history with that move's starting centre. Undo does not rerun checks.
+
+The helper-planning entry repeats the selected pose and its design-frame build
+direction, recorded fit/stability status and failed-check count. It identifies the
+pose that will be saved, independently of any pinned comparison reference. The
+recorded checks still describe the source analysis, not subsequent helper edits.
+
+Planning warnings include **Edit** buttons for their affected helper(s). These open
+the editor, highlight its box and focus its centre controls; a thin-edge warning
+focuses the undersized dimension instead. Navigation preserves all draft values
+and does not rerun geometry or sliced-evidence checks.
+
+Helper box centre coordinates and dimensions have separate labelled design-frame groups.
+They remain separate on narrow screens, so a centre coordinate never shares a row
+with a size field. The spatial browser check covers desktop/mobile ordering and
+unchanged draft data across layout changes.
+
+**Add helper** selects the new region and brings its name field into view with
+keyboard focus, including on narrow screens. Existing helper fields are retained.
+
+**Return to helper** reopens a folded editor and reveals its centre field. For a
+helper without an enabled box, it focuses the name instead. Navigation preserves
+the draft; keyboard/mobile browser checks cover both cases.
+
+Helpers with identical display names receive a temporary “helper N” suffix in
+the selector, editor legends, preview and warning actions. N is their current
+list position, not their stable identifier. Saved names and identifiers remain
+unchanged; the suffix disappears when names become distinct.
+
+Add, duplicate and undo-remove actions focus and reveal the helper name, including on small screens. Duplicate and Remove choose their resulting selection on activation, so button focus does not shift the controls during a pointer click. Undo still preserves incomplete field values and the helper’s original position.
+
+## Control the geometry preview
 
 Surface placement can be stopped with **Cancel placement** beside the preview
 or **Escape**, leaving helper coordinates and draft edits unchanged. A completed
 pick closes the mode. Changing pose, replacing the mesh or draft, removing a
 helper, turning off its box or choosing shell-only also closes pending placement.
+
+The preview's Design axes indicator rotates with the pose and camera, matching
+helper centre/nudge coordinates. A circled dot indicates an axis toward the viewer;
+a circled cross points away. The bed remains the print Z=0 plane. In top view,
+print Z points toward the viewer rather than upward on screen.
+
+The design-axis indicator is a noninteractive overlay: clicking or dragging it
+does not place helper centres or rotate the part. Cancelled pointer gestures do
+not leave a pending surface click.
+
+**Print +X side** and **Print +Y side** look toward the part from the respective
+positive print axis, with print Z upward on screen. These presets help inspect
+helper depth. Like Top view and Angled view, they reset zoom and change only the
+camera; the selected print pose and helper coordinates remain unchanged.
+
+While surface placement is armed, an orbit gesture stays a drag once it travels
+at least four screen pixels from its press point, even if it returns there before
+release. It leaves placement armed for a subsequent deliberate click.
+
+Preview orbit and placement gestures use the primary pointer's primary button.
+Right/middle clicks and secondary contacts do not change the camera or helper
+centre. A gesture belongs to its initiating pointer and ends on release,
+cancellation or loss of pointer capture.
+
+The preview labels only the active helper by default to keep dense proposals
+readable. **Show all helper labels** restores every name when needed. All valid
+box outlines remain visible either way; this viewing preference does not change
+the draft or exclude helpers from export.
+
+**Focus helper** frames the active valid box without changing its geometry or print
+pose. Orbit and zoom then operate around that box. **Show whole part** restores
+part framing while keeping the viewing direction; preset views also restore it.
+Changing the active helper or disabling its box ends focused framing.
+
+The preview scale bar reports millimetres in the orthographic view plane and
+updates with zoom and helper framing. It is a viewing aid, not a surface-distance
+measurement. Its inset, like the axis compass, does not accept placement clicks.
+
+The preview draws the declared rectangular bed at print Z=0 using the table
+producer's corner-origin convention. Its dimensions are labelled; absent/invalid
+dimensions retain a labelled reference-plane cue. This does not recalculate fit:
+a valid positive margin is drawn as a dashed inset labelled BED-001 margin;
+exclusion zones are not drawn, and BED-001 remains the recorded result.
+
+## Save inputs and recover rejected imports
+
+The workspace asks before a valid replacement table or saved draft discards edits
+since the last open/download checkpoint. Cancel preserves the current form,
+including incomplete numeric fields. Invalid incoming files leave it intact
+without a discard prompt. Browsers that support departure warnings also warn
+before leaving an edited plan. This is not autosave: export the draft to keep it.
+
+Draft downloads use the part and pose identifiers, for example
+`spool-rack-g2-ef-facet-00-massing-plan.json`. Filename segments use safe ASCII
+letters, digits and hyphens, limited to 64 characters each, with `part`/`pose`
+fallbacks. Names help identify files; exact content hashes still control receipt
+pairing. Repeated downloads can have the same suggested name.
 
 The export handoff offers **Download exact source table**. This saves the accepted
 input bytes unchanged, including a UTF-8 BOM or formatting, so the saved draft's
@@ -633,60 +808,11 @@ exit 1 means an error without a completed manifest. Toolpath checks do not repla
 physical qualification. Generated commands fill ordinary part/pose identifiers;
 unusual identifiers remain explicit placeholders to replace with exact paths.
 
-Pose buttons retain keyboard focus after selection. Use Tab or Shift+Tab to move
-between them, and Enter or Space to select; selection updates the detail panel
-without moving focus away from the comparison table.
-
-Use **Use selected pose as reference** to keep one pose beside subsequent choices
-in **Side-by-side measurements**. This compares recorded strength, geometry,
-support, shell and bridge values without calculating a winner. Expand each
-cell's Context to inspect its method and settings; unchecked values stay unchecked.
-The reference survives filtering, but clears when a new table is accepted. It is
-view state only: the selected pose remains the one saved in the planning draft.
-
-The preview's Design axes indicator rotates with the pose and camera, matching
-helper centre/nudge coordinates. A circled dot indicates an axis toward the viewer;
-a circled cross points away. The bed remains the print Z=0 plane. In top view,
-print Z points toward the viewer rather than upward on screen.
-
-The design-axis indicator is a noninteractive overlay: clicking or dragging it
-does not place helper centres or rotate the part. Cancelled pointer gestures do
-not leave a pending surface click.
-
-**Print +X side** and **Print +Y side** look toward the part from the respective
-positive print axis, with print Z upward on screen. These presets help inspect
-helper depth. Like Top view and Angled view, they reset zoom and change only the
-camera; the selected print pose and helper coordinates remain unchanged.
-
-Successful surface placement also supports **Undo last centre move**. The previous
-coordinate text is restored exactly, including blank fields; an unsuccessful pick
-does not overwrite this one-step history. Another successful pick or axis move
-replaces the history with that move's starting centre. Undo does not rerun checks.
-
 The handoff identifies commands as belonging to the last downloaded draft and
 warns when current edits are absent from that download. Reopening a draft,
 including a review handoff, clears previous export filenames and geometry-input
 summaries. Export again to populate them, or replace the template paths with
 your existing saved files.
-
-While surface placement is armed, an orbit gesture stays a drag once it travels
-at least four screen pixels from its press point, even if it returns there before
-release. It leaves placement armed for a subsequent deliberate click.
-
-The helper-planning entry repeats the selected pose and its design-frame build
-direction, recorded fit/stability status and failed-check count. It identifies the
-pose that will be saved, independently of any pinned comparison reference. The
-recorded checks still describe the source analysis, not subsequent helper edits.
-
-Planning warnings include **Edit** buttons for their affected helper(s). These open
-the editor, highlight its box and focus its centre controls; a thin-edge warning
-focuses the undersized dimension instead. Navigation preserves all draft values
-and does not rerun geometry or sliced-evidence checks.
-
-Preview orbit and placement gestures use the primary pointer's primary button.
-Right/middle clicks and secondary contacts do not change the camera or helper
-centre. A gesture belongs to its initiating pointer and ends on release,
-cancellation or loss of pointer capture.
 
 Provided helper identifiers must match the exporter contract: 1–80 lowercase
 ASCII letters, digits, underscores or hyphens, beginning with a letter or digit,
@@ -707,114 +833,11 @@ using the planning backend's 1e-8 tolerance. Invalid tables report the candidate
 and preserve the existing draft. This checks the pose contract, not mesh fit or
 physical printability.
 
-The preview labels only the active helper by default to keep dense proposals
-readable. **Show all helper labels** restores every name when needed. All valid
-box outlines remain visible either way; this viewing preference does not change
-the draft or exclude helpers from export.
-
-When a bundle producer withholds paired shell or bridge deltas, review shows its
-first reason in the bundle summary and the full reason list verbatim as text.
-Producer-withheld shell comparisons do not display a numeric delta in the bundle
-view. These manifest notes are labelled producer-reported; receipt validation
-remains separate, and manifest numeric deltas are not promoted as validated results.
-
-Failed BRG-001 toolpath screens now state that this workspace supplies no verified
-helper-edit remedy. They retain the strand-model FAIL and link to the bracket
-bridge-model investigation (#9) and coupon work (#12). This is not a claim that
-helpers can never improve a bridge; a changed design needs new slices and checks,
-and physical behaviour remains a separate question.
-
-Helper box centre coordinates and dimensions have separate labelled design-frame groups.
-They remain separate on narrow screens, so a centre coordinate never shares a row
-with a size field. The spatial browser check covers desktop/mobile ordering and
-unchanged draft data across layout changes.
-
-**Add helper** selects the new region and brings its name field into view with
-keyboard focus, including on narrow screens. Existing helper fields are retained.
-
-Bridge failure guidance links directly to the [owner decision record](https://github.com/thereprocase/fdm-design-toy/issues/17#issuecomment-6049963530),
-including bracket infill policy and coupon printing. That navigation does not
-change the recorded strand verdict or establish a helper-edit remedy.
-
 A rejected STL replacement retains the previously fingerprint-matched mesh and
 camera view, with an explicit rejection message. The rejected file is never
 displayed. Accepting a new orientation table still clears the old mesh.
-
-**Return to helper** reopens a folded editor and reveals its centre field. For a
-helper without an enabled box, it focuses the name instead. Navigation preserves
-the draft; keyboard/mobile browser checks cover both cases.
 
 When a saved draft requires another source table, the import error names its
 full required fingerprint and the suggested exact-table download filename.
 Renaming another table cannot satisfy that fingerprint; current edits remain
 available while the correct source is located.
-
-**Focus helper** frames the active valid box without changing its geometry or print
-pose. Orbit and zoom then operate around that box. **Show whole part** restores
-part framing while keeping the viewing direction; preset views also restore it.
-Changing the active helper or disabling its box ends focused framing.
-
-The preview scale bar reports millimetres in the orthographic view plane and
-updates with zoom and helper framing. It is a viewing aid, not a surface-distance
-measurement. Its inset, like the axis compass, does not accept placement clicks.
-
-The pose table includes print height beside its shell and fit results, so sorting
-by height leaves the compared measurement visible. Missing heights remain
-**Not checked** and sort after measured values; sorting does not choose a pose.
-
-Pose filters display the producer's declared feasibility scope as text, or state
-that it was not supplied. Only explicit true flags pass the feasible-only filter;
-missing flags read **Fit not recorded**. Other check verdicts remain independent.
-
-Bed fit (BED-001) has its own pose-table column, separate from combined feasibility
-(BED-001 plus BED-002 in the bracket tables). A pose can fit the bed while failing
-contact/stability. Missing or unchecked bed-fit evidence stays **Not checked**;
-the producer's geometric fidelity note is retained on the cell.
-
-The pose identifier column stays visible while scrolling horizontally through
-comparison metrics, including on narrow screens. Its selected-row highlight and
-keyboard selection remain available beside the far-right fit results.
-
-The preview draws the declared rectangular bed at print Z=0 using the table
-producer's corner-origin convention. Its dimensions are labelled; absent/invalid
-dimensions retain a labelled reference-plane cue. This does not recalculate fit:
-a valid positive margin is drawn as a dashed inset labelled BED-001 margin;
-exclusion zones are not drawn, and BED-001 remains the recorded result.
-
-An empty pose filter offers **Show all poses**. It clears visibility filters while
-keeping sort order, selected pose and draft fields. Keyboard focus returns to the
-selected row, or the first row without selecting it when no pose was chosen.
-
-Pose measurements below 0.001 in magnitude use scientific notation instead of
-rounding a nonzero value to zero. Exact zero remains zero. This changes display
-formatting only; source values, sort order and exported evidence remain intact.
-
-The material-corner range is withheld when either corner is explicitly
-**NOT_CHECKED**, even if the producer retained a numeric value. Individual values
-and the summary therefore agree about missing evidence; raw data is preserved.
-
-**Review selected pose** beside the comparison controls moves to the selected
-pose's evidence and planning action. It preserves the current choice and draft,
-and places keyboard focus on the detail heading. It is disabled until selection.
-
-Helpers with identical display names receive a temporary “helper N” suffix in
-the selector, editor legends, preview and warning actions. N is their current
-list position, not their stable identifier. Saved names and identifiers remain
-unchanged; the suffix disappears when names become distinct.
-
-Bundle pairing errors identify whether the export report, orientation table or
-pose differs. A report mismatch directs users to its matching bundle or to rerun
-`fdmgen evidence` with the current report and matching inputs. Identical 3MF bytes
-do not override a bundle manifest's report fingerprint.
-
-The review summary exposes current SHA-256 input fingerprints in an expandable panel. Draft and export-report hashes are calculated from opened bytes; table, template and project hashes are recorded provenance, not browser verification of those files. Rejected replacement reports retain the previously matched identities.
-
-Add, duplicate and undo-remove actions focus and reveal the helper name, including on small screens. Duplicate and Remove choose their resulting selection on activation, so button focus does not shift the controls during a pointer click. Undo still preserves incomplete field values and the helper’s original position.
-
-Reference pose comparisons include supplementary bridge ceiling maxima beside strand maxima. These are independent per-measure maxima, potentially on different roads; the strand verdict remains authoritative for the recorded screen. Missing ceiling measurements remain explicitly unrecorded.
-
-An incomplete bundle selection lists every missing receipt filename and asks for the manifest and all five receipts together. Each picker selection replaces the selected files; a rejected set leaves previously verified results intact.
-
-Review keeps draft, export report and full bundle inputs visible. Expand **Optional: load individual receipts or a mechanics pilot** for the manual route and its status messages; those controls preserve the same pairing checks.
-
-Bundle import errors identify the selected filename when JSON is malformed or the document is not an object, so the damaged or unrelated file can be replaced without discarding the previous verified review.
