@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from amg_bracket import assemble_active, rigid_candidates
 from fdmgen.fem import element
 from amg_relaxation import RELAXATIONS, configure_relaxation
+from amg_strength import POLICIES, strength_options
 
 
 def digest(array):
@@ -83,7 +84,7 @@ def stiffness_field(mask, emin, pattern):
     return rho, np.where(mask, emin + rho**3 * (1 - emin), 0.)
 
 
-def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coarse_solver='splu', audit=False, free_mask=None, relaxation='block_gauss_seidel'):
+def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coarse_solver='splu', audit=False, free_mask=None, relaxation='block_gauss_seidel', constraint_strength='original'):
     if not np.isfinite(strength_threshold) or not 0 <= strength_threshold <= 1:
         raise ValueError('strength threshold must be finite in [0,1]')
     if coarse_solver not in ('splu', 'pinv'):
@@ -94,9 +95,10 @@ def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coar
     # Reset separately for every case, including spectral-radius estimation.
     np.random.seed(seed)
     start = time.perf_counter()
+    strength, strength_metadata = strength_options(A, strength_threshold, free_mask, constraint_strength)
     ml = pyamg.smoothed_aggregation_solver(
         A.tobsr(blocksize=(3, 3)), B=B, symmetry='symmetric', smooth=smoother,
-        strength=('symmetric', {'theta': strength_threshold}),
+        strength=strength,
         max_coarse=100, presmoother=('block_gauss_seidel', {'sweep': 'symmetric'}),
         postsmoother=('block_gauss_seidel', {'sweep': 'symmetric'}), coarse_solver=coarse_solver)
     configure_relaxation(ml, relaxation)
@@ -121,7 +123,7 @@ def solve_case(A, rhs, B, smoother, maxiter, seed=0, strength_threshold=0., coar
     residual = float(np.linalg.norm(rhs - A @ u) / norm)
     compliance = float(rhs @ u)
     return dict(smoother=smoother, seed=seed, coarse_solver=coarse_solver, relaxation=relaxation,
-                strength=dict(method='symmetric', theta=strength_threshold, blocksize=3), status=int(status), iterations=len(history),
+                strength=strength_metadata, status=int(status), iterations=len(history),
                 converged=bool(status == 0 and np.isfinite(residual) and residual <= 1e-6
                                and np.isfinite(compliance) and compliance > 0),
                 true_relative_residual=residual, compliance=compliance,
@@ -148,6 +150,8 @@ def main():
     ap.add_argument('--smoothers', nargs='+', choices=['jacobi', 'energy'], default=['energy'])
     ap.add_argument('--strength-thresholds', nargs='+', type=float, default=[0.],
                     help='symmetric nodal block-strength theta values in [0,1]')
+    ap.add_argument('--constraint-strength', choices=POLICIES, default='original',
+                    help='first strength graph fixed-diagonal policy; physical constraints unchanged')
     ap.add_argument('--coarse-solver', choices=['splu', 'pinv'], default='splu')
     ap.add_argument('--relaxation', choices=RELAXATIONS, default='block_gauss_seidel',
                     help='V-cycle relaxation, distinct from prolongation --smoothers')
@@ -178,7 +182,7 @@ def main():
         mask_sha256=digest(mask), fixed_sha256=digest(fixed), load_sha256=digest(b),
         mesh_sha256=hashlib.sha256((args.root / HANDOFF / 'body-only.stl').read_bytes()).hexdigest(),
         source_sha256={p: hashlib.sha256((Path(__file__).parents[1] / p).read_bytes()).hexdigest()
-                       for p in ['bench/amg_relaxation.py', 'bench/amg_audit.py', 'bench/amg_sensitivity.py', 'bench/amg_bracket.py', 'bench/bracket_gate.py', 'src/fdmgen/fem/element.py']},
+                       for p in ['bench/amg_strength.py', 'bench/amg_relaxation.py', 'bench/amg_audit.py', 'bench/amg_sensitivity.py', 'bench/amg_bracket.py', 'bench/bracket_gate.py', 'src/fdmgen/fem/element.py']},
         versions=dict(python=platform.python_version(), numpy=np.__version__, scipy=scipy.__version__, pyamg=pyamg.__version__),
         maxiter=args.maxiter, relative_tolerance=1e-6, rows=[])
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -198,7 +202,7 @@ def main():
                 for smoother in args.smoothers:
                     for theta in args.strength_thresholds:
                         row = solve_case(A, rhs, B, smoother, args.maxiter, strength_threshold=theta, coarse_solver=args.coarse_solver,
-                                         audit=args.audit_preconditioner, free_mask=fixed[gdofs] == 0, relaxation=args.relaxation)
+                                         audit=args.audit_preconditioner, free_mask=fixed[gdofs] == 0, relaxation=args.relaxation, constraint_strength=args.constraint_strength)
                         row.update(pattern=pattern, **case, axis=axis, C=C.tolist(),
                             density_sha256=digest(rho), stiffness_sha256=digest(E), rhs_sha256=digest(rhs),
                             active_dofs_sha256=digest(gdofs), body_stiffness_min=float(E[mask].min()),

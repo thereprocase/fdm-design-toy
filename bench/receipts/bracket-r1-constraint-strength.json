@@ -1,0 +1,487 @@
+{
+  "schema": "fdmgen/amg-sensitivity@0.1",
+  "machine_role": "compute box",
+  "establishes": "CPU convergence on these declared synthetic stiffness fields and gate restraints",
+  "does_not_establish": "calibrated anisotropy, printable helpers, physical response, GPU/mixed-precision gate or zero-ersatz gap",
+  "card": null,
+  "parameter_cases": [
+    {
+      "ratio": 0.85,
+      "shear_ratio": 0.2,
+      "nu_p": 0.38,
+      "nu_pz": 0.36
+    }
+  ],
+  "law": {
+    "Ep": 1.0,
+    "Ez": "ratio",
+    "Gpz": "ratio * shear_ratio; null shear_ratio means 1/2.6",
+    "frame": "grid",
+    "density_power": 3,
+    "emin": 0.001,
+    "bands": "floor(grid_i/4) modulo 2 gives rho=0 or 1"
+  },
+  "h_mm": [
+    1.6,
+    1.6,
+    1.6
+  ],
+  "grid": [
+    144,
+    160,
+    16
+  ],
+  "body_cells": 42648,
+  "bc": {
+    "seat_nodes": {
+      "rear_seat": 626,
+      "front_seat": 648
+    },
+    "clamped_nodes": 1751,
+    "wall_nodes": 1631
+  },
+  "mask_sha256": "9b3cb5d7b3c73d5cfb30653335979e14c8194166e72954c22097c93485f517a2",
+  "fixed_sha256": "87b414a7db547403b90880e26fcd80d596fa737ffe390d3892c89469a995dbb6",
+  "load_sha256": "ac3b7008fb557ff762518e32f4abe1a3a583a48902815fde5ecd465425496aac",
+  "mesh_sha256": "565d0e8fb8d452e3d1b86352be97a980f85ba8a97ce2bbe915292db0fdb63843",
+  "source_sha256": {
+    "bench/amg_strength.py": "417a382a4fbfc581b734817d9453ad01dd0702e28728aaa68cbddfb8c8522be9",
+    "bench/amg_relaxation.py": "33bcc715b4ad6161d30d39a74bfdac4ce7d31d7c4a4775ed009dd6f7564f1c0d",
+    "bench/amg_audit.py": "39ddd7f40240ee5a705ec0ba2f534a1f611c68d4ac275866a4d6c1b62356cd07",
+    "bench/amg_sensitivity.py": "0134667738eb00457e45fc0ed5d2f162f09a25012129280fbbd002c45f399913",
+    "bench/amg_bracket.py": "4b9a005f47fcc0d1356814b91dda9f1a6d9e466998af3f4529f039a84b6bcd23",
+    "bench/bracket_gate.py": "a01543d9b5b9a02f3834b6d60ea70a6c7d105b21e2c43acb88f5d8a63a41fdf5",
+    "src/fdmgen/fem/element.py": "a42db7c44b79b4847a32b058c5fbfcb570f2909568a8e0cb85768dc9c635a2f6"
+  },
+  "versions": {
+    "python": "3.12.3",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "pyamg": "5.3.0"
+  },
+  "maxiter": 150,
+  "relative_tolerance": 1e-06,
+  "rows": [
+    {
+      "smoother": "energy",
+      "seed": 0,
+      "coarse_solver": "pinv",
+      "relaxation": "block_gauss_seidel",
+      "strength": {
+        "method": "symmetric",
+        "theta": 0.08,
+        "blocksize": 3,
+        "constraint_policy": "zero",
+        "applies_to": "first strength graph only; physical A and later-level strength unchanged",
+        "first_graph_sha256": {
+          "data": "cc68e1fdee14b5e12b4d02396ac11f928c93c92fa0006c4d5461ffabf50b2798",
+          "indices": "ae3ffc3bcf6b2fdadcb2a8afc88ecd195a68586cfc941f8202d65956bfa7f86f",
+          "indptr": "3782dbf1b1794edf5738007c1481c4edb512c2bb9e5660549628ab2344f19be8"
+        },
+        "first_aggregate_count": 3154,
+        "unassigned_free_dofs": 0,
+        "coverage_scope": "tentative aggregate coverage, not convergence or physical validation"
+      },
+      "status": 0,
+      "iterations": 50,
+      "converged": true,
+      "true_relative_residual": 7.506060340199787e-07,
+      "compliance": 42437010.94037609,
+      "setup_s": 8.182616751990281,
+      "solve_s": 10.990143699978944,
+      "history": [
+        56.55478445006351,
+        27.967085568976565,
+        33.512826920248024,
+        17.197912577571852,
+        18.5816376300613,
+        8.602023485498536,
+        6.634417494185038,
+        4.055874783772306,
+        3.90403328227793,
+        2.437435809280656,
+        2.4271131876682577,
+        1.9842305608411854,
+        1.6288961547638887,
+        1.4624154675166028,
+        1.5720613276370925,
+        1.1424718367034896,
+        0.9251298846410849,
+        0.693268262024024,
+        0.5908765953906978,
+        0.378303503325782,
+        0.26484657702758163,
+        0.17068116293735378,
+        0.08895100882497467,
+        0.060314702817880504,
+        0.03698496895996083,
+        0.028894734833043247,
+        0.020572869629698856,
+        0.018456968024425088,
+        0.015014573030382769,
+        0.009378122820887883,
+        0.005241133416431712,
+        0.0029082833766885976,
+        0.002277654091089556,
+        0.0015562120969584072,
+        0.0011276253589104328,
+        0.0007935823004831618,
+        0.0005183285315579988,
+        0.00032938797222834443,
+        0.0002030202824309238,
+        0.0001021590417982541,
+        6.0618650212554224e-05,
+        3.301989447775046e-05,
+        2.1238853865645147e-05,
+        1.4556857954404135e-05,
+        1.115484105674018e-05,
+        8.194383165671273e-06,
+        4.9452589231344e-06,
+        3.017827854867259e-06,
+        1.4171764104509861e-06,
+        7.506060340199787e-07
+      ],
+      "preconditioner_audit": {
+        "structure": {
+          "levels": [
+            {
+              "dofs": 164364,
+              "restriction_transpose_relative": 0.0,
+              "pre": {
+                "function": "block_gauss_seidel",
+                "parameters": {
+                  "iterations": 1,
+                  "Dinv": {
+                    "shape": [
+                      54788,
+                      3,
+                      3
+                    ],
+                    "sha256": "c557f76bffe62e5b482d76443a3e132018a2919ae8b7938ae435a06b9f358f7c"
+                  },
+                  "blocksize": 3,
+                  "sweep": "symmetric"
+                }
+              },
+              "post": {
+                "function": "block_gauss_seidel",
+                "parameters": {
+                  "iterations": 1,
+                  "Dinv": {
+                    "shape": [
+                      54788,
+                      3,
+                      3
+                    ],
+                    "sha256": "c557f76bffe62e5b482d76443a3e132018a2919ae8b7938ae435a06b9f358f7c"
+                  },
+                  "blocksize": 3,
+                  "sweep": "symmetric"
+                }
+              },
+              "recorded_pair_equal": true
+            },
+            {
+              "dofs": 18924,
+              "restriction_transpose_relative": 0.0,
+              "pre": {
+                "function": "block_gauss_seidel",
+                "parameters": {
+                  "iterations": 1,
+                  "Dinv": {
+                    "shape": [
+                      3154,
+                      6,
+                      6
+                    ],
+                    "sha256": "d321a533ccfb076f8389274b69a3f9847af6e18eb697762bddef879c43bca0c2"
+                  },
+                  "blocksize": 6,
+                  "sweep": "symmetric"
+                }
+              },
+              "post": {
+                "function": "block_gauss_seidel",
+                "parameters": {
+                  "iterations": 1,
+                  "Dinv": {
+                    "shape": [
+                      3154,
+                      6,
+                      6
+                    ],
+                    "sha256": "d321a533ccfb076f8389274b69a3f9847af6e18eb697762bddef879c43bca0c2"
+                  },
+                  "blocksize": 6,
+                  "sweep": "symmetric"
+                }
+              },
+              "recorded_pair_equal": true
+            },
+            {
+              "dofs": 1698,
+              "restriction_transpose_relative": 0.0,
+              "pre": {
+                "function": "block_gauss_seidel",
+                "parameters": {
+                  "iterations": 1,
+                  "Dinv": {
+                    "shape": [
+                      283,
+                      6,
+                      6
+                    ],
+                    "sha256": "eda0964f0f0238f738771ba7d4081d2f6ccfe8c8952686960192d46f391d1f36"
+                  },
+                  "blocksize": 6,
+                  "sweep": "symmetric"
+                }
+              },
+              "post": {
+                "function": "block_gauss_seidel",
+                "parameters": {
+                  "iterations": 1,
+                  "Dinv": {
+                    "shape": [
+                      283,
+                      6,
+                      6
+                    ],
+                    "sha256": "eda0964f0f0238f738771ba7d4081d2f6ccfe8c8952686960192d46f391d1f36"
+                  },
+                  "blocksize": 6,
+                  "sweep": "symmetric"
+                }
+              },
+              "recorded_pair_equal": true
+            },
+            {
+              "dofs": 318
+            }
+          ],
+          "scope": "matching recorded options does not prove that singular-block updates are adjoints"
+        },
+        "full_space": {
+          "seed": 1234,
+          "pairs": 20,
+          "input_dofs": 164364,
+          "total_dofs": 164364,
+          "energies": [
+            1181.1407685295167,
+            1216.8655894848343,
+            1284.0346651669238,
+            956.7380215677983,
+            1238.9067270789087,
+            837.3589032101055,
+            2550.250635914516,
+            679.7483989754405,
+            1196.1515672422167,
+            767.316267378923,
+            861.6861893613798,
+            1087.8511665814676,
+            1520.5990690103674,
+            1581.3861505036693,
+            581.0513823580823,
+            1055.2345720625285,
+            641.2738812970729,
+            2955.1577679298375,
+            1347.6620511777223,
+            1236.5988596740258,
+            1263.6173509060022,
+            1293.6495200131126,
+            719.6958820780978,
+            954.2079404069711,
+            1068.8881928222086,
+            1397.7166449610806,
+            897.2055506048016,
+            5769.833757951851,
+            653.121148487467,
+            1241.0677368111799,
+            1411.0068572692524,
+            3508.904618132514,
+            888.22846812719,
+            1494.1736932085291,
+            1878.5909514750138,
+            1187.5874176477892,
+            1228.9382148435147,
+            865.7644718981974,
+            1148.1319392436098,
+            1419.6075964446964
+          ],
+          "min_energy": 581.0513823580823,
+          "symmetry_gaps": [
+            1.0046196667341161e-13,
+            2.1746910885892356e-13,
+            1.1040038774965007e-12,
+            4.277425388891717e-13,
+            3.502171721558756e-13,
+            6.194842160197123e-14,
+            1.4142035877211056e-13,
+            4.126249705136003e-14,
+            8.255118577374651e-14,
+            1.391937861476064e-13,
+            7.887791396400289e-14,
+            2.934250602484069e-14,
+            6.412428240627055e-13,
+            4.523889725632588e-13,
+            1.1092401245423417e-13,
+            3.986183905053118e-14,
+            1.779714639659342e-13,
+            3.526034463153373e-13,
+            5.343744212723756e-14,
+            1.8218859888484384e-13
+          ],
+          "max_symmetry_gap": 1.1040038774965007e-12,
+          "undefined_symmetry_gaps": 0,
+          "max_output_leakage": 0.0,
+          "gap_definition": "abs(x.T M y-y.T M x)/(norm(x)*norm((M y)[input subspace]))",
+          "scope": "sampled inverse behavior; positive energies and small gaps do not prove SPD"
+        },
+        "free_space": {
+          "seed": 1234,
+          "pairs": 20,
+          "input_dofs": 162293,
+          "total_dofs": 164364,
+          "energies": [
+            1195.6419183829914,
+            1231.7751255158503,
+            1299.780462789947,
+            968.8073428554999,
+            1255.6215287578011,
+            847.8930300528283,
+            2581.826580972979,
+            688.7827563163632,
+            1212.004021011664,
+            777.5726570067923,
+            872.4140883901277,
+            1101.8969054324873,
+            1540.3983607583568,
+            1601.7545292365608,
+            588.3898021945952,
+            1068.682301505801,
+            649.3431648216435,
+            2993.2147886488005,
+            1364.8313848106602,
+            1252.7441828712142,
+            1279.6479235868487,
+            1310.3616036141964,
+            728.9687289800551,
+            966.137688390092,
+            1082.1571165100027,
+            1417.1370460953328,
+            908.4030939299616,
+            5843.828243577594,
+            661.1973427517786,
+            1256.7192725594489,
+            1428.6260403345648,
+            3555.454027438836,
+            899.7716560286945,
+            1512.7551291541854,
+            1901.7569518455657,
+            1203.17006837676,
+            1244.9270112197496,
+            876.5881586894059,
+            1163.1026629619869,
+            1437.487820087157
+          ],
+          "min_energy": 588.3898021945952,
+          "symmetry_gaps": [
+            1.0108165078446142e-13,
+            2.1881187253426168e-13,
+            1.1107195172083773e-12,
+            4.303686421103805e-13,
+            3.526077477973911e-13,
+            6.233855754805108e-14,
+            1.421137733289575e-13,
+            4.154227801135149e-14,
+            8.31052169086671e-14,
+            1.4014314673014282e-13,
+            7.939559702782685e-14,
+            2.952844672628932e-14,
+            6.452141043244266e-13,
+            4.552527638860809e-13,
+            1.116409849733942e-13,
+            4.0177831416478545e-14,
+            1.7912357238207107e-13,
+            3.5499740625221494e-13,
+            5.3681160146092506e-14,
+            1.8336743069773992e-13
+          ],
+          "max_symmetry_gap": 1.1107195172083773e-12,
+          "undefined_symmetry_gaps": 0,
+          "max_output_leakage": 0.0,
+          "gap_definition": "abs(x.T M y-y.T M x)/(norm(x)*norm((M y)[input subspace]))",
+          "scope": "sampled inverse behavior; positive energies and small gaps do not prove SPD"
+        }
+      },
+      "audit_s": 16.64117263900698,
+      "operator_complexity": 1.3085092980494908,
+      "timing_scope": "solve includes one diagnostic residual matvec per iteration; audit time includes lazy coarse factorization",
+      "pattern": "bands",
+      "ratio": 0.85,
+      "shear_ratio": 0.2,
+      "nu_p": 0.38,
+      "nu_pz": 0.36,
+      "axis": "z",
+      "C": [
+        [
+          1.6133196412202224,
+          0.8886819600608022,
+          0.7656124899919936,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.8886819600608022,
+          1.6133196412202226,
+          0.7656124899919936,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.7656124899919936,
+          0.7656124899919936,
+          1.3185548438751,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.17,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.3623188405797102
+        ]
+      ],
+      "density_sha256": "fbe24fae395c42e5cc53fb3677f5f1132bb1e4fccbe03169d631e66df135540e",
+      "stiffness_sha256": "59ae210135e0fa2cd01bc2cf990aaf186928f3dab3b79d331cb264c92c0a74b6",
+      "rhs_sha256": "45c35fc8184f6a354df9f12601f80020cb5a965995f44cedd74b2ff19b9e216c",
+      "active_dofs_sha256": "5e7c06ddca876c6a1db7e91a2b83ff90d820d1a0777c8505939081f7b97abd65",
+      "body_stiffness_min": 0.001,
+      "body_stiffness_max": 1.0,
+      "dofs": 164364,
+      "nnz": 9267568,
+      "assembly_s": 1.215670355973998
+    }
+  ]
+}

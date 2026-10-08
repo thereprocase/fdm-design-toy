@@ -688,3 +688,39 @@ The default remains symmetric block Gauss-Seidel. Remote full suite: 282 passed,
 6 CUDA-only skips; controls cover preservation of an exact solution's null
 component, agreement with compiled Jacobi for nonsingular blocks, direct-solve
 accuracy and unchanged CG histories when auditing is enabled.
+
+### Constraint-aware first-level strength (experimental)
+
+`amg_sensitivity.py --constraint-strength original|zero|mean` controls the
+identity diagonals used to calculate the first nodal strength graph. `original`
+is the unchanged default. `zero` excludes fixed identity diagonals from that
+calculation; `mean` replaces each with the mean free diagonal of its node
+(zero for an entirely fixed node). Both require identity rows for fixed DOFs.
+The physical matrix, loads, restraints and later-level strength are unchanged.
+
+Each case records the first graph hashes, aggregate count and number of free
+DOFs without tentative aggregate support. Complete coverage does not establish
+convergence: high-contrast systems can still fail. The option is a benchmark
+control, not a change to the production solver or its gate. Setup timing includes
+this graph/coverage calculation. To reproduce the R1 banded control, use:
+
+```sh
+python bench/amg_sensitivity.py --root /path/to/part-source \
+  --ratios .85 --shear-ratios .20 --nu-p .38 --nu-pz .36 \
+  --patterns bands --emin 1e-3 --strength-thresholds .08 \
+  --coarse-solver pinv --constraint-strength zero --audit-preconditioner \
+  --out out/amg-constraint-strength.json
+```
+
+The artificial band field has no fixed slicer shell. Its floor sensitivity cannot
+choose a floor for shell-and-helper optimisation: that needs matched designs,
+converged solves and the separate zero-ersatz comparison required by the plan.
+
+The recorded R1 replay (`receipts/bracket-r1-constraint-strength.json`) uses
+`zero`, E_min=1e-3, Ez/Ep=.85, Gpz/Ez=.20, nominal Poisson inputs .38/.36,
+energy interpolation, symmetric block Gauss–Seidel and coarse pseudoinverse.
+It converged in 50 CG iterations to a true relative residual of 7.5061e-7,
+with 3,154 first aggregates and zero uncovered free DOFs. Its complete residual
+history and graph hashes reproduce the exploratory control. This remains above
+the 40-iteration gate and establishes neither higher-contrast convergence nor
+an acceptable optimiser floor. Full remote validation: 322 passed, 6 CUDA skips.
