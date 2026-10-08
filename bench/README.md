@@ -531,3 +531,14 @@ Next investigation: aggregation strength and interpolation that preserve motion
 of stiff regions separated by soft bands, tested against this unchanged receipt
 before any claim of improvement. Full remote validation of the harness: 253 tests
 passed, 6 CUDA-only skips; the small direct-reference test passed separately.
+
+For a card-informed conditioning study, use
+`--card-ratio-corners polymaker-polylite-asa-t0` instead of explicit `--ratios`.
+The harness reads and hashes the linted card: both `E_z_over_E_p` interval ends
+and both `G_z_over_E_z` interval ends, keeping the card's nominal Poisson inputs.
+This is four ratio combinations, **not all uncertainty corners** (the Poisson
+intervals are not swept). Ep remains normalized to 1, so this is neither a
+short-term nor sustained dimensional movement prediction. The receipt retains
+borrowed/assumed evidence tags. Explicit synthetic studies can instead use
+`--shear-ratios`, `--nu-p` and `--nu-pz`; mixing those overrides with card mode
+is refused. Previous receipts and the original synthetic defaults stay intact.

@@ -20,17 +20,47 @@ def digest(array):
     return hashlib.sha256(np.ascontiguousarray(array).tobytes()).hexdigest()
 
 
-def constitutive(ratio, axis):
+def constitutive(ratio, axis, shear_ratio=None, nu_p=.3, nu_pz=.3):
     """Ep=1, Ez=ratio, both Poisson inputs .3, Gpz=ratio/2.6; axis in grid frame.
 
     Proper cyclic axis permutations preserve engineering-shear Voigt convention.
-    This is an explicit numerical family, not a fitted printed-material card.
+    Defaults retain the synthetic family; explicit parameters support card-ratio sensitivity.
     """
     if not np.isfinite(ratio) or not 0 < ratio <= 1 or axis not in ('x', 'y', 'z'):
         raise ValueError('ratio must be finite in (0,1], axis x/y/z')
-    C = element.ti_C(1., ratio, .3, .3, ratio / 2.6)
+    if shear_ratio is not None and (not np.isfinite(shear_ratio) or shear_ratio <= 0):
+        raise ValueError('shear ratio must be finite and positive')
+    if not np.isfinite([nu_p, nu_pz]).all():
+        raise ValueError('Poisson inputs must be finite')
+    C = element.ti_C(1., ratio, nu_p, nu_pz, ratio / 2.6 if shear_ratio is None else ratio * shear_ratio)
     order = {'x': [2, 0, 1, 5, 3, 4], 'y': [1, 2, 0, 4, 5, 3], 'z': list(range(6))}[axis]
     return C[np.ix_(order, order)]
+
+
+def parameter_cases(ratios=None, shear_ratios=None, nu_p=None, nu_pz=None, card_path=None):
+    """Read ratio endpoints and nominal Poisson inputs; normalize Ep to one."""
+    card_source = None
+    if card_path is not None:
+        if any(x is not None for x in (ratios, shear_ratios, nu_p, nu_pz)):
+            raise ValueError('card ratio corners cannot be mixed with explicit material parameters')
+        from fdmgen.materials.card import load_card
+        card = load_card(card_path)
+        m = card.data['moduli']
+        ratios = m['E_z_over_E_p']['interval']
+        shear_ratios = m['G_z_over_E_z']['interval']
+        nu_p, nu_pz = m['nu_p']['value'], m['nu_pz']['value']
+        card_source = dict(id=card.id, tier=card.tier,
+            sha256=hashlib.sha256(card.path.read_bytes()).hexdigest(),
+            parameters={key: m[key] for key in ['E_z_over_E_p', 'G_z_over_E_z', 'nu_p', 'nu_pz']},
+            normalization='Ep=1; neither dimensional modulus basis is used',
+            scope='two ratio intervals at nominal Poisson inputs, not all card uncertainty corners')
+    ratios = [1., .7] if ratios is None else ratios
+    shear_ratios = [None] if shear_ratios is None else shear_ratios
+    nu_p, nu_pz = .3 if nu_p is None else nu_p, .3 if nu_pz is None else nu_pz
+    cases = [dict(ratio=r, shear_ratio=g, nu_p=nu_p, nu_pz=nu_pz) for r in ratios for g in shear_ratios]
+    for case in cases:
+        constitutive(axis='z', **case)
+    return cases, card_source
 
 
 def stiffness_field(mask, emin, pattern):
@@ -87,7 +117,11 @@ def main():
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--h', type=float, default=1.6)
     ap.add_argument('--emin', type=float, default=1e-3)
-    ap.add_argument('--ratios', nargs='+', type=float, default=[1., .7])
+    ap.add_argument('--ratios', nargs='+', type=float)
+    ap.add_argument('--shear-ratios', nargs='+', type=float, help='Gpz/Ez; default 1/2.6')
+    ap.add_argument('--nu-p', type=float)
+    ap.add_argument('--nu-pz', type=float)
+    ap.add_argument('--card-ratio-corners', help='linted card path or ID; uses ratio endpoints and nominal Poisson inputs')
     ap.add_argument('--axes', nargs='+', choices=['x', 'y', 'z'], default=['z'])
     ap.add_argument('--patterns', nargs='+', choices=['uniform', 'bands'], default=['uniform', 'bands'])
     ap.add_argument('--smoothers', nargs='+', choices=['jacobi', 'energy'], default=['energy'])
@@ -95,8 +129,10 @@ def main():
     args = ap.parse_args()
     if not np.isfinite(args.h) or args.h <= 0 or args.maxiter < 1:
         ap.error('positive finite grid spacing and iteration cap required')
-    for ratio in args.ratios:
-        constitutive(ratio, 'z')
+    try:
+        cases, card_source = parameter_cases(args.ratios, args.shear_ratios, args.nu_p, args.nu_pz, args.card_ratio_corners)
+    except ValueError as error:
+        ap.error(str(error))
     stiffness_field(np.ones((1, 1, 1), bool), args.emin, 'uniform')
     import scipy
     import pyamg
@@ -106,7 +142,8 @@ def main():
     receipt = dict(schema='fdmgen/amg-sensitivity@0.1', machine_role='compute box',
         establishes='CPU convergence on these declared synthetic stiffness fields and gate restraints',
         does_not_establish='calibrated anisotropy, printable helpers, physical response, GPU/mixed-precision gate or zero-ersatz gap',
-        law=dict(Ep=1., Ez='ratio', nu_p=.3, nu_pz=.3, Gpz='ratio/2.6', frame='grid',
+        card=card_source, parameter_cases=cases,
+        law=dict(Ep=1., Ez='ratio', Gpz='ratio * shear_ratio; null shear_ratio means 1/2.6', frame='grid',
                  density_power=3, emin=args.emin, bands='floor(grid_i/4) modulo 2 gives rho=0 or 1'),
         h_mm=list(grid.h), grid=list(grid.shape), body_cells=int(mask.sum()), bc=bc,
         mask_sha256=digest(mask), fixed_sha256=digest(fixed), load_sha256=digest(b),
@@ -121,9 +158,9 @@ def main():
     save()
     for pattern in args.patterns:
         rho, E = stiffness_field(mask, args.emin, pattern)
-        for ratio in args.ratios:
+        for case in cases:
             for axis in args.axes:
-                C = constitutive(ratio, axis)
+                C = constitutive(axis=axis, **case)
                 start = time.perf_counter()
                 A, gdofs = assemble_active(E, element.box_ke(C, *grid.h), fixed)
                 assembly_s = time.perf_counter() - start
@@ -131,12 +168,12 @@ def main():
                 B = rigid_candidates(grid.node_coords()[gdofs[::3] // 3]); B[fixed[gdofs] != 0] = 0
                 for smoother in args.smoothers:
                     row = solve_case(A, rhs, B, smoother, args.maxiter)
-                    row.update(pattern=pattern, ratio=ratio, axis=axis, C=C.tolist(),
+                    row.update(pattern=pattern, **case, axis=axis, C=C.tolist(),
                         density_sha256=digest(rho), stiffness_sha256=digest(E), rhs_sha256=digest(rhs),
                         active_dofs_sha256=digest(gdofs), body_stiffness_min=float(E[mask].min()),
                         body_stiffness_max=float(E[mask].max()), dofs=A.shape[0], nnz=A.nnz, assembly_s=assembly_s)
                     receipt['rows'].append(row); save()
-                    print(pattern, ratio, axis, smoother, row['iterations'], row['true_relative_residual'], row['converged'], flush=True)
+                    print(pattern, case, axis, smoother, row['iterations'], row['true_relative_residual'], row['converged'], flush=True)
     return 0 if all(r['converged'] for r in receipt['rows']) else 2
 
 

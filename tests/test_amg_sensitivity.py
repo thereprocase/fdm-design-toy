@@ -53,3 +53,27 @@ def test_small_ti_contrast_solve_matches_direct():
     assert result['compliance'] == pytest.approx(rhs @ exact, rel=1e-8)
     exhausted = pilot.solve_case(A, rhs, B, 'energy', 1)
     assert not exhausted['converged']
+
+
+def test_card_corners_use_nominal_poisson_and_normalized_card_matrix():
+    from fdmgen.materials.card import load_card
+    card = load_card('polymaker-polylite-asa-t0')
+    cases, provenance = pilot.parameter_cases(card_path=card.path)
+    assert len(cases) == 4
+    assert {(c['ratio'], c['shear_ratio']) for c in cases} == {(.85, .2), (.85, .36), (.92, .2), (.92, .36)}
+    assert provenance['parameters']['E_z_over_E_p']['borrowed'] is True
+    assert provenance['parameters']['G_z_over_E_z']['tag'] == 'H'
+    for case in cases:
+        assert (case['nu_p'], case['nu_pz']) == (.38, .36)
+        C = pilot.constitutive(axis='z', **case)
+        expected = card.C('sustained_effective', {'E_z_over_E_p': case['ratio'], 'G_z_over_E_z': case['shear_ratio']}) / 1000
+        np.testing.assert_allclose(C, expected, rtol=1e-12, atol=1e-12)
+        assert C[3, 3] == pytest.approx(case['ratio'] * case['shear_ratio'])
+    with pytest.raises(ValueError, match='cannot be mixed'):
+        pilot.parameter_cases(ratios=[1], card_path=card.path)
+
+
+@pytest.mark.parametrize('shear', [0, -1, float('nan'), float('inf')])
+def test_invalid_shear_ratio_refused(shear):
+    with pytest.raises(ValueError):
+        pilot.constitutive(.85, 'z', shear_ratio=shear)
