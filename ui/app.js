@@ -34,12 +34,31 @@ byId('return-helper').onclick=()=>{
  document.querySelector('.preview').scrollTop=0;
 };
 let interfaceGeometry=null,interfaceRequest=0;
+function helperClearancePreview(){
+ const status=byId('helper-clearance-status'),off='Optional purple dotted envelope: base radius plus the active helper’s requested gap. This does not run KEEP-CLEAR.';
+ const stop=message=>{status.textContent=message;return [];};
+ if(!byId('preview-helper-clearance').checked)return stop(off);
+ if(byId('shell-only').checked)return stop('Shell-only plan: no helper clearance envelope is drawn.');
+ if(!activeHelper?.isConnected)return stop('Choose a helper to preview its requested clearance.');
+ const name=helperLabel(activeHelper),refs=[...activeHelper.querySelectorAll('[data-interface-id]:checked')].map(input=>input.dataset.interfaceId);
+ if(!refs.length)return stop(`${name}: no interface references selected; no clearance envelope drawn.`);
+ if(!interfaceGeometry)return stop(`${name}: load the matching interface geometry first.`);
+ const field=activeHelper.querySelector('[data-clearance]'),raw=field.value,extra=raw===''?0:Number(raw);
+ if(field.validity.badInput||!Number.isFinite(extra)||extra<0)return stop(`${name}: invalid extra clearance; enter a finite nonnegative value. No clearance envelope drawn.`);
+ const models=interfaceGeometry.items.filter(item=>refs.includes(item.id)&&item.rendered),missing=refs.filter(id=>!models.some(item=>item.id===id));
+ let items;try{items=models.map(item=>({...item,clearance:true,extra_clearance_mm:extra,lines:InterfaceRender.segments(item,extra)}));}catch(error){return stop(`${name}: ${error.message} No clearance envelope drawn.`);}
+ status.textContent=`${name}: purple dotted requested envelope; ${raw===''?'blank clearance uses 0':extra} mm extra. `+models.map(item=>`${item.id}: base ${item.base_radius_mm} + extra ${extra} = ${metricNumber(item.base_radius_mm+extra)} mm radius`).join('; ')+(missing.length?'. Not drawn (no model): '+missing.join(', '):'')+'. '+(!mesh||meshHash!==analysis?.mesh?.sha256||!selected?'Load the matched STL and select a pose to draw. ':'')+'Preview only; body clipping, printed fit and KEEP-CLEAR are not checked. Axis ends are drawing clips.';
+ return items;
+}
+byId('preview-helper-clearance').onchange=updateInterfaceVisibility;
 function updateInterfaceVisibility(){
  const chosen=interfaceGeometry?interfaceGeometry.items.filter(item=>byId('interface-items').querySelector(`[data-interface-preview="${CSS.escape(item.id)}"]`)?.checked):[];
  const ready=!!selected&&!!mesh&&meshHash===analysis?.mesh?.sha256;
- viewer.setInterfaces(ready?chosen.map(item=>({...item,lines:InterfaceRender.segments(item)})):[]);
- byId('interface-visibility').hidden=!chosen.length;
+ const envelopes=helperClearancePreview();
+ viewer.setInterfaces(ready?[...chosen.map(item=>({...item,lines:InterfaceRender.segments(item)})),...envelopes]:[]);
+ byId('interface-visibility').hidden=!chosen.length&&!envelopes.length;
  byId('interface-visible-names').textContent=chosen.length?(ready?'Interface models shown: ':'Interface models selected; load the matched STL and select a pose to draw: ')+chosen.map(item=>item.id).join(', ')+'. Blue dash-dot · base radii only, no helper extra clearance. End rings mark drawing clips, not physical ends.':'';
+ if(envelopes.length)byId('interface-visible-names').textContent+=` Purple dotted requested-clearance envelope for ${helperLabel(activeHelper)}: ${envelopes.map(item=>item.id).join(', ')}. Preview only, no clearance verdict.`;
 }
 function showHelperInterfaces(box){
  cancelSurfacePlacement();setActiveHelper(box);byId('interface-options').open=true;
@@ -55,13 +74,13 @@ function showHelperInterfaces(box){
   for(const input of byId('interface-items').querySelectorAll('[data-interface-preview]'))input.checked=!input.disabled&&refs.includes(input.dataset.interfacePreview);
   for(const id of refs)if(!interfaceGeometry.items.some(item=>item.id===id&&item.rendered))missing.push(id);
   updateInterfaceVisibility();
-  byId('interface-status').textContent=refs.length?`${helperLabel(box)}: locating selected base interface models only; requested extra clearance is not drawn.`+(missing.length?' Not drawn: '+missing.join(', ')+'. See the model reasons below.':''):'This helper has no selected interface references. Interface overlays hidden; no draft fields changed.';
+  byId('interface-status').textContent=refs.length?`${helperLabel(box)}: locating selected base interface models. The optional requested-clearance overlay is controlled separately below.`+(missing.length?' Not drawn: '+missing.join(', ')+'. See the model reasons below.':''):'This helper has no selected interface references. Interface overlays hidden; no draft fields changed.';
   if(refs.length&&(!mesh||meshHash!==analysis?.mesh?.sha256)){byId('mesh-options').open=true;target=byId('mesh-file');}
  }
  target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
 }
 function clearInterfaces(){
- interfaceRequest++;interfaceGeometry=null;updateInterfaceVisibility();byId('interface-file').value='';byId('interface-items').replaceChildren();byId('interface-source').textContent='';byId('interface-provenance').hidden=true;byId('interface-status').textContent='No interface geometry loaded.';
+ interfaceRequest++;interfaceGeometry=null;byId('preview-helper-clearance').checked=false;updateInterfaceVisibility();byId('interface-file').value='';byId('interface-items').replaceChildren();byId('interface-source').textContent='';byId('interface-provenance').hidden=true;byId('interface-status').textContent='No interface geometry loaded.';
 }
 function renderInterfaceOptions(){
  const list=byId('interface-items');list.replaceChildren();
@@ -71,7 +90,7 @@ function renderInterfaceOptions(){
  }
  byId('interface-source').textContent=JSON.stringify(interfaceGeometry,null,2);byId('interface-provenance').hidden=false;updateInterfaceVisibility();
 }
-byId('hide-interfaces').onclick=()=>{for(const input of byId('interface-items').querySelectorAll('input'))input.checked=false;updateInterfaceVisibility();byId('part-view').focus({preventScroll:true});};
+byId('hide-interfaces').onclick=()=>{byId('preview-helper-clearance').checked=false;for(const input of byId('interface-items').querySelectorAll('input'))input.checked=false;updateInterfaceVisibility();byId('part-view').focus({preventScroll:true});};
 byId('interface-file').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;const request=++interfaceRequest,tableHash=fingerprint;
  try{
@@ -700,7 +719,7 @@ function updateRegions(){
   }
  }
  for(const box of editors.values())box.querySelector('[data-view-helper]').disabled=!viewer.vertices||!valid.some(r=>r.id===box.dataset.id);
- viewer.setRegions(valid);byId('focus-helper').disabled=!viewer.vertices||!valid.some(r=>r.active);updateDraftState();
+ viewer.setRegions(valid);byId('focus-helper').disabled=!viewer.vertices||!valid.some(r=>r.active);updateInterfaceVisibility();updateDraftState();
 }
 function clearRemovalHistory(){
  removedHelpers.length=0;byId('undo-remove').disabled=true;byId('remove-status').textContent='';

@@ -29,3 +29,11 @@ test('real producer interface sidecar matches the original pinned table',()=>{
  const real=JSON.parse(fs.readFileSync(root+'.interface-render.json'));assert.equal(I.validate(real,table,sha),real);
  assert.deepEqual(real.items.map(i=>[i.id,i.axis,i.base_radius_mm]),[['rear_seat','Z',13.6],['front_seat','Z',13.6],['mount_upper','X',2.6],['mount_lower','X',2.6]]);
 });
+
+test('requested extra clearance adds to radius without changing the base model',()=>{
+ const item=structuredClone(g.items[0]),saved=structuredClone(item),base=I.segments(item),expanded=I.segments(item,2);
+ assert.deepEqual(item,saved);assert.deepEqual(I.segments(item,0),base);
+ for(const point of expanded.flat())assert(Math.abs(Math.hypot(point[0]-90,point[1])-15.6)<1e-12);
+ for(const extra of [-1,Infinity,NaN,'2',null])assert.throws(()=>I.segments(item,extra));
+ assert.throws(()=>I.segments({...item,base_radius_mm:Number.MAX_VALUE},Number.MAX_VALUE));
+});

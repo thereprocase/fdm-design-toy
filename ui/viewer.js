@@ -138,7 +138,7 @@ class PartViewer {
       ctx.stroke();ctx.setLineDash([]);
     }
     for(const item of this.interfaces){
-      ctx.strokeStyle='#176c9c';ctx.lineWidth=1.5;ctx.setLineDash([7,3,1,3]);ctx.beginPath();
+      ctx.strokeStyle=item.clearance?'#5842a3':'#176c9c';ctx.lineWidth=1.5;ctx.setLineDash(item.clearance?[2,3]:[7,3,1,3]);ctx.beginPath();
       for(const line of item.lines){
         const v=transformMesh(line.flat(),this.R,this.t),a=project(...v.slice(0,3)),b=project(...v.slice(3,6));
         ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);

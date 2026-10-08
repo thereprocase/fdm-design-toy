@@ -22,6 +22,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const refState=await p.evaluate(()=>workSnapshot());await locate.click();assert.deepEqual(await p.evaluate(()=>viewer.interfaces.map(item=>item.id)),['rear_seat']);assert.deepEqual(await p.evaluate(()=>workSnapshot()),refState);assert(await p.locator('#part-view').evaluate(e=>e===document.activeElement));
  await helper.locator('[data-interface-id="rear_seat"]').uncheck();const emptyState=await p.evaluate(()=>workSnapshot());await locate.click();assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);assert.match(await p.locator('#interface-status').innerText(),/no selected interface references/);assert.deepEqual(await p.evaluate(()=>workSnapshot()),emptyState);
  await helper.locator('[data-interface-id="rear_seat"]').check();await locate.click();
+ const extra=helper.locator('[data-clearance]'),savedExtra=await extra.inputValue();
+ await extra.fill('2');const envelopeState=await p.evaluate(()=>workSnapshot());await p.locator('#preview-helper-clearance').check();assert.deepEqual(await p.evaluate(()=>workSnapshot()),envelopeState);
+ assert.deepEqual(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).map(item=>[item.id,item.extra_clearance_mm])),[['rear_seat',2]]);assert.match(await p.locator('#helper-clearance-status').innerText(),/15.6 mm radius/);
+ await extra.fill('');assert.match(await p.locator('#helper-clearance-status').innerText(),/blank clearance uses 0/);assert.equal(await p.evaluate(()=>viewer.interfaces.find(item=>item.clearance).extra_clearance_mm),0);
+ await extra.fill('-1');assert.equal(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).length),0);assert.match(await p.locator('#helper-clearance-status').innerText(),/invalid extra clearance/);
+ await extra.fill(savedExtra);await p.locator('.helper-region').nth(1).locator('[data-key="name"]').focus();assert.equal(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).length),4);
+ await p.locator('#shell-only').check();assert.equal(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).length),0);assert.match(await p.locator('#helper-clearance-status').innerText(),/Shell-only plan/);await p.locator('#shell-only').uncheck();
+ await locate.click();await p.locator('#preview-helper-clearance').uncheck();assert.equal(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).length),0);
  const lines=await p.evaluate(()=>viewer.interfaces[0].lines);await p.getByRole('button',{name:'facet-01',exact:true}).click();assert.deepEqual(await p.evaluate(()=>viewer.interfaces[0].lines),lines);assert.deepEqual(await p.evaluate(()=>viewer.R),table.candidates.find(c=>c.id==='facet-01').R_design_to_print);
  await p.getByRole('button',{name:'facet-00',exact:true}).click();
  await p.locator('[data-interface-preview="mount_upper"]').check();

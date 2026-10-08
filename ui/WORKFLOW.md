@@ -386,7 +386,7 @@ this file does not run a clearance check.
 Open **Optional: locate interface models** beside the part preview and load the
 sidecar. Choose which interfaces to draw, then load the matching STL and select a
 pose. Blue dash-dot cylinders show the base models used by KEEP-CLEAR: the largest
-seat radius for a rod seat, or the clearance-bore radius for a screw. They do not
+seat radius for a rod seat, or the clearance-bore radius for a screw. The blue base models do not
 include any helper’s requested extra clearance. Mount washers and driver access
 are not modelled. End rings are drawing clips of an axially unbounded model, not
 physical bore ends.
@@ -395,6 +395,14 @@ In a helper’s settings, **Show selected interfaces on part** displays only tha
 helper’s selected references using the loaded base models. If a required file is
 missing, it takes you to the interface or mesh loader. It does not include the
 helper’s extra clearance. With no selected references, it hides the overlays.
+
+For the active helper, opt into **Preview active helper’s requested clearance**
+to draw a separate purple dotted envelope at base radius plus the requested gap.
+It follows that helper’s selected references and clearance as you edit them.
+Blank clearance explicitly uses 0 extra mm; invalid clearance hides the envelope.
+Choosing another helper updates it, and shell-only mode hides it. The status names
+the helper, interfaces and radii. This is a drawing of the request, not a clearance
+check or evidence of printed fit. **Hide interface models** turns off both layers.
 
 Drawing an interface does not select it in a helper’s keep-clear references, move
 a helper or record a PASS. Use the exporter’s KEEP-CLEAR results to check the

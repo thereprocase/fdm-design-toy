@@ -35,10 +35,12 @@ const InterfaceRender=(()=>{
   if(seen.size!==declarations.size)fail('Interface geometry omits table declarations.');
   return g;
  }
- function segments(item){
+ function segments(item,extra=0){
   if(!item.rendered)return [];
+  const radius=item.base_radius_mm+extra;
+  if(!Number.isFinite(extra)||extra<0||!Number.isFinite(radius)||radius<=0)throw Error('Preview clearance must be finite and nonnegative, with a finite positive total radius.');
   const plane=planes[item.axis],lines=[];
-  const point=(k,end)=>{const p=[...end],angle=k*Math.PI/32;p[plane.indices[0]]+=item.base_radius_mm*Math.cos(angle);p[plane.indices[1]]+=item.base_radius_mm*Math.sin(angle);return p;};
+  const point=(k,end)=>{const p=[...end],angle=k*Math.PI/32;p[plane.indices[0]]+=radius*Math.cos(angle);p[plane.indices[1]]+=radius*Math.sin(angle);return p;};
   for(const end of [item.axis_start_mm,item.axis_end_mm])for(let k=0;k<64;k++)lines.push([point(k,end),point(k+1,end)]);
   for(let k=0;k<64;k+=16)lines.push([point(k,item.axis_start_mm),point(k,item.axis_end_mm)]);
   return lines;
