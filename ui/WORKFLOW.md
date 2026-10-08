@@ -4,6 +4,24 @@ Open [the orientation workspace](index.html) in Chromium. This local workspace
 reads your files and saves planning drafts. Geometry export, slicing and analysis
 run separately on a compute worker; the browser does not run those jobs.
 
+## Try the included example
+
+For a first walkthrough, save the [example orientation table](../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json)
+and its [six-helper planning draft](fixtures/seed-draft.json). Keep the downloaded
+bytes unchanged: the draft pins this exact table, not the later shell- or
+bridge-enriched tables.
+
+1. Open the table in **Orientation table**.
+2. In the planning section, use **Reopen a saved planning draft** to open the saved draft.
+   Its pose, rationale, shell and six helper boxes are restored together.
+3. Inspect the proposal's scope and helper purposes before editing. This is a
+   stress-seeded candidate, not a proven optimum or qualified print.
+
+The files let you review pose evidence and edit helper fields without loading a
+mesh. For the 3D preview, supply the matching `body-mounted.stl` from the part
+source checkout; the JSON downloads do not include the STL. The workspace checks
+its fingerprint. This example does not download or generate geometry for you.
+
 ## Choose a pose
 
 1. Load the orientation table produced by `fdmgen orient`. Read what its evidence
