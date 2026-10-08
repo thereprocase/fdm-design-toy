@@ -1025,3 +1025,50 @@ CPU export needs the same existing SciPy/PyAMG environment as the other AMG
 pilots. No GPU package is needed for this stage. GPU execution is a separate
 benchmark stage; a short solve segment excludes CPU setup, transfer and upload
 and does not establish the optimiser's time budget or the P0-H gate.
+
+### Experimental GPU transfer consumer (Warp 1.18 only)
+
+`amg_transfer_gpu.py` consumes the exact pack hash from the CPU manifest. It
+keeps physical matvecs, outer CG vectors and reductions in FP64, with a selectable
+FP64 or FP32 auxiliary V-cycle. Cycle buffers and solver state are reused. Each
+run checks full/half/full load from zero, CPU physical-operator true residual,
+compliance and maximum displacement against the exported CPU reference. It also
+checks preconditioner aliasing and cycle-action agreement before solving.
+
+```bash
+python bench/amg_transfer_gpu.py --pack out/transfer/bracket.npz \
+  --sha256 HASH_FROM_CPU_MANIFEST --cycle-precision fp32 \
+  --experimental-warp-118 --out out/transfer/bracket-gpu-fp32.json
+# Repeat with --cycle-precision fp64 and a different --out for a pure-FP64 control.
+# --no-graph disables graph capture without changing the physical model.
+```
+
+**Version boundary:** this experiment requires an existing Warp **1.18.0**
+environment and explicit opt-in. Its reusable CG interface was tested there;
+compatibility and parity with the production **1.17.0** pin have not been
+established. The receipt records both versions and `gate_eligible: false`.
+Do not replace the project's pinned dependency to run this benchmark.
+
+Receipts (`fdmgen/amg-transfer-gpu@0.1`) separate CPU export timings, input
+validation, upload, buffer/probe setup and solve segments. Solve timing includes
+graph capture and scalar convergence checks, excludes the other stages and
+network transfer, and is not an optimiser-iteration benchmark. Exit 2 writes a
+completed but numerically unaccepted receipt; an error leaves no receipt at the
+requested output path. None of these checks establishes P0-H or physical strength.
+
+Measured on the second workstation using the public exporter and consumer:
+
+| Input | FP64 cycle | FP32 cycle | Independently recomputed relative residual |
+|---|---:|---:|---|
+| Synthetic cube, 5,967 DOFs | 35 CG | 35 CG | about 9.63e-10 in both |
+| Slice-derived bracket, 865,071 DOFs | 98 CG | 98 CG | about 1.05e-9 in both |
+
+Exact receipts: [cube FP64](receipts/amg-transfer-cube-gpu-fp64.json),
+[cube FP32](receipts/amg-transfer-cube-gpu-fp32.json),
+[bracket FP64](receipts/amg-transfer-bracket-gpu-fp64.json),
+[bracket FP32](receipts/amg-transfer-bracket-gpu-fp32.json). Each contains all
+three load-scale runs and the explicit version boundary. These establish transfer
+accuracy on those two operators. The bracket still exceeds 40 iterations; this
+slice-derived, capped-linear-density case is not the required floor/material gate
+sweep. The CPU hierarchy construction and matrix assembly are measured separately
+and remain substantial; fast repeated GPU solves do not remove that setup cost.

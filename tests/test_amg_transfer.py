@@ -43,7 +43,7 @@ def rewrite(path, meta, arrays):
     return transfer.file_sha(path)
 
 
-@pytest.mark.parametrize('mutation', ['hash', 'index', 'shape', 'restriction', 'nan'])
+@pytest.mark.parametrize('mutation', ['hash', 'index', 'shape', 'restriction', 'nan', 'zero_load', 'reference', 'direct_shape'])
 def test_transfer_refuses_corrupt_or_inconsistent_pack(exported, mutation):
     path, manifest = exported
     meta, arrays, _ = transfer.load_pack(path, manifest['npz_sha256'])
@@ -62,6 +62,14 @@ def test_transfer_refuses_corrupt_or_inconsistent_pack(exported, mutation):
     elif mutation == 'nan':
         arrays['load'][0] = np.nan
         meta['array_sha256']['load'] = transfer.array_sha(arrays['load'])
+    elif mutation == 'zero_load':
+        arrays['load'][:] = 0
+        meta['array_sha256']['load'] = transfer.array_sha(arrays['load'])
+    elif mutation == 'reference':
+        meta['reference_solve']['compliance_N_mm'] = 0
+    elif mutation == 'direct_shape':
+        arrays['direct_solution'] = arrays['direct_solution'][:-1]
+        meta['array_sha256']['direct_solution'] = transfer.array_sha(arrays['direct_solution'])
     sha = rewrite(path, meta, arrays)
     with pytest.raises(ValueError):
         transfer.load_pack(path, sha)

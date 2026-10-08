@@ -184,6 +184,21 @@ def load_pack(path, expected_sha256):
     if (arrays['load'].shape != (dofs[0],) or arrays['rhs'].shape != (2, dofs[0])
             or arrays['fp64_reference'].shape != arrays['rhs'].shape):
         raise ValueError('invalid vector dimensions')
+    vector_keys = ['load', 'rhs', 'fp64_reference']
+    if 'direct_solution' in arrays:
+        vector_keys.append('direct_solution')
+        if arrays['direct_solution'].shape != (dofs[0],):
+            raise ValueError('invalid direct-solution dimensions')
+    if any(arrays[key].dtype != np.float64 for key in vector_keys) or np.linalg.norm(arrays['load']) == 0:
+        raise ValueError('vectors must be float64 with a nonzero load')
+    solve = meta.get('reference_solve', {})
+    for key in ('compliance_N_mm', 'max_displacement_mm'):
+        value = solve.get(key)
+        if isinstance(value, bool) or not isinstance(value, (float, int)) or not np.isfinite(value) or value <= 0:
+            raise ValueError('invalid CPU reference metric: '+key)
+    residual = solve.get('true_relative_residual')
+    if not isinstance(residual, (float, int)) or not np.isfinite(residual) or not 0 <= residual <= 1e-8:
+        raise ValueError('CPU reference is not converged')
     for i in range(n-1):
         delta = matrices[f'R{i}']-matrices[f'P{i}'].T
         if delta.nnz and np.max(np.abs(delta.data)) > 1e-12:

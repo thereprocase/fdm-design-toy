@@ -1,0 +1,136 @@
+{
+  "schema": "fdmgen/amg-transfer-gpu@0.1",
+  "version_boundary": {
+    "used": "1.18.0",
+    "production_gate_pin": "1.17.0",
+    "gate_eligible": false,
+    "reason": "Reusable Warp CG interface tested in the existing 1.18 environment; compatibility/parity with the production 1.17 pin is not established"
+  },
+  "input_sha256": "b1097989df929340f550c751f61d6ce505249ce8500caaea806aaf952157344f",
+  "input_schema": "fdmgen/amg-transfer@0.1",
+  "input_provenance": {
+    "case": "heterogeneous clamped cube",
+    "grid": {
+      "shape": [
+        16,
+        12,
+        8
+      ],
+      "h_mm": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "load": "minus1 N at last node Y DOF",
+    "material": "nominal TI constants; synthetic control"
+  },
+  "source_sha256": {
+    "amg_transfer_gpu.py": "090dfb35ed11018e25a3c5e5f3492023df50f0e97d0c445ee73b90f9806f59ab",
+    "amg_transfer.py": "1b21c90021b5f25a155b02183c18ce9fbe4ca18d8ed533f7838388eb5e0d6cd3"
+  },
+  "device": "NVIDIA GeForce RTX 3080 Ti",
+  "levels": [
+    5967,
+    540
+  ],
+  "cycle_precision": "fp32",
+  "physical_and_outer_precision": "fp64",
+  "graph": true,
+  "check_every": 1,
+  "maxiter": 120,
+  "reference_solve": {
+    "iterations": 35,
+    "true_relative_residual": 9.630781410762715e-10,
+    "compliance_N_mm": 0.028473198400237664,
+    "max_displacement_mm": 0.03141852205956449,
+    "relative_direct_solution_error": 2.761577329061738e-11
+  },
+  "cpu_export_timings_s": {
+    "assembly": 0.09246362399426289,
+    "hierarchy_and_export_matrices": 0.3907633050112054,
+    "cpu_reference_solve": 0.125399639015086
+  },
+  "timings_s": {
+    "read_and_validation": 0.07713657297426835,
+    "upload": 1.0354931420006324,
+    "buffers_probes_solver_setup": 0.7004684659768827
+  },
+  "timing_scope": "solve includes graph capture and scalar checks; excludes export, transfer, validation, upload and setup; not optimiser throughput",
+  "probe_relative_errors_vs_cpu_fp64": [
+    9.906454838684544e-08,
+    1.299688954126095e-07
+  ],
+  "probe_scope": "includes cycle quantization and arithmetic, not only rounding",
+  "operator_contract_tests": [
+    {
+      "alias": "separate",
+      "relative_error": 7.039933156730662e-17
+    },
+    {
+      "alias": "x",
+      "relative_error": 7.039933156730662e-17
+    },
+    {
+      "alias": "y",
+      "relative_error": 7.039933156730662e-17
+    }
+  ],
+  "beta_zero_ignores_nan_y": true,
+  "runs": [
+    {
+      "accepted": true,
+      "true_relative_residual_cpu_physical": 9.630734250335665e-10,
+      "compliance_N_mm": 0.02847319840023704,
+      "max_displacement_mm": 0.031418522059563865,
+      "relative_reference_compliance_error": 2.19824158875781e-14,
+      "relative_reference_max_displacement_error": 1.9872992140790302e-14,
+      "relative_direct_displacement_error": 2.760411551723277e-11,
+      "scale": 1.0,
+      "iterations": 35,
+      "recursive_residual": 9.630698657079526e-10,
+      "absolute_tolerance": 1e-09,
+      "relative_scaled_solution_error_vs_first": 0.0,
+      "solve_s_including_graph_capture_and_scalar_checks": 0.17307704998529516
+    },
+    {
+      "accepted": true,
+      "true_relative_residual_cpu_physical": 9.630734250335665e-10,
+      "compliance_N_mm": 0.00711829960005926,
+      "max_displacement_mm": 0.015709261029781933,
+      "relative_reference_compliance_error": 2.19824158875781e-14,
+      "relative_reference_max_displacement_error": 1.9872992140790302e-14,
+      "relative_direct_displacement_error": 2.760411551723277e-11,
+      "scale": 0.5,
+      "iterations": 35,
+      "recursive_residual": 4.815349328539763e-10,
+      "absolute_tolerance": 5e-10,
+      "relative_scaled_solution_error_vs_first": 0.0,
+      "solve_s_including_graph_capture_and_scalar_checks": 0.010376491001807153
+    },
+    {
+      "accepted": true,
+      "true_relative_residual_cpu_physical": 9.630734250335665e-10,
+      "compliance_N_mm": 0.02847319840023704,
+      "max_displacement_mm": 0.031418522059563865,
+      "relative_reference_compliance_error": 2.19824158875781e-14,
+      "relative_reference_max_displacement_error": 1.9872992140790302e-14,
+      "relative_direct_displacement_error": 2.760411551723277e-11,
+      "scale": 1.0,
+      "iterations": 35,
+      "recursive_residual": 9.630698657079526e-10,
+      "absolute_tolerance": 1e-09,
+      "relative_scaled_solution_error_vs_first": 0.0,
+      "solve_s_including_graph_capture_and_scalar_checks": 0.00991655999678187
+    }
+  ],
+  "accepted": true,
+  "establishes": "transfer accuracy and reusable solver state on the supplied operator",
+  "does_not_establish": [
+    "production Warp 1.17 parity",
+    "P0-H gate",
+    "all floor/material cases",
+    "optimiser iteration time",
+    "physical qualification"
+  ]
+}
