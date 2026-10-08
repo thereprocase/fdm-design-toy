@@ -486,6 +486,8 @@ def test_bridge_check_locates_the_worst_roads_in_plate_print_and_design_frames(t
     assert d["run_start"][0] == pytest.approx(5.0, abs=0.1) and d["run_end"][0] == pytest.approx(5.0 + gap, abs=0.1)
     assert d["run_start"][2] == 0.4 and d["road_start"][0] == pytest.approx(1.0, abs=1e-3)
     assert np.allclose(np.array(s["print_mm"]["run_start"]) - d["run_start"], t, atol=1e-3)       # print = design + t
-    assert np.allclose(np.array(s["plate_mm"]["run_start"]) - s["print_mm"]["run_start"], shift, atol=0.01)
+    measured = np.append(r["placement"]["shift_xy_mm"], 0.0)            # the footprint locator's measurement
+    assert np.allclose(measured, shift, atol=0.15)                        # (3, ~0): roads are not centred in y
+    assert np.allclose(np.array(s["plate_mm"]["run_start"]) - s["print_mm"]["run_start"], measured, atol=1e-3)
     c = w["external"]["ceiling"]
     assert c["design_mm"]["witness"][0] == pytest.approx(5.0 + gap / 2, abs=0.15)   # farthest from both pads
