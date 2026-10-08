@@ -99,7 +99,9 @@ part when you choose a different print pose.
   restoring the previous coordinate text, including blanks. **Redo centre move**
   restores an undone placement. A fresh move clears redo; typing a coordinate
   clears both histories for that helper. Up to 20 nudges and successful picks
-  can be undone and redone during this editing session.
+  can be undone and redone during this editing session. When the focused Undo or
+  Redo button runs out of moves, focus switches to the reverse action. A move
+  refused because a centre coordinate is incomplete focuses that field.
 - **Duplicate region** copies its fields into an independently editable helper.
   **Undo remove** restores a removed helper while that removal history remains
   in this session.

@@ -401,15 +401,16 @@ function addHelper(region={}) {
     const move=text('button',`Move ${'XYZ'[axis]} ${sign<0?'−':'+'}`,moves);move.type='button';move.className='secondary';
     move.onclick=()=>{
       const fields=centres(),before=fields.map(f=>f.value);
-      if(before.some(v=>v.trim()===''||!Number.isFinite(Number(v)))){status.textContent='Complete all three centre coordinates before moving.';return;}
+      const invalid=before.findIndex(v=>v.trim()===''||!Number.isFinite(Number(v)));
+      if(invalid!==-1){status.textContent='Complete all three centre coordinates before moving.';fields[invalid].focus();return;}
       const value=Number(before[axis])+sign*Number(step.value);
       if(!Number.isFinite(value)){status.textContent='Centre move is outside the numeric range.';return;}
       cancelSurfacePlacement();rememberCentreMove(before);fields[axis].value=Number(value.toFixed(6));undo.disabled=false;setActiveHelper(box);updateRegions();
       status.textContent=`Moved centre ${sign<0?'−':'+'}${step.value} mm along design ${'XYZ'[axis]}. Geometry checks have not been rerun.`;
     };
   }
-  undo.onclick=()=>{if(!centreMoves.length)return;cancelSurfacePlacement();redoMoves.push(centres().map(f=>f.value));redo.disabled=false;const before=centreMoves.pop();centres().forEach((f,i)=>f.value=before[i]);undo.disabled=!centreMoves.length;updateRegions();status.textContent=`Previous centre restored. ${centreMoves.length} earlier centre move(s) can still be undone. Geometry checks have not been rerun.`;};
-  redo.onclick=()=>{if(!redoMoves.length)return;cancelSurfacePlacement();centreMoves.push(centres().map(f=>f.value));const after=redoMoves.pop();centres().forEach((f,i)=>f.value=after[i]);redo.disabled=!redoMoves.length;undo.disabled=false;updateRegions();status.textContent=`Centre move restored. ${redoMoves.length} later centre move(s) can still be redone. Geometry checks have not been rerun.`;};
+  undo.onclick=()=>{if(!centreMoves.length)return;const hadFocus=document.activeElement===undo;cancelSurfacePlacement();redoMoves.push(centres().map(f=>f.value));redo.disabled=false;const before=centreMoves.pop();centres().forEach((f,i)=>f.value=before[i]);undo.disabled=!centreMoves.length;updateRegions();if(hadFocus&&undo.disabled)redo.focus({preventScroll:true});status.textContent=`Previous centre restored. ${centreMoves.length} earlier centre move(s) can still be undone. Geometry checks have not been rerun.`;};
+  redo.onclick=()=>{if(!redoMoves.length)return;const hadFocus=document.activeElement===redo;cancelSurfacePlacement();centreMoves.push(centres().map(f=>f.value));const after=redoMoves.pop();centres().forEach((f,i)=>f.value=after[i]);redo.disabled=!redoMoves.length;undo.disabled=false;updateRegions();if(hadFocus&&redo.disabled)undo.focus({preventScroll:true});status.textContent=`Centre move restored. ${redoMoves.length} later centre move(s) can still be redone. Geometry checks have not been rerun.`;};
   box.addEventListener('input',event=>{if(event.target.matches('[data-geometry="center_mm"]')){cancelSurfacePlacement();centreMoves.length=0;redoMoves.length=0;undo.disabled=true;redo.disabled=true;}});
   const view=text('button','View this helper',spatial);view.type='button';view.className='secondary';view.dataset.viewHelper='';view.disabled=true;view.title='Load the matching mesh and enter a valid box to preview this helper.';
   view.onclick=()=>{cancelSurfacePlacement();setActiveHelper(box);viewer.focusRegion(box.dataset.id);document.querySelector('.preview').scrollTop=0;byId('part-view').scrollIntoView({block:'center'});byId('part-view').focus({preventScroll:true});};

@@ -173,6 +173,7 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   const cy=region.locator('[data-geometry="center_mm"][data-axis="1"]');await cy.fill('');
   assert(await page.evaluate(()=>viewer.onPick===null));
   await region.getByRole('button',{name:'Move X +',exact:true}).click();
+  assert(await cy.evaluate(el=>document.activeElement===el));
   assert.equal(await cy.inputValue(),'');assert.match(await region.locator('[data-nudge-status]').innerText(),/Complete all three/);
   await cy.fill(centers[1]);assert(await region.getByRole('button',{name:'Undo last centre move'}).isDisabled());
   // A sequence can be unwound, preserving coordinate text and all other fields.
@@ -186,14 +187,17 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   }
   const lastPlacement=await page.evaluate(()=>draftFormState());
   for(const state of [...snapshots].reverse()){
-   await undoMove.click();assert.equal(await page.evaluate(()=>draftFormState()),state);
+   await undoMove.press('Enter');assert.equal(await page.evaluate(()=>draftFormState()),state);
+   if(await undoMove.isEnabled())assert(await undoMove.evaluate(el=>document.activeElement===el));
   }
-  assert(await undoMove.isDisabled());
+  assert(await undoMove.isDisabled());assert(await redoMove.evaluate(el=>document.activeElement===el));
   await region.getByRole('button',{name:'Place centre on part'}).click();
   for(const state of [...snapshots.slice(1),lastPlacement]){
-   await redoMove.click();assert.equal(await page.evaluate(()=>draftFormState()),state);
+   await redoMove.press('Enter');assert.equal(await page.evaluate(()=>draftFormState()),state);
+   if(await redoMove.isEnabled())assert(await redoMove.evaluate(el=>document.activeElement===el));
   }
   assert(await page.evaluate(()=>viewer.onPick===null));assert(await redoMove.isDisabled());
+  assert(await undoMove.evaluate(el=>document.activeElement===el));
   for(let i=0;i<3;i++)await undoMove.click();
   assert.equal(await page.evaluate(()=>draftFormState()),recoveryStart);
   // A fresh move chooses a new branch; old redo placements are discarded.
