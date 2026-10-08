@@ -2,7 +2,7 @@
 const byId = id => document.getElementById(id);
 let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draftRequest = 0;
 const decisions = new Map();
-let proposalOrigin=null;
+let proposalOrigin=null,sourceTableBytes=null;
 const removedHelpers=[];
 let draftCheckpoint=null,draftCheckpointKind='new';
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
@@ -165,7 +165,7 @@ byId('table-file').onchange=async event=>{
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';event.target.value='';return;}
-    fingerprint=nextFingerprint;analysis=data;selected=null;meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('table-download-status').textContent='';analysis=data;selected=null;meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
@@ -256,6 +256,8 @@ function addHelper(region={}) {
 }
 function resetPlan(){
   cancelSurfacePlacement();clearDraftError();
+  byId('handoff-command').textContent='fdmgen massing DRAFT.json --table TABLE.json --template PROFILE.3mf --out out/massing';
+  byId('handoff-readiness').textContent='Save a draft to check whether its helper boxes are defined.';
   clearRemovalHistory();
   proposalOrigin=null;renderProposal();
   activeHelper=null;byId('return-helper').hidden=true;byId('mesh-options').open=true;
@@ -350,12 +352,22 @@ function clearDraftError(){
  for(const f of document.querySelectorAll('[data-export-error]')){f.removeAttribute('aria-invalid');f.removeAttribute('aria-errormessage');delete f.dataset.exportError;}
 }
 document.addEventListener('input',event=>{if(event.target.hasAttribute('data-export-error'))clearDraftError();});
+function downloadFile(contents,name){
+ const url=URL.createObjectURL(new Blob([contents],{type:'application/json'})),a=document.createElement('a');
+ a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function sourceTableFilename(){return `orientation-table-${fingerprint.slice(0,12)}.json`;}
+byId('download-table').onclick=()=>{
+ if(!sourceTableBytes||!fingerprint)return;
+ downloadFile(sourceTableBytes,sourceTableFilename());
+ byId('table-download-status').textContent=`Original table bytes downloaded as ${sourceTableFilename()}. SHA-256: ${fingerprint}.`;
+};
 byId('export').onclick=()=>{
   clearDraftError();
   try{
     remember();const draft=Plan.create(analysis,fingerprint,selected,planInput());
-    const blob=new Blob([JSON.stringify(draft,null,2)+'\n'],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download=Plan.filename(draft);a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);checkpointDraft('downloaded');
+    downloadFile(JSON.stringify(draft,null,2)+'\n',Plan.filename(draft));checkpointDraft('downloaded');
+    byId('handoff-command').textContent=`fdmgen massing ${Plan.filename(draft)} --table ${sourceTableFilename()} --template PROFILE.3mf --out out/massing`;
     byId('export-status').textContent='Draft exported. It includes the source fingerprint and outstanding verification steps.';
     const incomplete=draft.massing.helper_regions.filter(h=>!h.geometry);
     byId('handoff-readiness').textContent=incomplete.length?`Last exported draft: ${incomplete.length} helper(s) without a box: ${incomplete.map(h=>h.name).join(', ')}. Enable their spatial controls and set centre/size, then save again before running the exporter.`:'Last exported draft: geometry inputs needed for export are present. The command still checks source fingerprints and helper geometry.';

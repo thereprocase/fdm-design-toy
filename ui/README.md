@@ -609,3 +609,12 @@ Surface placement can be stopped with **Cancel placement** beside the preview
 or **Escape**, leaving helper coordinates and draft edits unchanged. A completed
 pick closes the mode. Changing pose, replacing the mesh or draft, removing a
 helper, turning off its box or choosing shell-only also closes pending placement.
+
+The export handoff offers **Download exact source table**. This saves the accepted
+input bytes unchanged, including a UTF-8 BOM or formatting, so the saved draft's
+source fingerprint remains valid. It does not save draft edits. A rejected table
+upload leaves the previously accepted table available. After draft export, the
+CLI example uses the suggested draft and table names; adjust paths or names if
+your browser renames a repeated download, and supply your own profile template.
+The table filename includes a short fingerprint for recognition; verification
+continues to use the full SHA-256 hash.
