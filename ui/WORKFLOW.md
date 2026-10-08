@@ -115,6 +115,8 @@ A numerical ordering or a passed slicer check is not print qualification.
 With a selected pose and matching STL, use **Save preview image** beneath the
 canvas to download a PNG of the current camera and visible overlays. Its footer
 includes the pose, exact table and mesh fingerprints, and planning-only scope.
+Visible interface and keep-out overlays also carry their names and line-style
+meanings; requested clearance envelopes name the helper and extra gaps.
 It can show unsaved helper edits. The image is an illustration, not a check
 receipt, editable plan or physical result; keep the corresponding source receipts
 when discussing evidence. Save a draft or work snapshot separately to preserve

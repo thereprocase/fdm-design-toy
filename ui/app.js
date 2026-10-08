@@ -158,6 +158,10 @@ byId('save-preview').onclick=()=>{
   if(!selected||!mesh||meshHash!==analysis?.mesh?.sha256)throw Error('Load the matched mesh and select a pose first.');
   viewer.draw();
   const name=`preview-${selected.id.replace(/[^a-zA-Z0-9_-]/g,'_')}-${fingerprint.slice(0,12)}.png`;
+  const overlayNotes=[],baseModels=viewer.interfaces.filter(item=>!item.clearance),clearanceModels=viewer.interfaces.filter(item=>item.clearance);
+  if(baseModels.length)overlayNotes.push('Blue dash-dot: base interface models '+baseModels.map(item=>item.id).join(', ')+'. Axial ends are drawing clips.');
+  if(clearanceModels.length)overlayNotes.push('Purple dotted: '+helperLabel(activeHelper)+' requested clearance; '+clearanceModels.map(item=>`${item.id} +${item.extra_clearance_mm} mm`).join(', ')+'. No clearance verdict.');
+  if(viewer.keepouts.length)overlayNotes.push('Magenta dashed: keep-outs '+viewer.keepouts.map(item=>item.id).join(', ')+'. Clipped/sampled display, not a clearance result.');
   const picture=previewImageCanvas(byId('part-view'),[
    'PLANNING PREVIEW - not a check receipt or print qualification',
    `Pose: ${selected.id}`,
@@ -165,6 +169,7 @@ byId('save-preview').onclick=()=>{
    `Mesh SHA256: ${meshHash}`,
    'Current camera and visible overlays; unsaved helper edits may be shown.',
    'Helper boxes are unclipped planning intent, not credited material.',
+   ...overlayNotes,
    'Keep the draft or work snapshot and source receipts separately.'
   ]);
   picture.toBlob(blob=>{
