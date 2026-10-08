@@ -234,7 +234,12 @@ fdmgen bridge-check shell-only.gcode --table TABLE.json --pose POSE_ID --out out
 Use the exact G-code, table and pose paired with the loaded shell check; use the
 project G-code instead when inspecting **Helper project**. The worker needs the
 matching part source checkout (or `SPOOL_RACK_ROOT` for the bracket). Exit 2 means
-the completed receipt contains a FAIL to inspect. Keep old receipt files intact;
+the completed receipt contains a FAIL to inspect. Exit 1 means no new receipt was
+written: read the terminal error for the cause. Common causes include a missing
+part checkout or a slice that does not verify as the requested pose (the wrong
+G-code, or automatic arrangement/orientation during slicing). A file left at the
+output path from an earlier run is not evidence that this run succeeded; use a
+fresh output filename for a new check. Keep old receipt files intact;
 a new optional location receipt does not repair or reissue an existing bundle.
 A missing-location message leaves the old measurements readable without an
 invented overlay.
