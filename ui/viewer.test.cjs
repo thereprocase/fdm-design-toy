@@ -65,3 +65,14 @@ test('bed margin inset matches BED-001 coordinates and omits invalid margins',()
  for(const margin_mm of [undefined,null,'10',0,-1,128,200])assert.equal(bedInset({x_mm:256,y_mm:256,margin_mm}),null);
  assert.equal(bedInset({margin_mm:10}),null);
 });
+
+test('helper labels stay inside canvas and avoid axis, scale and bed annotations',()=>{
+ const {helperLabelLayout}=require('./viewer.js'),measure=s=>Array.from(s).length*7;
+ for(const [w,h] of [[310,280],[620,420],[300,220]])for(const anchor of [[0,0],[200,100],[10000,-10000],[-10000,10000]]){
+  const p=helperLabelLayout('Editing: stress-seeded helper with an unusually long name',anchor,w,h,measure);
+  assert(p);assert(p.x>=8&&p.y>=8);assert(p.x+p.width<=w-8);assert(p.y+p.height<=h-73);
+  assert(p.x>=138||p.y>=132);if(w===310||h===220)assert(p.text.endsWith('…'));assert(measure(p.text)<=p.width-10);
+ }
+ const p=helperLabelLayout('Seat',[160,180],620,420,measure);assert.equal(p.text,'Seat');
+ assert.equal(helperLabelLayout('Seat',[0,0],100,100,measure),null);
+});

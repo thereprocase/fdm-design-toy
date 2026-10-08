@@ -61,6 +61,19 @@ function previewScale(pixelsPerMm,maxPixels){
 }
 function scalePanel(width,height){return {x:width-Math.min(100,width*.25)-24,y:height-65,width:Math.min(100,width*.25)+16,height:44};}
 const AXIS_PANEL={x:8,y:8,width:122,height:116};
+function helperLabelLayout(label,anchor,width,height,measure){
+  const padding=5,boxHeight=22,margin=8,axisBottom=AXIS_PANEL.y+AXIS_PANEL.height;
+  let left=margin,right=width-margin,top=margin,bottom=height-73-boxHeight;
+  // Short canvases use the strip beside the axis key instead of fitting below it.
+  if(bottom<axisBottom+margin)left=AXIS_PANEL.x+AXIS_PANEL.width+margin;
+  if(right-left<30||bottom<top)return null;
+  const limit=right-left-2*padding,chars=Array.from(label);let shown=label;
+  if(measure(shown)>limit){let lo=0,hi=chars.length;while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(measure(chars.slice(0,mid).join('')+'…')<=limit)lo=mid;else hi=mid-1;}shown=chars.slice(0,lo).join('')+'…';}
+  const boxWidth=measure(shown)+2*padding;
+  let x=Math.max(left,Math.min(right-boxWidth,anchor[0]+5)),y=Math.max(top,Math.min(bottom,anchor[1]-boxHeight-5));
+  if(x<AXIS_PANEL.x+AXIS_PANEL.width+margin&&y<axisBottom+margin)y=axisBottom+margin;
+  return {text:shown,x,y,width:boxWidth,height:boxHeight,textX:x+padding,textY:y+15};
+}
 class PartViewer {
   constructor(canvas) {
     this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;this.focusId=null;this.bed=null;this.keepouts=[];this.interfaces=[];
@@ -150,7 +163,16 @@ class PartViewer {
       for(let i=0;i<24;i+=3)points.push(project(corners[i],corners[i+1],corners[i+2]));
       ctx.strokeStyle=region.active?'#175caa':'#ad501c';ctx.lineWidth=region.active?3:2;ctx.setLineDash(region.active?[]:[5,3]);ctx.beginPath();
       for(let i=0;i<8;i++)for(let a=0;a<3;a++){const j=i^(1<<a);if(j>i){ctx.moveTo(points[i][0],points[i][1]);ctx.lineTo(points[j][0],points[j][1]);}}
-      ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';ctx.fillStyle=region.active?'#174d89':'#84360f';if(region.active||this.showAllLabels)ctx.fillText((region.active?'Editing: ':'')+(region.previewName||region.name||'Planning region'),points[7][0]+5,points[7][1]-5);
+      ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';
+      if(region.active||this.showAllLabels){
+        const label=(region.active?'Editing: ':'')+(region.previewName||region.name||'Planning region');
+        const placement=helperLabelLayout(label,points[7],width,height,text=>ctx.measureText(text).width);
+        if(placement){
+          ctx.strokeStyle=region.active?'#174d89':'#84360f';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(points[7][0],points[7][1]);ctx.lineTo(Math.max(placement.x,Math.min(placement.x+placement.width,points[7][0])),Math.max(placement.y,Math.min(placement.y+placement.height,points[7][1])));ctx.stroke();
+          ctx.fillStyle='rgba(255,255,255,.94)';ctx.fillRect(placement.x,placement.y,placement.width,placement.height);
+          ctx.fillStyle=region.active?'#174d89':'#84360f';ctx.fillText(placement.text,placement.textX,placement.textY);
+        }
+      }
     }
     if(this.roadWitness){
       const w=this.roadWitness,point=p=>project(...transformMesh(p,this.R,this.t));
@@ -189,4 +211,4 @@ class PartViewer {
     ctx.fillStyle='#344d40';ctx.font='11px system-ui';ctx.fillText(this.bed?`Declared bed: ${this.bed[2][0]} × ${this.bed[2][1]} mm`:'Reference plane: print Z = 0 · mm',14,height-15);
   }
 }
-if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView,previewScale,bedFootprint,bedInset};
+if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView,previewScale,bedFootprint,bedInset,helperLabelLayout};
