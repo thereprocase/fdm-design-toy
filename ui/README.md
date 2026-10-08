@@ -780,3 +780,7 @@ producer's corner-origin convention. Its dimensions are labelled; absent/invalid
 dimensions retain a labelled reference-plane cue. This does not recalculate fit:
 a valid positive margin is drawn as a dashed inset labelled BED-001 margin;
 exclusion zones are not drawn, and BED-001 remains the recorded result.
+
+An empty pose filter offers **Show all poses**. It clears visibility filters while
+keeping sort order, selected pose and draft fields. Keyboard focus returns to the
+selected row, or the first row without selecting it when no pose was chosen.

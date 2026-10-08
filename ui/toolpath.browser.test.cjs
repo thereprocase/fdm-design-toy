@@ -163,5 +163,22 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#table-file').setInputFiles({name:'no-scope.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.waitForFunction(()=>document.querySelector('#feasible-scope').textContent.includes('scope not supplied'));
  assert.match(await page.locator('#feasible-scope').innerText(),/scope not supplied/);
+ for(const c of table.candidates){c.feasible=false;c.columns.t_support_segments={value:null,verdict:'NOT_CHECKED'};}
+ await page.locator('#table-file').setInputFiles({name:'unsliced.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
+ await page.waitForFunction(()=>document.querySelector('#pose-count').textContent.includes('0 have measured slices'));
+ await page.locator('#feasible-only').check();await page.locator('#sliced-only').check();
+ const beforeEmpty=await page.evaluate(()=>draftFormState());
+ await page.getByRole('button',{name:'Show all poses',exact:true}).focus();await page.keyboard.press('Enter');
+ assert.equal(await page.locator('#rows button').count(),4);assert.equal(await page.evaluate(()=>selected),null);
+ assert.equal(await page.evaluate(()=>draftFormState()),beforeEmpty);
+ assert(await page.locator('#rows button').first().evaluate(e=>e===document.activeElement));
+ await page.getByRole('button',{name:'unknown',exact:true}).click();await page.locator('#rationale').fill('Keep this choice while revealing alternatives');
+ await page.locator('#pose-sort').selectOption('height_mm');
+ const beforeSelectedEmpty=await page.evaluate(()=>draftFormState());
+ await page.locator('#feasible-only').check();await page.locator('#sliced-only').check();
+ await page.getByRole('button',{name:'Show all poses',exact:true}).click();
+ assert.equal(await page.locator('#pose-sort').inputValue(),'height_mm');
+ assert.equal(await page.evaluate(()=>draftFormState()),beforeSelectedEmpty);
+ assert(await page.getByRole('button',{name:'unknown',exact:true}).evaluate(e=>e===document.activeElement));
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

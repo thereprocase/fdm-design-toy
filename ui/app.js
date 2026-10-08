@@ -193,7 +193,15 @@ function renderRows() {
     const failures=failedColumns(c).length;
     text('td',(c.feasible===true?'Fits / stable':c.feasible===false?'Fit needs review':'Fit not recorded')+`; ${failures} recorded failed check${failures===1?'':'s'}`,tr);
   }
-  if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=9;}
+  if(!rows.length){
+    const td=text('td','No candidates match these filters. ',text('tr','',byId('rows')));td.colSpan=9;
+    const reset=text('button','Show all poses',td);reset.type='button';reset.className='secondary';
+    reset.onclick=()=>{
+      byId('feasible-only').checked=false;byId('sliced-only').checked=false;renderRows();
+      const target=byId('rows').querySelector('[aria-pressed="true"]')||byId('rows').querySelector('button');
+      target?.focus();target?.scrollIntoView({block:'nearest',inline:'nearest'});
+    };
+  }
 }
 byId('reveal-pose').onclick=()=>{
   if(!selected)return;
