@@ -48,21 +48,24 @@ const AXIS_PANEL={x:8,y:8,width:122,height:116};
 class PartViewer {
   constructor(canvas) {
     this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;
-    let start=null,down=null,dragged=false;
+    let start=null,down=null,dragged=false,pointer=null;
     const onOverlay=e=>{
       const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
       return this.vertices&&x>=AXIS_PANEL.x&&x<=AXIS_PANEL.x+AXIS_PANEL.width&&y>=AXIS_PANEL.y&&y<=AXIS_PANEL.y+AXIS_PANEL.height;
     };
-    canvas.addEventListener('pointerdown',e=>{dragged=false;if(onOverlay(e)){start=down=null;return;}start=down=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId);});
+    canvas.addEventListener('pointerdown',e=>{if(e.button!==0||!e.isPrimary||pointer!==null||onOverlay(e))return;dragged=false;pointer=e.pointerId;start=down=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId);});
     canvas.addEventListener('pointerup',e=>{
-      if(this.onPick&&down&&!dragged&&!onOverlay(e)&&Math.hypot(e.clientX-down[0],e.clientY-down[1])<4&&this.project&&this.vertices){
+      if(e.pointerId!==pointer)return;
+      if(e.button===0&&this.onPick&&down&&!dragged&&!onOverlay(e)&&Math.hypot(e.clientX-down[0],e.clientY-down[1])<4&&this.project&&this.vertices){
         const rect=canvas.getBoundingClientRect(),point=pickSurface(this.vertices,this.project,e.clientX-rect.left,e.clientY-rect.top);
         const design=point?[0,1,2].map(a=>this.R.reduce((sum,row,j)=>sum+row[a]*(point[j]-this.t[j]),0)):null;
         this.onPick(design);
       }
-      start=down=null;
-    });canvas.addEventListener('pointercancel',()=>{start=down=null;});
-    canvas.addEventListener('pointermove',e=>{if(!start)return;if(down&&Math.hypot(e.clientX-down[0],e.clientY-down[1])>=4)dragged=true;this.yaw+=(e.clientX-start[0])*.01;this.pitch=Math.max(-1.5,Math.min(1.5,this.pitch+(e.clientY-start[1])*.01));start=[e.clientX,e.clientY];this.schedule();});
+      start=down=pointer=null;
+    });
+    const cancel=e=>{if(e.pointerId===pointer)start=down=pointer=null;};
+    canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
+    canvas.addEventListener('pointermove',e=>{if(!start||e.pointerId!==pointer)return;if(down&&Math.hypot(e.clientX-down[0],e.clientY-down[1])>=4)dragged=true;this.yaw+=(e.clientX-start[0])*.01;this.pitch=Math.max(-1.5,Math.min(1.5,this.pitch+(e.clientY-start[1])*.01));start=[e.clientX,e.clientY];this.schedule();});
     canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
     new ResizeObserver(()=>this.schedule()).observe(canvas);
   }

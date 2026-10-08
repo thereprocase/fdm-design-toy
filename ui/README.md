@@ -682,3 +682,8 @@ Planning warnings include **Edit** buttons for their affected helper(s). These o
 the editor, highlight its box and focus its centre controls; a thin-edge warning
 focuses the undersized dimension instead. Navigation preserves all draft values
 and does not rerun geometry or sliced-evidence checks.
+
+Preview orbit and placement gestures use the primary pointer's primary button.
+Right/middle clicks and secondary contacts do not change the camera or helper
+centre. A gesture belongs to its initiating pointer and ends on release,
+cancellation or loss of pointer capture.

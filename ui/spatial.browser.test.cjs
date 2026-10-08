@@ -40,9 +40,19 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   const hit=await page.evaluate(()=>{
     const v=viewer.vertices;let best=null,area=-1;for(let i=0;i<v.length;i+=9){const p=[0,3,6].map(j=>viewer.project(v[i+j],v[i+j+1],v[i+j+2]));const a=Math.abs((p[1][0]-p[0][0])*(p[2][1]-p[0][1])-(p[2][0]-p[0][0])*(p[1][1]-p[0][1]));if(a>area){area=a;best=[p.reduce((s,q)=>s+q[0],0)/3,p.reduce((s,q)=>s+q[1],0)/3];}}const r=viewer.canvas.getBoundingClientRect();return [best[0]+r.left,best[1]+r.top];
   });
-  await page.locator('#part-view').dispatchEvent('pointerdown',{clientX:hit[0],clientY:hit[1],pointerId:1});
-  await page.locator('#part-view').dispatchEvent('pointercancel',{pointerId:1});
-  await page.locator('#part-view').dispatchEvent('pointerup',{clientX:hit[0],clientY:hit[1],pointerId:1});
+  const beforeAuxiliary=await page.evaluate(()=>({form:draftFormState(),yaw:viewer.yaw,pitch:viewer.pitch}));
+  for(const button of ['right','middle']){
+    await page.mouse.click(...hit,{button});
+    await page.mouse.move(...hit);await page.mouse.down({button});await page.mouse.move(hit[0]+20,hit[1],{steps:2});await page.mouse.up({button});
+  }
+  await page.locator('#part-view').dispatchEvent('pointerdown',{clientX:hit[0],clientY:hit[1],pointerId:99,isPrimary:false,button:0});
+  await page.locator('#part-view').dispatchEvent('pointermove',{clientX:hit[0]+20,clientY:hit[1],pointerId:99,isPrimary:false});
+  await page.locator('#part-view').dispatchEvent('pointerup',{clientX:hit[0],clientY:hit[1],pointerId:99,isPrimary:false,button:0});
+  assert.equal(await page.evaluate(()=>window.pickCalls),0);
+  assert.deepEqual(await page.evaluate(()=>({form:draftFormState(),yaw:viewer.yaw,pitch:viewer.pitch})),beforeAuxiliary);
+  await page.locator('#part-view').dispatchEvent('pointerdown',{clientX:hit[0],clientY:hit[1],pointerId:1,isPrimary:true});
+  await page.locator('#part-view').dispatchEvent('pointercancel',{pointerId:1,isPrimary:true});
+  await page.locator('#part-view').dispatchEvent('pointerup',{clientX:hit[0],clientY:hit[1],pointerId:1,isPrimary:true});
   assert.equal(await page.evaluate(()=>window.pickCalls),0);assert(await page.evaluate(()=>!!viewer.onPick));
   const beforeOrbit=await page.evaluate(()=>draftFormState());
   await page.mouse.move(...hit);await page.mouse.down();
