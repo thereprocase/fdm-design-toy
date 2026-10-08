@@ -1,5 +1,9 @@
 # Orientation and massing workspace
 
+Start with the [user workflow guide](WORKFLOW.md) for pose selection, helper editing,
+exact-file handoff and evidence review. This page contains technical contracts,
+evidence scope and verification details.
+
 Open `ui/index.html` directly in Chromium or serve this directory over localhost.
 The current prototype imports an orientation JSON, compares candidates, records
 a choice rationale, and exports a massing planning draft. No build step or network
@@ -18,7 +22,7 @@ The intended complete workflow is:
 5. Export a planning document with the selected orientation, shell settings,
    helper intent, outstanding checks and the source table fingerprint.
 
-The orientation-table contract is being implemented in `fdmgen.orient`.
+The orientation-table contract is implemented in `fdmgen.orient`.
 Candidate directions and transforms must carry a frame. The stress prescreen
 uses installed-frame centres and stress tensors; a consumer must align that
 frame with the orientation table before computing failure indices.
