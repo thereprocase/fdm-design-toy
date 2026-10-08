@@ -387,6 +387,7 @@ function addHelper(region={}) {
       field.type='number';field.step='0.1';field.dataset.geometry=key;field.dataset.axis=axis;field.value=region.geometry?.[key]?.[axis]??(key==='center_mm'?0:10);label.append(field);
     }
   }
+  const volume=text('p','',spatial);volume.className='hint';volume.dataset.boxVolume='';
   const sizeFields=()=>[...box.querySelectorAll('[data-geometry="size_mm"]')];
   const sizeValues=()=>sizeFields().map(f=>f.value),sizeUndo=[],sizeRedo=[];
   let sizeBefore=sizeValues(),sizeEditing=false;
@@ -568,8 +569,14 @@ function updateRegions(){
  };
 
  refreshHelperSelector();
+ for(const box of editors.values())box.querySelector('[data-box-volume]').textContent=byId('shell-only').checked?'Helper omitted from this shell-only plan.':'Enter a valid box to show its unclipped volume.';
  if(!byId('shell-only').checked)for(const box of byId('helper-regions').children){const r=regionInput(box),z=box.querySelector('[data-print-z]');z.textContent='';if(!r.geometry)continue;
-  try{Plan.geometry(r.geometry);r.active=box===activeHelper;r.previewName=helperLabel(box);valid.push(r);
+  try{Plan.geometry(r.geometry);
+    const volume=r.geometry.size_mm.reduce((a,b)=>a*b,1);
+    box.querySelector('[data-box-volume]').textContent=Number.isFinite(volume)&&volume>0
+      ?`Unclipped box volume: ${volume>=1e9||volume<.001?volume.toExponential(3):volume.toLocaleString(undefined,{maximumSignificantDigits:6})} mm³. Not credited material or a print estimate; body clipping, overlaps and shell material are not deducted.`
+      :'Box volume is outside the numeric display range.';
+    r.active=box===activeHelper;r.previewName=helperLabel(box);valid.push(r);
     if(mesh&&meshBounds&&[0,1,2].some(k=>r.geometry.center_mm[k]+r.geometry.size_mm[k]/2<meshBounds.min[k]||r.geometry.center_mm[k]-r.geometry.size_mm[k]/2>meshBounds.max[k]))warn(`${r.name||'Region'}: box lies outside the part bounds and cannot bond to the body.`,[r.id]);
     if(r.geometry.size_mm.some(x=>x<.84))warn(`${r.name||'Region'}: an edge is below the 0.84 mm planning screen (2 × assumed 0.42 mm line width).`,[r.id],`[data-geometry="size_mm"][data-axis="${r.geometry.size_mm.findIndex(x=>x<.84)}"]`);
     if(selected){const corners=transformMesh(boxCorners(r.geometry),selected.R_design_to_print,selected.t_mm),zs=Array.from(corners).filter((_,i)=>i%3===2);z.textContent=`Print Z extent: ${Math.min(...zs).toFixed(3)}–${Math.max(...zs).toFixed(3)} mm. Layer snapping and body bonding remain unchecked.`;}

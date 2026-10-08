@@ -159,6 +159,22 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   }
   // Number-input arrow steps have no native undo: dimension history restores
   // the whole box without changing its centre, notes or constraints.
+  const boxVolume=region.locator('[data-box-volume]');
+  const originalSizes=await region.locator('[data-geometry="size_mm"]').evaluateAll(fields=>fields.map(f=>f.value));
+  for(const [axis,value] of ['10','20','3'].entries())await region.locator(`[data-geometry="size_mm"][data-axis="${axis}"]`).fill(value);
+  assert.match(await boxVolume.innerText(),/Unclipped box volume: 600 mm³/);
+  assert.match(await boxVolume.innerText(),/Not credited material or a print estimate/);
+  const volumeState=await page.evaluate(()=>draftFormState());
+  await page.evaluate(()=>updateRegions());assert.equal(await page.evaluate(()=>draftFormState()),volumeState);
+  await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('');
+  assert.doesNotMatch(await boxVolume.innerText(),/600/);
+  await region.getByRole('button',{name:'Undo dimension edit',exact:true}).click();
+  assert.match(await boxVolume.innerText(),/Unclipped box volume: 600 mm³/);
+  await page.locator('#shell-only').check();assert.match(await boxVolume.innerText(),/omitted/);
+  await page.locator('#shell-only').uncheck();assert.match(await boxVolume.innerText(),/600 mm³/);
+  await region.locator('[data-spatial]').uncheck();assert.doesNotMatch(await boxVolume.innerText(),/600/);
+  await region.locator('[data-spatial]').check();
+  for(const [axis,value] of originalSizes.entries())await region.locator(`[data-geometry="size_mm"][data-axis="${axis}"]`).fill(value);
   const dimension=region.locator('[data-geometry="size_mm"][data-axis="0"]');
   const undoSize=region.getByRole('button',{name:'Undo dimension edit',exact:true});
   const redoSize=region.getByRole('button',{name:'Redo dimension edit',exact:true});

@@ -102,6 +102,9 @@ part when you choose a different print pose.
   can be undone and redone during this editing session. When the focused Undo or
   Redo button runs out of moves, focus switches to the reverse action. A move
   refused because a centre coordinate is incomplete focuses that field.
+- The dimension controls show **unclipped box volume** to compare sizes. This
+  is not credited material or a print estimate: body clipping, overlaps and the
+  existing shell are not deducted. Sliced evidence is needed for material changes.
 - **Undo dimension edit** and **Redo dimension edit** recover box sizes, including
   arrow-key changes and incomplete fields. Typing in one field is one edit; up to
   20 edits are kept per helper. Centre moves use their own history.
