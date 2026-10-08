@@ -511,6 +511,9 @@ function helperLabel(box){
  const boxes=[...byId('helper-regions').children],nameOf=b=>b.querySelector('[data-key="name"]').value.trim()||'Helper region',name=nameOf(box);
  return boxes.filter(b=>nameOf(b)===name).length>1?`${name} (helper ${boxes.indexOf(box)+1})`:name;
 }
+function invalidGeometryField(box){
+ return [...box.querySelectorAll('[data-geometry]')].find(f=>f.value===''||!Number.isFinite(Number(f.value))||f.dataset.geometry==='size_mm'&&Number(f.value)<=0);
+}
 function updateRegions(){
  const valid=[],warnings=byId('region-warnings');warnings.replaceChildren();
  const editors=new Map([...byId('helper-regions').children].map(box=>[box.dataset.id,box]));
@@ -529,7 +532,10 @@ function updateRegions(){
     if(mesh&&meshBounds&&[0,1,2].some(k=>r.geometry.center_mm[k]+r.geometry.size_mm[k]/2<meshBounds.min[k]||r.geometry.center_mm[k]-r.geometry.size_mm[k]/2>meshBounds.max[k]))warn(`${r.name||'Region'}: box lies outside the part bounds and cannot bond to the body.`,[r.id]);
     if(r.geometry.size_mm.some(x=>x<.84))warn(`${r.name||'Region'}: an edge is below the 0.84 mm planning screen (2 × assumed 0.42 mm line width).`,[r.id],`[data-geometry="size_mm"][data-axis="${r.geometry.size_mm.findIndex(x=>x<.84)}"]`);
     if(selected){const corners=transformMesh(boxCorners(r.geometry),selected.R_design_to_print,selected.t_mm),zs=Array.from(corners).filter((_,i)=>i%3===2);z.textContent=`Print Z extent: ${Math.min(...zs).toFixed(3)}–${Math.max(...zs).toFixed(3)} mm. Layer snapping and body bonding remain unchecked.`;}
-  }catch(e){warn(`${r.name||'Region'}: ${e.message}`,[r.id]);}
+  }catch(e){
+    const field=invalidGeometryField(box);
+    warn(`${r.name||'Region'}: ${e.message}`,[r.id],field?`[data-geometry="${field.dataset.geometry}"][data-axis="${field.dataset.axis}"]`:'[data-geometry="center_mm"]');
+  }
  }
  for(let i=0;i<valid.length;i++)for(let j=i+1;j<valid.length;j++){
   if(['center_mm','size_mm'].every(key=>valid[i].geometry[key].every((v,k)=>v===valid[j].geometry[key][k])))warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: identical planning boxes. Move, resize or remove the redundant copy as needed.`,[valid[i].id,valid[j].id]);
@@ -574,7 +580,7 @@ function invalidDraftField(){
   for(const key of ['name','location','purpose']){const f=box.querySelector(`[data-key="${key}"]`);if(!f.value.trim())return f;}
   const clearance=box.querySelector('[data-clearance]');if(clearance.value!==''&&(!Number.isFinite(Number(clearance.value))||Number(clearance.value)<0))return clearance;
   const note=box.querySelector('[data-key="keep_clear"]');if(!note.value.trim())return note;
-  if(box.querySelector('[data-spatial]').checked)for(const f of box.querySelectorAll('[data-geometry]'))if(f.value===''||!Number.isFinite(Number(f.value))||f.dataset.geometry==='size_mm'&&Number(f.value)<=0)return f;
+  if(box.querySelector('[data-spatial]').checked){const field=invalidGeometryField(box);if(field)return field;}
  }
  return null;
 }

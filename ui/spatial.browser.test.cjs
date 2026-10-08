@@ -184,6 +184,17 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert(await region.locator('[data-geometry="size_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));
   assert.equal(await page.evaluate(()=>draftFormState()),warningState);
 
+  // Invalid dimensions and missing coordinates must focus the offending field, not centre X.
+  for(const [key,axis,value] of [['size_mm',2,'0'],['size_mm',1,''],['center_mm',2,'']]){
+    const field=region.locator(`[data-geometry="${key}"][data-axis="${axis}"]`),original=await field.inputValue();
+    await field.fill(value);const invalidState=await page.evaluate(()=>draftFormState());
+    await region.locator('.helper-editor').evaluate(e=>e.open=false);
+    await page.locator('#region-warnings li').filter({hasText:/Region sizes must be positive|Region centre and size need/}).getByRole('button',{name:'Edit Seat backing',exact:true}).click();
+    assert(await field.evaluate(e=>e===document.activeElement));
+    assert(await region.locator('.helper-editor').evaluate(e=>e.open));
+    assert.equal(await page.evaluate(()=>draftFormState()),invalidState);
+    await field.fill(original);
+  }
   await region.locator('[data-geometry="size_mm"][data-axis="0"]').fill('10');
   const pending=page.waitForEvent('download');await page.locator('#export').click();const draft=JSON.parse(await fs.readFile(await(await pending).path(),'utf8'));
   assert.equal(draft.massing.helper_regions[0].geometry.frame,'design');assert.equal(draft.massing.helper_regions[0].geometry_status,'sketch');assert.deepEqual(draft.massing.helper_regions[0].keep_clear.interface_ids,['rear_seat']);
