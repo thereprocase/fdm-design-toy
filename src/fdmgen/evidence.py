@@ -137,10 +137,10 @@ def build_orient_bundle(table: Path, slices: list[tuple[str, str, Path]], out_di
     manifest_path = out_dir / "orient-evidence.json"
     manifest_path.unlink(missing_ok=True)
     seen = set()
-    for pose, kind, _ in slices:
-        if (pose, kind) in seen:
-            raise RuntimeError(f"two slices for pose {pose} ({kind}); give one per pose")
-        seen.add((pose, kind))
+    for pose, kind, _ in slices:                     # the table has one column per pose, whatever the slice kind
+        if pose in seen:
+            raise RuntimeError(f"two slices for pose {pose}; the table holds one column per pose, so give one slice each")
+        seen.add(pose)
     receipts, shell, bridge = [], [], []
     for pose, kind, g in slices:
         for check, extra, sink in (("shell-check", ["--cell", str(shell_cell_mm), "--samples", str(shell_samples)], shell),
@@ -152,9 +152,14 @@ def build_orient_bundle(table: Path, slices: list[tuple[str, str, Path]], out_di
                 raise RuntimeError(f"{check} on pose {pose} ({kind}) failed (exit {code}); no manifest written")
             raw = dest.read_bytes()
             rec = json.loads(raw)
+            g_sha = _sha(g)
+            got_pose, got_g = (rec.get("pose") or {}).get("id"), (rec.get("gcode") or {}).get("gcode_sha256")
+            if got_pose != pose or got_g != g_sha:     # never let a receipt land on a pose or slice it did not measure
+                raise RuntimeError(f"{check} receipt for pose {pose} names pose {got_pose!r} and G-code "
+                                   f"{str(got_g)[:12]}, not {pose} and {g_sha[:12]}; no manifest written")
             sink.append((rec, hashlib.sha256(raw).hexdigest(), kind))
-            receipts.append({"check": check, "pose": pose, "slice_kind": kind, "path": name, "sha256": _sha(dest),
-                             "schema": rec.get("schema"), "verdict": rec["result"]["verdict"]})
+            receipts.append({"check": check, "pose": pose, "slice_kind": kind, "gcode_sha256": g_sha, "path": name,
+                             "sha256": _sha(dest), "schema": rec.get("schema"), "verdict": rec["result"]["verdict"]})
     traw = Path(table).read_bytes()
     try:
         enriched = add_shell_columns(json.loads(traw), hashlib.sha256(traw).hexdigest(), shell)
@@ -164,9 +169,11 @@ def build_orient_bundle(table: Path, slices: list[tuple[str, str, Path]], out_di
         raise RuntimeError(f"a receipt was refused for the table: {e}") from e
     etab = out_dir / "orientation-table.enriched.json"
     etab.write_text(json.dumps(enriched, indent=1), encoding="utf-8")
+    in_sha = hashlib.sha256(traw).hexdigest()
     manifest = {
         "schema": ORIENT_SCHEMA,
-        "table": {"name": Path(table).name, "sha256": hashlib.sha256(traw).hexdigest()},
+        "table": {"name": Path(table).name, "input_sha256": in_sha,
+                  "root_sha256": enriched["enriched"]["from_table_sha256"]},
         "slices": [{"pose": p, "slice_kind": k, "gcode_sha256": _sha(g)} for p, k, g in slices],
         "receipts": receipts,
         "enriched_table": {"path": etab.name, "sha256": _sha(etab),

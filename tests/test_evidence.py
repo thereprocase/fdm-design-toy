@@ -120,16 +120,18 @@ def test_a_failed_run_removes_the_previous_bundle(tmp_path, monkeypatch):
 
 
 def _canned_orient(monkeypatch, *, broken=None, swap_pose=False):
-    """shell-check / bridge-check replaced by the real per-pose receipt fixtures."""
+    """shell-check / bridge-check replaced by the real per-pose receipt fixtures, re-stamped with the input
+    G-code's sha256 as the real commands would record it (swap_pose hands back the other pose's receipt)."""
     def run(argv):
         if argv[0] == broken:
             return 1
         pose = argv[argv.index("--pose") + 1]
         src = pose if not swap_pose else {"facet-00": "facet-01", "facet-01": "facet-00"}[pose]
         sub = "shell" if argv[0] == "shell-check" else "bridge"
-        rec = (FIX / sub / f"{src}-shell-only.{argv[0]}.json").read_bytes()
-        Path(argv[argv.index("--out") + 1]).write_bytes(rec)
-        return 2 if json.loads(rec)["result"]["verdict"] == "FAIL" else 0
+        rec = json.loads((FIX / sub / f"{src}-shell-only.{argv[0]}.json").read_text(encoding="utf-8"))
+        rec["gcode"]["gcode_sha256"] = hashlib.sha256(Path(argv[1]).read_bytes()).hexdigest()
+        Path(argv[argv.index("--out") + 1]).write_text(json.dumps(rec), encoding="utf-8")
+        return 2 if rec["result"]["verdict"] == "FAIL" else 0
     monkeypatch.setattr(evidence, "_run", run)
 
 
@@ -143,9 +145,11 @@ def test_orient_bundle_enriches_one_table_from_every_pose_slice(tmp_path, monkey
     m = evidence.build_orient_bundle(TABLE, [("facet-00", "shell-only", tmp_path / "a.gcode"),
                                              ("facet-01", "shell-only", tmp_path / "b.gcode")], tmp_path / "out")
     assert m["schema"] == "fdmgen/orient-evidence@0.1" and len(m["receipts"]) == 4
-    assert m["table"]["sha256"] == hashlib.sha256(TABLE.read_bytes()).hexdigest()
+    assert m["table"]["input_sha256"] == m["table"]["root_sha256"] == hashlib.sha256(TABLE.read_bytes()).hexdigest()
     t = json.loads((tmp_path / "out" / m["enriched_table"]["path"]).read_text(encoding="utf-8"))
-    assert t["enriched"]["from_table_sha256"] == m["table"]["sha256"]
+    assert t["enriched"]["from_table_sha256"] == m["table"]["root_sha256"]
+    assert {r["gcode_sha256"] for r in m["receipts"] if r["pose"] == "facet-00"} == {hashlib.sha256(b"a").hexdigest()}
+    assert len({r["path"] for r in m["receipts"]}) == 4
     cols = {c["id"]: c["columns"] for c in t["candidates"]}
     assert cols["facet-00"]["t_shell_thin_fraction"]["value"] == 0.0022
     assert cols["facet-01"]["t_bridge_span_external_mm"]["value"] == 52.2
@@ -153,7 +157,7 @@ def test_orient_bundle_enriches_one_table_from_every_pose_slice(tmp_path, monkey
         (tmp_path / "out" / m["enriched_table"]["path"]).read_bytes()).hexdigest()
 
 
-@pytest.mark.parametrize("case", ["duplicate", "wrong_pose_receipt", "command_error"])
+@pytest.mark.parametrize("case", ["duplicate", "duplicate_other_kind", "wrong_pose_receipt", "wrong_gcode", "command_error"])
 def test_orient_bundle_refuses_and_leaves_no_manifest(tmp_path, monkeypatch, case):
     _canned_orient(monkeypatch, broken="bridge-check" if case == "command_error" else None,
                    swap_pose=case == "wrong_pose_receipt")
@@ -161,6 +165,17 @@ def test_orient_bundle_refuses_and_leaves_no_manifest(tmp_path, monkeypatch, cas
     slices = [("facet-00", "shell-only", tmp_path / "a.gcode")]
     if case == "duplicate":
         slices.append(("facet-00", "shell-only", tmp_path / "a.gcode"))
+    if case == "duplicate_other_kind":
+        slices.append(("facet-00", "project", tmp_path / "a.gcode"))      # would overwrite the pose's column
+    if case == "wrong_gcode":                                              # receipt measured another slice
+        def run(argv, _orig=evidence._run):
+            code = _orig(argv)
+            out = Path(argv[argv.index("--out") + 1])
+            rec = json.loads(out.read_text(encoding="utf-8"))
+            rec["gcode"]["gcode_sha256"] = "f" * 64
+            out.write_text(json.dumps(rec), encoding="utf-8")
+            return code
+        monkeypatch.setattr(evidence, "_run", run)
     with pytest.raises(RuntimeError):
         evidence.build_orient_bundle(TABLE, slices, tmp_path / "out")
     assert not (tmp_path / "out" / "orient-evidence.json").exists()
