@@ -761,3 +761,7 @@ measurement. Its inset, like the axis compass, does not accept placement clicks.
 The pose table includes print height beside its shell and fit results, so sorting
 by height leaves the compared measurement visible. Missing heights remain
 **Not checked** and sort after measured values; sorting does not choose a pose.
+
+Pose filters display the producer's declared feasibility scope as text, or state
+that it was not supplied. Only explicit true flags pass the feasible-only filter;
+missing flags read **Fit not recorded**. Other check verdicts remain independent.

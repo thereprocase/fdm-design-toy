@@ -160,7 +160,8 @@ function choose(candidate) {
 }
 function renderRows() {
   byId('rows').replaceChildren();
-  const rows=analysis.candidates.filter(c=>(!byId('feasible-only').checked || c.feasible)&&(!byId('sliced-only').checked || hasSlice(c)));
+  const rows=analysis.candidates.filter(c=>(!byId('feasible-only').checked || c.feasible===true)&&(!byId('sliced-only').checked || hasSlice(c)));
+  byId('feasible-scope').textContent=typeof analysis.feasible_scope==='string'&&analysis.feasible_scope.trim()?'Producer feasibility scope: '+analysis.feasible_scope:'Feasibility scope not supplied by this table. A feasible flag does not mean all checks pass.';
   const sortKey=byId('pose-sort').value;
   if(sortKey!=='analysis'){
     const value=c=>{const m=c.columns?.[sortKey];return m?.verdict!=='NOT_CHECKED'&&Number.isFinite(m?.value)?m.value:null;};
@@ -185,13 +186,13 @@ function renderRows() {
     text('td',shellSummary(c),tr);
     text('td',formatted(c.columns?.height_mm),tr);
     const failures=failedColumns(c).length;
-    text('td',(c.feasible?'Fits / stable':'Fit needs review')+`; ${failures} recorded failed check${failures===1?'':'s'}`,tr);
+    text('td',(c.feasible===true?'Fits / stable':c.feasible===false?'Fit needs review':'Fit not recorded')+`; ${failures} recorded failed check${failures===1?'':'s'}`,tr);
   }
   if(!rows.length){const td=text('td','No candidates match this filter.',text('tr','',byId('rows')));td.colSpan=8;}
 }
 byId('reveal-pose').onclick=()=>{
   if(!selected)return;
-  if(!selected.feasible)byId('feasible-only').checked=false;
+  if(selected.feasible!==true)byId('feasible-only').checked=false;
   if(!hasSlice(selected))byId('sliced-only').checked=false;
   renderRows();
   const button=byId('rows').querySelector('[aria-pressed="true"]');

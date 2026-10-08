@@ -128,5 +128,17 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 52.2 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/Ceiling span maximum: 52.2 mm/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ table.feasible_scope='BED-001 and BED-002 only. <b>Scope text, not markup.</b>';
+ table.candidates[2].feasible=null;
+ await page.locator('#table-file').setInputFiles({name:'scope-fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
+ await page.locator('#feasible-only').uncheck();await page.locator('#sliced-only').uncheck();
+ assert.equal(await page.locator('#feasible-scope').innerText(),'Producer feasibility scope: '+table.feasible_scope);
+ assert.equal(await page.locator('#feasible-scope b').count(),0);
+ assert.match(await page.locator('#rows tr').filter({has:page.getByRole('button',{name:'unknown',exact:true})}).innerText(),/Fit not recorded/);
+ await page.locator('#feasible-only').check();assert.equal(await page.getByRole('button',{name:'unknown',exact:true}).count(),0);
+ delete table.feasible_scope;
+ await page.locator('#table-file').setInputFiles({name:'no-scope.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
+ await page.waitForFunction(()=>document.querySelector('#feasible-scope').textContent.includes('scope not supplied'));
+ assert.match(await page.locator('#feasible-scope').innerText(),/scope not supplied/);
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
