@@ -99,3 +99,29 @@ def test_caps_do_not_depend_on_how_a_straight_road_is_split():
         grids.append(g)
     for g in grids[1:]:
         assert np.abs(g - grids[0]).sum() / 2 < 0.01 * grids[0].sum()
+
+
+@pytest.mark.parametrize("receipt,ok", [
+    ({"frame": "installed"}, True),                                               # stress-receipt style
+    ({"schema": "fdmgen/bracket-grid@0.1",
+      "coordinate_convention": "Column vectors: print = R @ installed + t_mm. Grid origin is corner of cell"}, True),
+    ({"schema": "fdmgen/bracket-grid@0.1", "coordinate_convention": "something else"}, False),
+    ({}, False),                                                                  # frame never stated
+])
+def test_gcode_occupancy_accepts_only_receipts_that_state_the_installed_frame(tmp_path, receipt, ok):
+    import json
+
+    from fdmgen.cli import main
+    tp_text = gcode(layers=1)
+    vol = read_gcode(tp_text, footer_rel_tol=None).volume.sum()
+    (tmp_path / "s.gcode").write_text(tp_text + f"; filament used [cm3] = {vol / 1000:.8f}\n", encoding="utf-8")
+    table = {"mesh": {"path": "b.stl", "frame": "design"},
+             "candidates": [{"id": "p0", "R_design_to_print": np.eye(3).tolist(), "t_mm": [0.0, 0.0, 0.0]}]}
+    (tmp_path / "t.json").write_text(json.dumps(table), encoding="utf-8")
+    rec = {**receipt, "grid": {"shape": [30, 30, 4], "h_mm": [0.5, 0.5, 0.5], "origin_print_mm": [-1.0, -1.0, -1.0]},
+           "installed_to_print": {"R": np.eye(3).tolist(), "t_mm": [0.0, 0.0, 0.0]}}
+    (tmp_path / "g.json").write_text(json.dumps(rec), encoding="utf-8")
+    out = tmp_path / "o.npz"
+    code = main(["gcode-occupancy", str(tmp_path / "s.gcode"), "--table", str(tmp_path / "t.json"), "--pose", "p0",
+                 "--grid-receipt", str(tmp_path / "g.json"), "--out", str(out)])
+    assert (code == 0) is ok and out.exists() is ok

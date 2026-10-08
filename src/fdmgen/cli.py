@@ -328,7 +328,12 @@ def _cmd_gcode_occupancy(a) -> int:
         return 1
     rec = json.loads(a.grid_receipt.read_text(encoding="utf-8"))
     g, i2p = rec["grid"], rec["installed_to_print"]
-    if rec.get("frame") != "installed" or table["mesh"]["frame"] != "design":
+    # stress receipts say frame "installed"; grid-only receipts (fdmgen/bracket-grid@0.1) state the same map
+    # as their coordinate convention, print = R @ installed + t_mm
+    installed = rec.get("frame") == "installed" or (
+        rec.get("schema") == "fdmgen/bracket-grid@0.1"
+        and "print = R @ installed + t_mm" in str(rec.get("coordinate_convention", "")))
+    if not installed or table["mesh"]["frame"] != "design":
         print("ERROR   the grid receipt must map the installed (= design) frame to its print grid")
         return 1
     M, c = plate_to_grid(cand["R_design_to_print"], cand["t_mm"], i2p["R"], i2p["t_mm"])
