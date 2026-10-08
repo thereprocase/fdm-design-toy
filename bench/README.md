@@ -658,3 +658,13 @@ Audit time was 20.83 s on the shared CPU worker; it includes coarse factorizatio
 and 80 inverse applications. Full remote suite: 268 passed, 6 CUDA-only skips.
 Small controls confirm that enabling the audit preserves CG histories. No
 production solver default or convergence gate changed.
+
+`--relaxation` selects V-cycle relaxation separately from the existing
+`--smoothers` prolongation setting. The default is `block_gauss_seidel` (one
+symmetric pre/post sweep). `block_jacobi` uses one pre/post step with spectral
+radius damping. `residual_block_jacobi` reuses exactly those block inverses,
+damping and counts, but adds `omega * Dinv * (b-Ax)` to the iterate. Thus an
+exact solution retains its null component for singular diagonal blocks.
+Hierarchy construction stays fixed; the relaxation is changed afterward.
+This is an experimental symmetry repair, not a convergence fix or SPD proof.
+Use `--audit-preconditioner` to record actual settings and sampled behavior.

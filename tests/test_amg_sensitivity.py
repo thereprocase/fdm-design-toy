@@ -36,9 +36,10 @@ def test_bands_exercise_actual_contrast_without_activating_exterior():
     assert np.unique(uniform[mask]).size == 1
 
 
+@pytest.mark.parametrize('relaxation', ['block_gauss_seidel', 'block_jacobi', 'residual_block_jacobi'])
 @pytest.mark.parametrize('coarse_solver', ['splu', 'pinv'])
 @pytest.mark.parametrize('theta', [0., .08, .25])
-def test_small_ti_contrast_solve_matches_direct(theta, coarse_solver):
+def test_small_ti_contrast_solve_matches_direct(theta, coarse_solver, relaxation):
     pytest.importorskip('pyamg')
     E = np.ones((5, 2, 2)); E[1:3] = 1e-3
     fixed, load = reference.cantilever(*E.shape)
@@ -49,12 +50,12 @@ def test_small_ti_contrast_solve_matches_direct(theta, coarse_solver):
     nodes = ids[::3] // 3
     points = np.column_stack(np.unravel_index(nodes, tuple(v+1 for v in E.shape)))
     B = pilot.rigid_candidates(points); B[fixed[ids] != 0] = 0
-    result = pilot.solve_case(A, rhs, B, 'energy', 100, strength_threshold=theta, coarse_solver=coarse_solver)
+    result = pilot.solve_case(A, rhs, B, 'energy', 100, strength_threshold=theta, coarse_solver=coarse_solver, relaxation=relaxation)
     exact = np.linalg.solve(A.toarray(), rhs)
     assert result['converged']
     assert result['compliance'] == pytest.approx(rhs @ exact, rel=1e-8)
     audited = pilot.solve_case(A, rhs, B, 'energy', 100, strength_threshold=theta,
-                               coarse_solver=coarse_solver, audit=True, free_mask=fixed[ids] == 0)
+                               coarse_solver=coarse_solver, audit=True, free_mask=fixed[ids] == 0, relaxation=relaxation)
     assert audited['history'] == result['history']
     assert audited['preconditioner_audit']['free_space']['max_output_leakage'] < 1e-12
     exhausted = pilot.solve_case(A, rhs, B, 'energy', 1)
