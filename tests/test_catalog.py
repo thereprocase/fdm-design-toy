@@ -25,7 +25,7 @@ def test_catalog_lints_clean_and_has_every_table_rule():
     assert len(rules) == 35                     # master table rows (the plan's "33" is out of date)
     for rid in ("OVH-001", "WALL-001", "GAP-001", "BRG-001", "PROC-001", "STR-001", "CAL-001"):
         assert rid in rules
-    assert set(rules["OVH-001"].data["checkers"]) == {"V", "M"}
+    assert set(rules["OVH-001"].data["checkers"]) == {"V", "M", "T"}          # T: toolpath.check_support
 
 
 def test_lint_catches_unitless_untagged_and_misnamed():
