@@ -91,6 +91,7 @@ function shellSummary(candidate) {
 function validBridgeColumn(c){
  return c?.rule==='BRG-001'&&c.level==='T'&&c.unit==='mm'&&['PASS','FAIL'].includes(c.verdict)&&Number.isFinite(c.value)&&c.value>=0&&Number.isFinite(c.limit_mm)&&c.limit_mm>0;
 }
+function comparisonSliceKind(column){return ['shell-only','project'].includes(column?.receipt?.slice_kind)?column.receipt.slice_kind:null;}
 function renderComparison(){
  byId('pin-reference').disabled=!selected;byId('clear-reference').disabled=!referencePose;
  const panel=byId('reference-comparison');panel.hidden=!referencePose||!selected;
@@ -100,11 +101,20 @@ function renderComparison(){
    `Reference: ${referencePose.id}. Selected for planning: ${selected?.id||'none'}.`;
  if(panel.hidden)return;
  byId('reference-name').textContent=`Reference: ${referencePose.id}`;byId('comparison-name').textContent=`Selected: ${selected.id}`;
+ const sliceKeys=['t_shell_thin_fraction','t_bridge_span_external_mm','t_bridge_span_internal_mm'];
+ const differentKinds=sliceKeys.some(key=>{const a=comparisonSliceKind(referencePose.columns?.[key]),b=comparisonSliceKind(selected.columns?.[key]);return a&&b&&a!==b;});
+ let sliceNote=byId('comparison-slice-context');
+ if(!sliceNote){sliceNote=text('p','',panel);sliceNote.id='comparison-slice-context';panel.insertBefore(sliceNote,panel.querySelector('.table-wrap'));}
+ sliceNote.hidden=!sliceKeys.some(key=>referencePose.columns?.[key]||selected.columns?.[key]);
+ sliceNote.className=differentKinds?'warning':'hint';
+ sliceNote.textContent=differentKinds?'Slice kinds differ in this comparison (helper project versus shell-only). These values are not a controlled orientation comparison: helper geometry and settings may also differ. Review each result’s source and method.':'Slice kinds are recorded below where available. Equal kinds alone do not establish matching geometry or slicer settings; compare each result’s source and method.';
+
  for(const [key,label,ceiling] of [['F_L_max','Layer failure · design corner'],['F_L_max_vendor_corner','Layer failure · vendor corner'],['ovh_fail_mm2','Overhang area'],['contact_mm2','Bed contact'],['height_mm','Print height'],['t_support_segments','Support segments · T'],['t_shell_thin_fraction','Thin shell fraction · T'],['t_bridge_span_external_mm','External bridge strand maximum · T'],['t_bridge_span_internal_mm','Internal bridge strand maximum · T'],['t_bridge_span_external_mm','External bridge ceiling maximum · T',true],['t_bridge_span_internal_mm','Internal bridge ceiling maximum · T',true]]){
    const row=text('tr','',byId('comparison-rows'));text('th',label,row).scope='row';
    for(const candidate of [referencePose,selected]){
      const column=candidate.columns?.[key],cell=text('td','',row);
      text('span',ceiling?(validBridgeColumn(column)&&Number.isFinite(column.ceiling_span_mm)&&column.ceiling_span_mm>=0?`${metricNumber(column.ceiling_span_mm)} mm · supplementary`:'Not recorded'):key==='t_shell_thin_fraction'?shellSummary(candidate):formatted(column),cell);
+     if(sliceKeys.includes(key)){const kind=text('p','Slice kind: '+(comparisonSliceKind(column)||'not recorded'),cell);kind.className='hint';kind.dataset.sliceKind='';}
      if(ceiling)text('p','Independent maximum over evaluated roads; may occur on a different road from the strand maximum. The recorded verdict uses the strand model.',cell).className='hint';
      if(column){const details=text('details','',cell);text('summary','Context',details);
        text('p',[column.rule,column.level,column.fidelity||'Method and settings not supplied.'].filter(Boolean).join(' · '),details);}

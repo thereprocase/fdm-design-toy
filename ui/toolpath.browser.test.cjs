@@ -34,6 +34,22 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   assert.match(await page.locator('#rows tr').first().locator('td').nth(4).innerText(),/Not checked/);
   assert.match(await page.locator('#toolpath-metrics').innerText(),/Not checked/);
  }
+ // Mixed slice kinds are not silently presented as controlled orientation evidence.
+ const mixedKinds=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/orient-evidence/orientation-table.enriched.json')));
+ mixedKinds.candidates.find(c=>c.id==='facet-01').columns.t_shell_thin_fraction.receipt.slice_kind='project';
+ await page.locator('#table-file').setInputFiles({name:'synthetic-mixed-kinds.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(mixedKinds))});
+ await page.getByRole('button',{name:'facet-00',exact:true}).click();await page.locator('#pin-reference').click();await page.getByRole('button',{name:'facet-01',exact:true}).click();
+ const shellKinds=page.locator('#comparison-rows tr').filter({has:page.getByRole('rowheader',{name:'Thin shell fraction · T',exact:true})});
+ assert.deepEqual(await shellKinds.locator('[data-slice-kind]').allTextContents(),['Slice kind: shell-only','Slice kind: project']);
+ assert.match(await page.locator('#comparison-slice-context').innerText(),/not a controlled orientation comparison/);
+ assert.match(await shellKinds.locator('td > span').first().innerText(),/PASS/);
+ await page.getByRole('button',{name:'facet-00',exact:true}).click();
+ assert.match(await page.locator('#comparison-slice-context').innerText(),/Equal kinds alone do not establish/);
+ // Missing metadata remains explicit, and source records are not rewritten.
+ delete mixedKinds.candidates.find(c=>c.id==='facet-01').columns.t_shell_thin_fraction.receipt.slice_kind;
+ await page.locator('#table-file').setInputFiles({name:'synthetic-missing-kind.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(mixedKinds))});
+ await page.getByRole('button',{name:'facet-00',exact:true}).click();await page.locator('#pin-reference').click();await page.getByRole('button',{name:'facet-01',exact:true}).click();
+ assert.deepEqual(await shellKinds.locator('[data-slice-kind]').allTextContents(),['Slice kind: shell-only','Slice kind: not recorded']);
  // Known-order comparison fixture: zero is measured, unchecked numeric values stay last.
  await page.locator('#sliced-only').uncheck();
  const table=JSON.parse(fs.readFileSync(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json')));

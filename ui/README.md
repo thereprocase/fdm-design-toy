@@ -938,3 +938,8 @@ exports created from the enriched workspace.
 The real two-pose example is in `ui/fixtures/orient-evidence/`. Both bridge FAIL
 receipts remain visible. File verification is not physical qualification or an
 independent check of the recorded G-code/source hashes. See the [batch workflow](WORKFLOW.md#open-an-orientation-evidence-batch).
+
+Pose comparison shows recorded slice kinds beside shell and bridge values. Mixing
+a helper-project slice with a shell-only slice triggers an explicit uncontrolled-
+comparison note; the recorded values remain visible. Missing kinds stay unrecorded.
+Equal kinds alone do not establish matching geometry or slicer settings.
