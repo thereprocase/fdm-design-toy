@@ -662,3 +662,9 @@ Successful surface placement also supports **Undo last centre move**. The previo
 coordinate text is restored exactly, including blank fields; an unsuccessful pick
 does not overwrite this one-step history. Another successful pick or axis move
 replaces the history with that move's starting centre. Undo does not rerun checks.
+
+The handoff identifies commands as belonging to the last downloaded draft and
+warns when current edits are absent from that download. Reopening a draft,
+including a review handoff, clears previous export filenames and geometry-input
+summaries. Export again to populate them, or replace the template paths with
+your existing saved files.

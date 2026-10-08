@@ -45,6 +45,12 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.match(await page.locator('#evidence-command').innerText(),/spool-rack-g2-ef-facet-00-massing.json project.gcode shell-only.gcode/);
   assert.match(await page.locator('#evidence-command').innerText(),/--pose facet-00 --out out\/evidence/);
   assert(await page.locator('#handoff-placeholders').isHidden());
+  assert.match(await page.locator('#handoff-snapshot').innerText(),/describe the last downloaded draft/);
+  await page.locator('#walls').fill('5');
+  assert.match(await page.locator('#handoff-snapshot').innerText(),/Current edits are not included/);
+  await page.locator('#walls').fill('4');
+  assert.doesNotMatch(await page.locator('#handoff-snapshot').innerText(),/Current edits are not included/);
+
 
   await page.locator('#collapse-other-helpers').click();
   assert.equal(await page.locator('.helper-editor[open]').count(),1);
@@ -109,6 +115,11 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await sourceDownload(bom);
   const exact=await download();assert.equal(exact.source.orientation_table_sha256,crypto.createHash('sha256').update(bom).digest('hex'));
   await upload(exact);await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
+  assert.match(await page.locator('#handoff-command').innerText(),/massing DRAFT.json --table TABLE.json/);
+  assert.match(await page.locator('#evidence-command').innerText(),/PART-POSE-massing.json/);
+  assert.match(await page.locator('#handoff-readiness').innerText(),/Export this draft/);
+  assert.match(await page.locator('#handoff-snapshot').innerText(),/No export from this draft/);
+
   const malformed=Buffer.concat([Buffer.from('{"problem":"'),Buffer.from([0xff]),Buffer.from('"}')]);
   await page.locator('#table-file').setInputFiles({name:'malformed.json',mimeType:'application/json',buffer:malformed});
   await page.waitForFunction(()=>document.querySelector('#status').textContent.startsWith('Could not load table'));

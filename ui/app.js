@@ -280,11 +280,14 @@ function addHelper(region={}) {
   for(const child of [...box.children].slice(1))editor.append(child);
   box.append(editor);byId('helper-regions').append(box);updateRegions();return box;
 }
+function resetHandoff(){
+ byId('handoff-command').textContent='fdmgen massing DRAFT.json --table TABLE.json --template PROFILE.3mf --out out/massing';
+ byId('handoff-readiness').textContent='Export this draft to populate its filenames and geometry-input summary.';
+ renderEvidenceHandoff(null);
+}
 function resetPlan(){
   cancelSurfacePlacement();clearDraftError();
-  byId('handoff-command').textContent='fdmgen massing DRAFT.json --table TABLE.json --template PROFILE.3mf --out out/massing';
-  byId('handoff-readiness').textContent='Save a draft to check whether its helper boxes are defined.';
-  renderEvidenceHandoff(null);
+  resetHandoff();
   clearRemovalHistory();
   proposalOrigin=null;renderProposal();
   activeHelper=null;byId('return-helper').hidden=true;byId('mesh-options').open=true;
@@ -313,6 +316,11 @@ function updateDraftState(){
   ?(changed?'Draft edited. Download it to keep these changes.':'No draft downloaded in this session.')
   :changed?`Changes since ${draftCheckpointKind==='opened'?'reopening':'the last download'}. Export an updated draft before running checks.`
   :`No edits since ${draftCheckpointKind==='opened'?'reopening this draft':'the last draft download'}.`;
+ const handoff=byId('handoff-snapshot');handoff.className=changed?'warning':'hint';
+ handoff.textContent=draftCheckpointKind==='downloaded'
+  ?changed?'The commands below describe the last downloaded draft. Current edits are not included; export an updated draft before running them.':'The commands below describe the last downloaded draft. Use the actual saved filenames on your worker.'
+  :'No export from this draft is recorded in this session. Export it to populate the commands below, or substitute your saved file paths in the templates.';
+
 }
 function checkpointDraft(kind){draftCheckpointKind=kind;draftCheckpoint=draftFormState();updateDraftState();}
 function hasDraftEdits(){return draftCheckpoint!==null&&draftFormState()!==draftCheckpoint;}
@@ -423,7 +431,7 @@ function restoreDraft(raw){
     byId('walls').value=input.walls;byId('skin').value=input.skin_mm;byId('shell-only').checked=input.shell_only;byId('helper-panel').hidden=input.shell_only;
     byId('helper-regions').replaceChildren();input.helper_regions.forEach(addHelper);
     byId('draft-status').textContent=restored.migrated?'Legacy notes restored. Complete each helper location and interface constraint before exporting.':'Draft restored against its original analysis. You can revise it and export again.';
-    byId('export-status').textContent='';updateRegions();checkpointDraft('opened');
+    resetHandoff();byId('export-status').textContent='';updateRegions();checkpointDraft('opened');
 }
 
 let pendingReview=null;
