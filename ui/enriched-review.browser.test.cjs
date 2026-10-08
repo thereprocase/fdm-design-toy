@@ -14,6 +14,9 @@ const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=requi
  await page.locator('#review-draft').setInputFiles(path.join(inputs,'browser-draft.json'));
  await page.locator('#review-receipt').setInputFiles(path.join(inputs,'spool-rack-g2-ef-facet-01-massing.json'));
  await page.waitForFunction(()=>!document.querySelector('#review-bundle').disabled);
+ await page.locator('[data-review-target="review-preview"]').focus();await page.keyboard.press('Enter');
+ assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Saved plan geometry');
+ await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.id),'review-mesh');
  await page.locator('#review-mesh').setInputFiles(process.env.FDM_PREVIEW_MESH);
  await page.waitForFunction(()=>document.querySelector('#review-mesh-status').textContent.startsWith('Body fingerprint matched'));
  await page.locator('#review-top').click();await page.locator('#review-show-helpers').uncheck();await page.locator('#review-show-helpers').check();
