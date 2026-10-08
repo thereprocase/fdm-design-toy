@@ -573,3 +573,26 @@ nodal block-strength filtering with every other case input fixed. Zero retains
 the original unfiltered default; each row records method, threshold and block
 size. This changes the AMG hierarchy, not the stiffness matrix or boundary
 conditions. Direct-reference controls exercise all three thresholds.
+
+Strength sensitivity (`receipts/bracket-r1-strength-emin003.json`, harness
+`5f44f92`) holds the R1 banded case at Ez/Ep=0.85, Gpz/Ez=0.20,
+nu_p=0.38, nu_pz=0.36, E_min=1e-3, grid-Z axis and energy interpolation.
+These explicit normalized parameters match the preceding card corner; this run
+uses explicit parameters rather than rereading the card. All mask, load,
+restraint, density, stiffness, active-DOF and constitutive inputs match that
+corner. The zero-threshold residual history reproduced it exactly.
+
+| Symmetric block-strength theta | CG iterations | Final true relative residual | Operator complexity |
+|---:|---:|---:|---:|
+| 0 | 150 cap | 0.0198 | 1.241 |
+| 0.08 | 150 cap | 248.1 | 1.304 |
+| 0.25 | 150 cap | 11.61 | 1.923 |
+
+All three missed 1e-6 (benchmark exit 2). These positive thresholds made this
+case worse; none is a recommended setting. No converged compliance comparison
+can be made. This does not isolate the cause or establish that every strength
+method fails: aggregation, interpolation and preconditioner suitability for CG
+still need examination. The original default remains zero. Remote direct-solve
+controls passed at all three thresholds; full suite 260 passed, 6 CUDA-only
+skips. Source hashes were verified. This is CPU numerical evidence, not a GPU
+gate result or a physical bracket prediction.
