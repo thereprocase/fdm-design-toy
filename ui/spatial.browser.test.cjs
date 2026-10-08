@@ -199,6 +199,22 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.equal(await page.evaluate(()=>draftFormState()),beforeWarningNavigation);
 
 
+  const beforeFrame=await page.evaluate(()=>({form:draftFormState(),pose:selected.id,vertices:Array.from(viewer.vertices)}));
+  await page.locator('#focus-helper').click();await page.waitForFunction(()=>!viewer.pending);
+  assert.equal(await page.evaluate(()=>viewer.focusId),await copy.getAttribute('data-id'));
+  const framing=await page.evaluate(()=>{
+    const region=viewer.regions.find(r=>r.active),c=transformMesh(region.geometry.center_mm,viewer.R,viewer.t),p=viewer.project(...c);
+    return {x:p[0],y:p[1],width:viewer.canvas.clientWidth,height:viewer.canvas.clientHeight};
+  });
+  assert(Math.abs(framing.x-framing.width/2)<1e-8&&Math.abs(framing.y-framing.height/2)<1e-8);
+  assert.deepEqual(await page.evaluate(()=>({form:draftFormState(),pose:selected.id,vertices:Array.from(viewer.vertices)})),beforeFrame);
+  await page.locator('#view-whole').click();assert.equal(await page.evaluate(()=>viewer.focusId),null);
+  await page.locator('#focus-helper').click();await page.locator('#view-top').click();assert.equal(await page.evaluate(()=>viewer.focusId),null);
+  await page.locator('#focus-helper').click();await copy.locator('[data-spatial]').uncheck();
+  assert(await page.locator('#focus-helper').isDisabled());assert.equal(await page.evaluate(()=>viewer.focusId),null);
+  await copy.locator('[data-spatial]').check();
+  assert.deepEqual(await page.evaluate(()=>({form:draftFormState(),pose:selected.id,vertices:Array.from(viewer.vertices)})),beforeFrame);
+
   const copyDownload=page.waitForEvent('download');await page.locator('#export').click();
   const copied=JSON.parse(await fs.readFile(await(await copyDownload).path(),'utf8'));
   const [a,b]=copied.massing.helper_regions;assert.notEqual(a.id,b.id);

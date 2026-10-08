@@ -47,7 +47,7 @@ function designAxesInView(R,yaw,pitch){
 const AXIS_PANEL={x:8,y:8,width:122,height:116};
 class PartViewer {
   constructor(canvas) {
-    this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;
+    this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;this.focusId=null;
     let start=null,down=null,dragged=false,pointer=null;
     const onOverlay=e=>{
       const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
@@ -69,13 +69,15 @@ class PartViewer {
     canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
     new ResizeObserver(()=>this.schedule()).observe(canvas);
   }
-  set(vertices,R,t){this.R=R;this.t=t;this.vertices=transformMesh(vertices,R,t);this.schedule();}
-  setRegions(regions){this.regions=regions;this.schedule();}
-  clear(){this.vertices=null;this.onPick=null;this.canvas.style.cursor='';this.schedule();}
+  set(vertices,R,t){this.focusId=null;this.R=R;this.t=t;this.vertices=transformMesh(vertices,R,t);this.schedule();}
+  setRegions(regions){this.regions=regions;if(this.focusId&&!regions.some(r=>r.id===this.focusId&&r.active))this.frameAll();this.schedule();}
+  focusRegion(id){if(!this.vertices||!this.regions.some(r=>r.id===id&&r.active))return;this.focusId=id;this.zoom=1;this.schedule();}
+  frameAll(){this.focusId=null;this.zoom=1;this.schedule();}
+  clear(){this.focusId=null;this.vertices=null;this.onPick=null;this.canvas.style.cursor='';this.schedule();}
   zoomBy(factor){this.zoom=Math.max(.5,Math.min(8,this.zoom*factor));this.schedule();}
   view(name){
     const angles={top:[0,Math.PI/2],'print-x':[Math.PI/2,0],'print-y':[0,0],iso:[-.65,.65]};
-    [this.yaw,this.pitch]=angles[name]||angles.iso;this.zoom=1;this.schedule();
+    [this.yaw,this.pitch]=angles[name]||angles.iso;this.focusId=null;this.zoom=1;this.schedule();
   }
   schedule(){if(this.pending)return;this.pending=true;requestAnimationFrame(()=>{this.pending=false;this.draw();});}
   draw(){
@@ -84,7 +86,10 @@ class PartViewer {
     if(!this.vertices){ctx.fillStyle='#53665a';ctx.font='15px system-ui';ctx.textAlign='center';ctx.fillText('Load the matching STL to preview this pose',width/2,height/2);return;}
     const v=this.vertices,lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
     for(let i=0;i<v.length;i++) {const a=i%3;lo[a]=Math.min(lo[a],v[i]);hi[a]=Math.max(hi[a],v[i]);}
-    const center=lo.map((x,i)=>(x+hi[i])/2),radius=Math.hypot(...hi.map((x,i)=>x-lo[i]))/2||1,scale=Math.min(width,height)*.4/radius*this.zoom;
+    const focus=this.regions.find(r=>r.id===this.focusId&&r.active);
+    const center=focus?Array.from(transformMesh(focus.geometry.center_mm,this.R,this.t)):lo.map((x,i)=>(x+hi[i])/2);
+    const radius=Math.hypot(...hi.map((x,i)=>x-lo[i]))/2||1;
+    const frameRadius=focus?Math.hypot(...focus.geometry.size_mm)/2:radius,scale=Math.min(width,height)*.4/frameRadius*this.zoom;
     const cy=Math.cos(this.yaw),sy=Math.sin(this.yaw),cp=Math.cos(this.pitch),sp=Math.sin(this.pitch);
     const project=(x,y,z)=>{x-=center[0];y-=center[1];z-=center[2];const xx=cy*x-sy*y,yy=sy*x+cy*y;return [width/2+scale*xx,height/2-scale*(cp*z-sp*yy),cp*yy+sp*z];};
     this.project=project;

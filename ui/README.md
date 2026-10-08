@@ -748,3 +748,8 @@ When a saved draft requires another source table, the import error names its
 full required fingerprint and the suggested exact-table download filename.
 Renaming another table cannot satisfy that fingerprint; current edits remain
 available while the correct source is located.
+
+**Focus helper** frames the active valid box without changing its geometry or print
+pose. Orbit and zoom then operate around that box. **Show whole part** restores
+part framing while keeping the viewing direction; preset views also restore it.
+Changing the active helper or disabling its box ends focused framing.

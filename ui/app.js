@@ -21,6 +21,8 @@ function updatePreview(){
  try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();}
  catch(e){cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent=e.message;}
 }
+byId('focus-helper').onclick=()=>{if(activeHelper)viewer.focusRegion(activeHelper.dataset.id);};
+byId('view-whole').onclick=()=>viewer.frameAll();
 byId('zoom-in').onclick=()=>viewer.zoomBy(1.4);byId('zoom-out').onclick=()=>viewer.zoomBy(1/1.4);
 byId('view-iso').onclick=()=>viewer.view('iso');byId('view-top').onclick=()=>viewer.view('top');
 byId('view-x').onclick=()=>viewer.view('print-x');byId('view-y').onclick=()=>viewer.view('print-y');
@@ -382,7 +384,7 @@ function updateRegions(){
   if(['center_mm','size_mm'].every(key=>valid[i].geometry[key].every((v,k)=>v===valid[j].geometry[key][k])))warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: identical planning boxes. Move, resize or remove the redundant copy as needed.`,[valid[i].id,valid[j].id]);
   if(Plan.boxSeparation(valid[i].geometry,valid[j].geometry).needs_review)warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: overlap or separation is below the nominal 0.84 mm screen. Review sliver modifiers.`,[valid[i].id,valid[j].id]);
  }
- viewer.setRegions(valid);updateDraftState();
+ viewer.setRegions(valid);byId('focus-helper').disabled=!viewer.vertices||!valid.some(r=>r.active);updateDraftState();
 }
 function clearRemovalHistory(){
  removedHelpers.length=0;byId('undo-remove').disabled=true;byId('remove-status').textContent='';
