@@ -778,4 +778,5 @@ keyboard selection remain available beside the far-right fit results.
 The preview draws the declared rectangular bed at print Z=0 using the table
 producer's corner-origin convention. Its dimensions are labelled; absent/invalid
 dimensions retain a labelled reference-plane cue. This does not recalculate fit:
-margins and exclusion zones are not drawn, and BED-001 remains the recorded result.
+a valid positive margin is drawn as a dashed inset labelled BED-001 margin;
+exclusion zones are not drawn, and BED-001 remains the recorded result.

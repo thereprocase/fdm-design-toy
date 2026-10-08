@@ -75,8 +75,9 @@ change your print pose or draft.
 Orange dashed boxes and the highlighted helper are unclipped planning regions.
 Their displayed volume is not credited material. The ground rectangle shows the
 declared bed at print Z=0, with the print origin at a bed corner. Without bed
-dimensions it is only a labelled reference plane. Margins and exclusion zones
-are not drawn; use the recorded bed-fit check. Size, gap and bounding-box warnings are planning
+dimensions it is only a labelled reference plane. A dashed inset shows the declared
+BED-001 margin when available. Exclusion zones are not drawn; use the recorded
+bed-fit check. Size, gap and bounding-box warnings are planning
 screens. Exporter checks, sliced evidence and physical testing remain separate.
 
 If a replacement STL is rejected, the previously matched mesh and camera remain

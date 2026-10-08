@@ -48,6 +48,11 @@ function bedFootprint(bed){
   if(!Number.isFinite(bed?.x_mm)||bed.x_mm<=0||!Number.isFinite(bed?.y_mm)||bed.y_mm<=0)return null;
   return [[0,0],[bed.x_mm,0],[bed.x_mm,bed.y_mm],[0,bed.y_mm]];
 }
+function bedInset(bed){
+  const m=bed?.margin_mm;
+  if(!bedFootprint(bed)||!Number.isFinite(m)||m<=0||2*m>=Math.min(bed.x_mm,bed.y_mm))return null;
+  return [[m,m],[bed.x_mm-m,m],[bed.x_mm-m,bed.y_mm-m],[m,bed.y_mm-m]];
+}
 function previewScale(pixelsPerMm,maxPixels){
   if(!Number.isFinite(pixelsPerMm)||pixelsPerMm<=0||!Number.isFinite(maxPixels)||maxPixels<=0)return null;
   const limit=maxPixels/pixelsPerMm,power=10**Math.floor(Math.log10(limit));
@@ -80,7 +85,7 @@ class PartViewer {
     canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
     new ResizeObserver(()=>this.schedule()).observe(canvas);
   }
-  setBed(bed){this.bed=bedFootprint(bed);this.schedule();}
+  setBed(bed){this.bed=bedFootprint(bed);this.bedMargin=bedInset(bed);this.schedule();}
   set(vertices,R,t){this.focusId=null;this.R=R;this.t=t;this.vertices=transformMesh(vertices,R,t);this.schedule();}
   setRegions(regions){this.regions=regions;if(this.focusId&&!regions.some(r=>r.id===this.focusId&&r.active))this.frameAll();this.schedule();}
   focusRegion(id){if(!this.vertices||!this.regions.some(r=>r.id===id&&r.active))return;this.focusId=id;this.zoom=1;this.schedule();}
@@ -109,6 +114,11 @@ class PartViewer {
     const pad=radius*.12,outline=this.bed||[[lo[0]-pad,lo[1]-pad],[hi[0]+pad,lo[1]-pad],[hi[0]+pad,hi[1]+pad],[lo[0]-pad,hi[1]+pad]];
     const ground=outline.map(p=>project(...p,0));
     ctx.beginPath();ground.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle='#d7dfd1';ctx.fill();ctx.strokeStyle='#adbda8';ctx.stroke();
+    if(this.bedMargin){
+      const inset=this.bedMargin.map(p=>project(...p,0));
+      ctx.beginPath();inset.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();
+      ctx.strokeStyle='#849981';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);
+    }
     const faces=[];
     for(let i=0;i<v.length;i+=9){const p=[project(v[i],v[i+1],v[i+2]),project(v[i+3],v[i+4],v[i+5]),project(v[i+6],v[i+7],v[i+8])];
       const a=[v[i+3]-v[i],v[i+4]-v[i+1],v[i+5]-v[i+2]],b=[v[i+6]-v[i],v[i+7]-v[i+1],v[i+8]-v[i+2]],n=[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=Math.hypot(...n)||1;
@@ -147,7 +157,8 @@ class PartViewer {
       ctx.fillText(bar.mm.toLocaleString(undefined,{maximumSignificantDigits:3})+' mm',x,panel.y+16);
       ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x,y+4);ctx.moveTo(x,y);ctx.lineTo(x+bar.pixels,y);ctx.moveTo(x+bar.pixels,y-4);ctx.lineTo(x+bar.pixels,y+4);ctx.stroke();
     }
+    if(this.bedMargin){ctx.fillStyle='#53665a';ctx.font='11px system-ui';ctx.fillText(`BED-001 margin: ${this.bedMargin[0][0]} mm`,14,height-32);}
     ctx.fillStyle='#344d40';ctx.font='11px system-ui';ctx.fillText(this.bed?`Declared bed: ${this.bed[2][0]} × ${this.bed[2][1]} mm`:'Reference plane: print Z = 0 · mm',14,height-15);
   }
 }
-if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView,previewScale,bedFootprint};
+if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView,previewScale,bedFootprint,bedInset};

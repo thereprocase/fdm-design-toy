@@ -58,3 +58,10 @@ test('declared bed footprint uses print-corner coordinates without inventing mis
  assert.deepEqual(bedFootprint({x_mm:256,y_mm:200,margin_mm:10}),[[0,0],[256,0],[256,200],[0,200]]);
  for(const bed of [undefined,{}, {x_mm:256},{x_mm:0,y_mm:20},{x_mm:20,y_mm:-1},{x_mm:'256',y_mm:20}])assert.equal(bedFootprint(bed),null);
 });
+
+test('bed margin inset matches BED-001 coordinates and omits invalid margins',()=>{
+ const {bedInset}=require('./viewer.js');
+ assert.deepEqual(bedInset({x_mm:256,y_mm:256,margin_mm:10}),[[10,10],[246,10],[246,246],[10,246]]);
+ for(const margin_mm of [undefined,null,'10',0,-1,128,200])assert.equal(bedInset({x_mm:256,y_mm:256,margin_mm}),null);
+ assert.equal(bedInset({margin_mm:10}),null);
+});

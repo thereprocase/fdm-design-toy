@@ -11,6 +11,7 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await page.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);
   await page.waitForFunction(()=>document.querySelector('#mesh-status').textContent.startsWith('Mesh fingerprint matched'));
   assert.deepEqual(await page.evaluate(()=>viewer.bed),[[0,0],[256,0],[256,256],[0,256]]);
+  assert.deepEqual(await page.evaluate(()=>viewer.bedMargin),[[10,10],[246,10],[246,246],[10,246]]);
   await page.locator('#rationale').fill('Preserve loaded interfaces.');
   await page.locator('#plan-pose').click();assert(await page.locator('#walls').evaluate(e=>e===document.activeElement));
   const region=page.locator('.helper-region').first();
