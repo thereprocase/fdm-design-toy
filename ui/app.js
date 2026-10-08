@@ -342,9 +342,16 @@ function renderRows() {
 
     const failures=failedColumns(c).length;
     text('td',(c.feasible===true?'Fits / stable':c.feasible===false?'Fit needs review':'Fit not recorded')+`; ${failures} recorded failed check${failures===1?'':'s'}`,tr);
+    const bridges=text('td','',tr);bridges.dataset.bridgeSummary='';
+    for(const [key,label] of [['t_bridge_span_external_mm','External'],['t_bridge_span_internal_mm','Internal']]){
+      const column=c.columns?.[key],valid=validBridgeColumn(column);
+      const line=text('div',label+': '+(valid?`${column.verdict} · ${metricNumber(column.value)} mm · T${column.provisional?' · provisional':''} · ${comparisonSliceKind(column)||'slice kind not recorded'}`:'Not checked'),bridges);
+      if(valid)line.title=`Recorded limit ${column.limit_mm} mm. ${column.fidelity||'Method context not supplied; review the recorded column.'}`;
+    }
+
   }
   if(!rows.length){
-    const td=text('td','No candidates match these filters. ',text('tr','',byId('rows')));td.colSpan=9;
+    const td=text('td','No candidates match these filters. ',text('tr','',byId('rows')));td.colSpan=10;
     const reset=text('button','Show all poses',td);reset.type='button';reset.className='secondary';
     reset.onclick=()=>{
       byId('feasible-only').checked=false;byId('sliced-only').checked=false;renderRows();

@@ -14,6 +14,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.getByRole('button',{name:'facet-02',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/Not checked/);assert.match(await page.locator('#toolpath-settings').innerText(),/No support-column slicer context/);assert.equal(await page.locator('#credited-scope').innerText(),'');
  assert.equal(await page.locator('#pose-shell-summary').innerText(),'Not checked');
  assert.match(await page.locator('#pose-bridges').innerText(),/Not checked/);
+ assert.match(await page.locator('#rows tr.selected [data-bridge-summary]').innerText(),/External: Not checked[\s\S]*Internal: Not checked/);
  await page.locator('#sliced-only').check();assert.equal(await page.locator('#rows tr').count(),2);assert.match(await page.locator('#pose-count').innerText(),/Selected pose facet-02 is hidden/);await page.getByRole('button',{name:'facet-01',exact:true}).click();assert.match(await page.locator('#toolpath-metrics').innerText(),/8,596/);
  // Batch shell/bridge enrichment supplies evidence without support-count columns.
  const checksOnly=JSON.parse(fs.readFileSync(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json')));
@@ -33,6 +34,17 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   await page.getByRole('button',{name:'facet-00',exact:true}).click();
   assert.match(await page.locator('#rows tr').first().locator('td').nth(4).innerText(),/Not checked/);
   assert.match(await page.locator('#toolpath-metrics').innerText(),/Not checked/);
+ }
+ // Exact producer fixture exposes the distinguishing bridge measurements in the table.
+ await page.locator('#table-file').setInputFiles(path.join(__dirname,'fixtures/orient-evidence/orientation-table.enriched.json'));
+ for(const id of ['facet-00','facet-01']){
+  const row=page.locator('#rows tr').filter({has:page.getByRole('button',{name:id,exact:true})});
+  const expected=await page.evaluate(id=>analysis.candidates.find(c=>c.id===id).columns,id);
+  for(const [key,label] of [['t_bridge_span_external_mm','External'],['t_bridge_span_internal_mm','Internal']]){
+   const column=expected[key],display=await page.evaluate(v=>metricNumber(v),column.value);
+   assert((await row.locator('[data-bridge-summary]').innerText()).includes(`${label}: ${column.verdict} · ${display} mm · T`));
+  }
+  assert.match(await row.locator('[data-bridge-summary]').innerText(),/shell-only/);
  }
  // Mixed slice kinds are not silently presented as controlled orientation evidence.
  const mixedKinds=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/orient-evidence/orientation-table.enriched.json')));
