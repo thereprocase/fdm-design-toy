@@ -60,3 +60,5 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 #orientation-bundle-summary pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;max-height:360px;overflow:auto}
 
 #bridge-location-buttons button[aria-pressed="true"],#pose-road-buttons button[aria-pressed="true"]{background:#28644e;color:white;border-color:#28644e}
+
+.owner-decisions{margin:16px 0;padding:12px 14px;border:1px solid #c5cdbd;border-radius:8px;background:#f3f4eb;font-size:.85rem;overflow-wrap:anywhere}.owner-decisions>summary{cursor:pointer;font-weight:650}.owner-decisions li{margin:10px 0}.owner-decisions a{color:#245c47}
