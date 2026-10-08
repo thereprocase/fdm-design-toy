@@ -435,6 +435,8 @@ def _cmd_bridge_check(a) -> int:
     import hashlib
     import inspect
 
+    import numpy as np
+
     from .catalog.checks import toolpath
     from .gcode import extruder_offset, read_gcode, reader
     from .gcode import occupancy as occ
@@ -460,6 +462,21 @@ def _cmd_bridge_check(a) -> int:
             return 1
         pose_block = {**_pose_provenance(a, table, cand, mesh_path), "placement": placed}
     r = toolpath.check_bridge_toolpath(tp, offset=off, cell_mm=a.cell)
+    if pose_block:                       # the worst roads in the pose's print frame and in the design frame too
+        shift = np.append(pose_block["placement"]["shift_xy_mm"], 0.0)
+        R, t = np.asarray(cand["R_design_to_print"], float), np.asarray(cand["t_mm"], float)
+        for per_role in r.metrics["worst"].values():
+            for w in per_role.values():
+                if w is None:
+                    continue
+                pr = {k: (None if v is None else [round(float(x), 4) for x in np.asarray(v) - shift])
+                      for k, v in w["plate_mm"].items()}
+                w["print_mm"] = pr
+                w["design_mm"] = {k: (None if v is None else [round(float(x), 4) for x in R.T @ (np.asarray(v) - t)])
+                                  for k, v in pr.items()}
+        r.metrics["worst_frames"] = {"plate_mm": "G-code coordinates with the extruder offset restored",
+                                     "print_mm": "plate minus the measured placement shift (the pose's print frame)",
+                                     "design_mm": "R_design_to_print^T (print - t_mm)"}
     sig = {**inspect.signature(toolpath.bridge_spans).parameters, **inspect.signature(toolpath.check_bridge_toolpath).parameters}
     out = {"schema": "fdmgen/bridge-check@0.2", "result": r.to_dict(),
            "gcode": {**_slicer_context(text, tp), "extruder_offset_mm": list(off)}, **pose_block,

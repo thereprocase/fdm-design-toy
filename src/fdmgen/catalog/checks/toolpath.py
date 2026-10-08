@@ -80,6 +80,9 @@ def bridge_spans(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), cell_mm: float = 0.1, 
     reaches a road end is reported as a cantilever instead. ceiling_span_mm is twice the largest distance from
     an unsupported point of the road to any support below (the ceiling model of the M-level check: a skin
     anchored all round). The two differ when the slicer lays strands along a narrow channel.
+    where_plate locates the road in plate coordinates with the extruder offset restored (x, y, layer z): the
+    full road, the longest bounded unsupported run, and the ceiling witness (the unsupported point farthest
+    from support). "External" and "internal" are the slicer's role labels, not a geometric finding.
     """
     from ...gcode.occupancy import deposit
     off = np.asarray(offset, float)
@@ -125,11 +128,25 @@ def bridge_spans(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), cell_mm: float = 0.1, 
                 else:
                     k += 1
             d = to_support[idx[:, 0], idx[:, 1]]
-            anchor = float(d[~sup].max()) if (~sup).any() else 0.0   # farthest unsupported point from any support
-            span = max(((j - k + 1) * step for k, j in runs if k > 0 and j < len(sup) - 1), default=0.0)
+            far = int(np.flatnonzero(~sup)[np.argmax(d[~sup])]) if (~sup).any() else None
+            anchor = float(d[far]) if far is not None else 0.0          # farthest unsupported point from any support
+            bounded = [(k, j) for k, j in runs if k > 0 and j < len(sup) - 1]
+            span, run = 0.0, None
+            for k, j in bounded:
+                if (j - k + 1) * step > span:
+                    span, run = (j - k + 1) * step, (k, j)
             cant = max(((j - k + 1) * step for k, j in runs if k == 0 or j == len(sup) - 1), default=0.0)
+            u = (b - a) / L
+
+            def pt(xy, zz=float(z)):
+                return [round(float(xy[0]), 4), round(float(xy[1]), 4), round(zz, 4)]
+            where = {"road_start_mm": pt(a), "road_end_mm": pt(b),
+                     "run_start_mm": pt(a + u * (s[run[0]] - step / 2)) if run else None,
+                     "run_end_mm": pt(a + u * (s[run[1]] + step / 2)) if run else None,
+                     "ceiling_witness_mm": pt(p[far]) if far is not None else None}
             out.append({"road_index": int(i), "role": str(tp.role[i]), "z_mm": float(z), "length_mm": L, "span_mm": span,
-                        "cantilever_mm": cant, "supported_fraction": float(sup.mean()), "ceiling_span_mm": 2 * anchor})
+                        "cantilever_mm": cant, "supported_fraction": float(sup.mean()), "ceiling_span_mm": 2 * anchor,
+                        "where_plate": where})
     return out
 
 
@@ -148,7 +165,23 @@ def check_bridge_toolpath(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), max_span_exte
 
     def worst_ceiling(sel):
         return float(ceil[sel].max()) if sel.any() else 0.0
+    def witness(sel, key):
+        idx = [k for k in np.flatnonzero(sel) if rows[k][key] > 0]
+        if not idx:
+            return None
+        r = rows[max(idx, key=lambda k: rows[k][key])]
+        w = r["where_plate"]
+        out = {"road_index": r["road_index"], "role": r["role"], "z_mm": r["z_mm"], "value_mm": round(r[key], 3),
+               "plate_mm": {"road_start": w["road_start_mm"], "road_end": w["road_end_mm"]}}
+        if key == "span_mm":
+            out["plate_mm"].update(run_start=w["run_start_mm"], run_end=w["run_end_mm"])
+        else:
+            out["plate_mm"]["witness"] = w["ceiling_witness_mm"]
+        return out
+    worst = {role: {"strand": witness(sel, "span_mm"), "ceiling": witness(sel, "ceiling_span_mm")}
+             for role, sel in (("external", ~internal), ("internal", internal))}
     metrics = {"bridge_roads": len(rows), "external_roads": int((~internal).sum()), "internal_roads": int(internal.sum()),
+               "worst": worst,
                "max_span_external_mm": round(ext, 3), "max_span_internal_mm": round(inn, 3),
                "max_ceiling_span_external_mm": round(worst_ceiling(~internal), 3),
                "max_ceiling_span_internal_mm": round(worst_ceiling(internal), 3),
