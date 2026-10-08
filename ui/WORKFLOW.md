@@ -191,6 +191,54 @@ original inputs; they do not verify the revised plan.
 For schema details, evidence limits and test-worker instructions, see the
 [technical UI guide](README.md).
 
+### Locate a failing bridge on the body
+
+After loading a matched review and its evidence bundle, choose **Saved geometry**
+in the review navigation. Load the exact body STL recorded by the draft. The
+preview shows the saved pose and helper boxes, without changing the draft.
+
+1. Open **Locate a worst bridge road**.
+2. Choose **Helper project** or **Shell-only baseline** to match the slice you
+   want to inspect. The matching shell check must already be loaded, either from
+   the bundle or through the individual receipt controls.
+3. Select that slice's pose-bound bridge receipt. The page checks its G-code,
+   pose and geometry context against the loaded shell check, then validates the
+   recorded location coordinates.
+4. Choose an external/internal strand or ceiling maximum. Use **Top** or
+   **Isometric**, then orbit or zoom to inspect its position. **Hide road** removes
+   the overlay without discarding the receipt.
+
+The dashed line is the full road; the solid segment is its longest bounded
+unsupported run. A dot marks the ceiling model's farthest unsupported point.
+They are drawn through the body to make the location visible. Strand and ceiling
+maxima can come from different roads. “External” and “internal” are slicer role
+labels, not proof of open air or a hollow core; location alone does not establish
+that a helper can fix the failure. Read the selected road's context and the
+**Location source receipt** alongside the picture.
+
+To try the exact checked example, load `ui/fixtures/seed-draft.json` and
+`ui/fixtures/seed-export-report.json`, then all six JSON files in
+`ui/fixtures/seed-evidence-bundle/`. Select **Shell-only baseline** and open
+`ui/fixtures/bridge-locations/facet-00-shell-only.bridge-check.json`. Its
+**internal strand · 122.1 mm** button locates the long road near the mount face.
+Use the matching body STL from the part source checkout. The newer location
+receipt does not replace the older bundle's measurements or hashes.
+
+Older bridge receipts can lack location geometry. For your own slice, generate a
+fresh receipt on the compute worker with the current checker:
+
+```bash
+fdmgen bridge-check shell-only.gcode --table TABLE.json --pose POSE_ID --out out/bridge-location.json
+```
+
+Use the exact G-code, table and pose paired with the loaded shell check; use the
+project G-code instead when inspecting **Helper project**. The worker needs the
+matching part source checkout (or `SPOOL_RACK_ROOT` for the bracket). Exit 2 means
+the completed receipt contains a FAIL to inspect. Keep old receipt files intact;
+a new optional location receipt does not repair or reissue an existing bundle.
+A missing-location message leaves the old measurements readable without an
+invented overlay.
+
 ### Preview keep-outs while placing helpers
 
 On the geometry worker, run `fdmgen keepout-render TABLE.json --problem problem.yaml --out keepouts.json`
