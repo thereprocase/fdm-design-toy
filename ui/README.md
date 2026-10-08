@@ -816,3 +816,5 @@ Reference pose comparisons include supplementary bridge ceiling maxima beside st
 An incomplete bundle selection lists every missing receipt filename and asks for the manifest and all five receipts together. Each picker selection replaces the selected files; a rejected set leaves previously verified results intact.
 
 Review keeps draft, export report and full bundle inputs visible. Expand **Optional: load individual receipts or a mechanics pilot** for the manual route and its status messages; those controls preserve the same pairing checks.
+
+Bundle import errors identify the selected filename when JSON is malformed or the document is not an object, so the damaged or unrelated file can be replaced without discarding the previous verified review.

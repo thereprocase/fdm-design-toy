@@ -48,6 +48,9 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  for(const receipt of real.receipts)assert(missingMessage.includes(receipt.path));
  assert.match(missingMessage,/each selection replaces/);
  assert.equal(await page.locator('#bundle-provenance').textContent(),verifiedManifest);
+ await page.locator('#review-bundle').setInputFiles([{name:'broken-shell.json',mimeType:'application/json',buffer:Buffer.from('{')}]);
+ await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('Invalid JSON in selected file: broken-shell.json'));
+ assert.equal(await page.locator('#bundle-provenance').textContent(),verifiedManifest);
  assert(await page.locator('#bundle-results').isVisible());
  assert.equal(real.receipts.find(r=>r.check==='bridge-check'&&r.slice_kind==='project').sha256,'e82806aa7543dff15d94459ab1eff1d7af221bd06a871ad905ba687eb46fd76b');
  assert.match(await page.locator('#bundle-bridges').innerText(),/Project bridges · T FAIL/);

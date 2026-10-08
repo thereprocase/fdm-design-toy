@@ -29,7 +29,14 @@
  async function load(files,{report,draft,reportHash}){
   if(!hash(reportHash))throw Error('Reload the export report before importing a bundle.');
   const entries=new Map();
-  for(const f of files){if(entries.has(f.name))throw Error('Duplicate selected filename: '+f.name);const bytes=await f.arrayBuffer();entries.set(f.name,{value:JSON.parse(new TextDecoder().decode(bytes)),sha:await digest(bytes)});}
+  for(const f of files){
+   if(entries.has(f.name))throw Error('Duplicate selected filename: '+f.name);
+   const bytes=await f.arrayBuffer();let value;
+   try{value=JSON.parse(new TextDecoder().decode(bytes));}
+   catch{throw Error('Invalid JSON in selected file: '+f.name+'. Select the original complete receipt or manifest file.');}
+   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Expected a JSON object in selected file: '+f.name+'. Select a receipt or manifest file.');
+   entries.set(f.name,{value,sha:await digest(bytes)});
+  }
   const manifests=[...entries.values()].filter(e=>e.value.schema==='fdmgen/evidence-bundle@0.1');
   if(manifests.length!==1)throw Error('Select one evidence-bundle manifest and its five receipt files.');
   const manifest=manifests[0].value;

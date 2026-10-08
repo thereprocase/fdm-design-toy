@@ -31,3 +31,10 @@ test('bundle lists every missing receipt and validates roles before file recover
  const invalid=fixture();invalid.files=[];invalid.manifest.receipts[1]={...invalid.manifest.receipts[0]};
  await assert.rejects(Bundle.load(inputs(invalid),invalid.context),/duplicate bundle receipt role/);
 });
+
+test('bundle names malformed and non-object JSON files',async()=>{
+ for(const contents of ['{','null','[]','42','"text"']){
+  const f=fixture(),name=f.files[2].name;f.files[2].buffer=Buffer.from(contents);
+  await assert.rejects(Bundle.load(inputs(f),f.context),error=>error.message.includes(name)&&/Invalid JSON|Expected a JSON object/.test(error.message));
+ }
+});
