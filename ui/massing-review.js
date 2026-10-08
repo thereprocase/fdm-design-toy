@@ -107,6 +107,7 @@ function renderMechanics(r){
  showReviewSection('mechanics-results',!(false));
  el('mechanics-policy').textContent=weighted?`FE pilot · provisional. Density-weighted stiffness, no binary threshold. Domain policy: ${r.domain_policy}. The full-body context may remove fragments; see each audit. This is not equivalent to the thresholded load-transfer pilot.`:`FE pilot · provisional. Domain policy: ${r.domain_policy}; density threshold ${r.threshold}. ${r.domain_policy==='largest-face-component sensitivity'?'Fragments were explicitly removed. This is not the unmodified raster result.':'Original thresholded domains; inspect connectivity failures below.'}`;
  el('mechanics-comparison').textContent=comparable?`Project compliance change versus shell-only: ${num(100*(r.solves.project.compliance_N_mm/r.solves.baseline.compliance_N_mm-1))}%. Applies only to this domain and load policy; not a strength rating.`:`No supported compliance comparison: ${reasons[0]}`;
+ if(weighted)el('mechanics-comparison').textContent+=' This density-law sensitivity does not establish equivalence to the thresholded and load-transferred pilot.';
  el('mechanics-model').textContent=weighted?`Load policy: ${r.load_policy}. Load SHA-256: ${r.load_sha256}. Material: E0 ${num(r.material.E0_MPa)} MPa, nu ${num(r.material.nu)}; ${r.material.law}, power ${num(r.material.power)}, stiffness floor ${r.material.stiffness_floor}. ${r.material.evidence}. This law is uncalibrated; linear model outputs do not establish physical movement.`:`Load method: ${r.method}. ${r.context_note||''} Material constants are not recorded in this pilot receipt; consult its reproducible benchmark. Linear model outputs do not establish physical movement.`;
  const grid=r.inputs.baseline.provenance.grid;
  el('mechanics-resolution').textContent=`Solver cell size: ${grid.h_mm.map(num).join(' × ')} mm; grid ${grid.shape.join(' × ')} cells. Bead sampling refines deposition inside this grid, not the FE mesh.`;
@@ -119,6 +120,8 @@ function renderMechanics(r){
   const caps=r.inputs[key].provenance.sampling?.caps;
   return `${label} road-end/turn caps: ${caps===true?'enabled':caps===false?'disabled':'not recorded'}.`;
  }).join(' ')+' Raster-model changes can alter thresholded domains and transferred loads; equal sampling steps do not establish equivalent mechanics.';
+ el('mechanics-sampling').textContent+=' '+[['baseline','Shell-only'],['project','Project']].map(([key,label])=>{const sampling=r.inputs[key].provenance.sampling;return `${label} sampling fraction: ${sampling?.step_frac??'not recorded'}; original recorded fraction: ${sampling?.recorded_step_frac??'not recorded'}. ${sampling?.purpose||''}`;}).join(' ');
+ el('mechanics-sampling-provenance').textContent=JSON.stringify(Object.fromEntries(['baseline','project'].map(key=>[key,r.inputs[key].provenance.sampling??'Not recorded'])),null,2);
  el('mechanics-rows').replaceChildren();el('mechanics-audits').replaceChildren();
  if(reasons.length){const blocked=add('article','',el('mechanics-audits'));blocked.dataset.mechanicsReasons='';add('h3','Why this comparison is withheld',blocked);const list=add('ul','',blocked);for(const reason of reasons)add('li',reason,list);}
  for(const [name,label] of [['full_solid','Full-body context'],['baseline','Shell-only'],['project','Seeded project']]){

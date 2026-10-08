@@ -130,3 +130,13 @@ test('mechanics withholding names load, solver and seat conservation failures',(
  const name=Object.keys(binary.seats)[0];binary.seats[name].moment_error_N_mm=1;
  assert.deepEqual(Review.mechanicsReasons(binary),[`${name}: seat moment error exceeds 1e-7 N mm.`]);
 });
+
+test('weighted comparison requires matching sampling methods but distinct source files are allowed',()=>{
+ const read=()=>JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p1-sf16-r1.json')));
+ assert.deepEqual(Review.mechanicsReasons(read()),[]);
+ for(const mutate of [r=>r.cases.project.provenance.sampling.step_frac='1/3',r=>r.cases.project.provenance.sampling.caps=true,r=>delete r.cases.project.provenance.sampling,r=>r.cases.project.provenance.sampling.generator='other producer']){
+  const r=read();mutate(r);assert.equal(Review.mechanicsComparable(r),false);assert(Review.mechanicsReasons(r).some(x=>/sampling/i.test(x)));
+ }
+ const reordered=read(),s=reordered.cases.project.provenance.sampling;
+ reordered.cases.project.provenance.sampling=Object.fromEntries(Object.entries(s).reverse());assert(Review.mechanicsComparable(reordered));
+});

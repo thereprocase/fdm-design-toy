@@ -44,6 +44,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   assert.match(await page.locator('#mechanics-model').innerText(),new RegExp(`power ${power}, stiffness floor 0`));
   assert.match(await page.locator('#mechanics-model').innerText(),/no transfer or deletion/);
   assert.match(await page.locator('#mechanics-model').innerText(),/uncalibrated/);
+  assert.match(await page.locator('#mechanics-sampling').innerText(),/sampling fraction: 1\/16; original recorded fraction: 1\/3/);
+  assert.match(await page.locator('#mechanics-sampling').innerText(),/road-end\/turn caps: not recorded/);
+  assert.match(await page.locator('#mechanics-sampling-provenance').textContent(),/occupancy_resample/);
+  assert.match(await page.locator('#mechanics-comparison').innerText(),/does not establish equivalence/);
   assert.match(await page.locator('#mechanics-audits').innerText(),/Raw domain: blocked/);
   assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),JSON.parse(fs.readFileSync(weightedPath)));
  }

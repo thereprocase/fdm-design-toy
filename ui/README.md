@@ -321,6 +321,14 @@ list every blocking domain, load, restraint, convergence or seat-conservation
 condition in the audit section. These explain the recorded model checks; they
 do not recommend changing physical restraints to obtain a solve.
 
+Weighted deltas also require matching sampling method metadata. Per-input source
+NPZ names/hashes may differ; the remaining sampling block must match regardless
+of JSON key order. Missing caps metadata remains “not recorded”, never inferred
+false. The review shows the resampled fraction and original recorded fraction,
+plus the full source/generator/purpose blocks for inspection. In the recorded
+p1/p3 pilots these are 1/16 versus 1/3: a sampling sensitivity, not a new recorded
+grid. Non-equivalence to the thresholded load-transfer pilot stays beside the delta.
+
 The review also accepts `fdmgen/density-weighted-mechanics-pilot@0.1` receipts.
 They retain their separate original-load policy and uncalibrated stiffness law
 `E/E0 = min(raw_density, 1)^power`, with no stiffness floor. The page shows the

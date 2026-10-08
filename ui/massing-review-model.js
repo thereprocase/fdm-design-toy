@@ -191,6 +191,16 @@ const MassingReview = (() => {
     if(!(v.compliance_N_mm>0))note('positive compliance is not established.');
    }
   }
+  if(weighted){
+   const base=r.cases.baseline.provenance.sampling,project=r.cases.project.provenance.sampling;
+   const complete=s=>s&&typeof s==='object'&&!Array.isArray(s)&&typeof s.step_frac==='string'&&s.step_frac.length>0&&Number.isFinite(s.step_mm)&&s.step_mm>0&&typeof s.recorded_step_frac==='string'&&typeof s.generator==='string'&&typeof s.purpose==='string'&&(!Object.hasOwn(s,'caps')||typeof s.caps==='boolean');
+   if(!complete(base)||!complete(project))reasons.push('Sampling method metadata is missing or incomplete for the weighted pair.');
+   else{
+    // The two source deposits are different inputs; all other sampling metadata must agree.
+    const method=s=>JSON.stringify(s,(_key,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).filter(k=>!['source_npz','source_npz_sha256'].includes(k)).sort().map(k=>[k,v[k]])):v);
+    if(method(base)!==method(project))reasons.push('Shell-only and project sampling methods differ; the delta is withheld.');
+   }
+  }
   if(!weighted)for(const [name,seat] of Object.entries(r.seats)){
    if(!(seat.force_error_N<=1e-9))reasons.push(`${name}: seat force error exceeds 1e-9 N.`);
    if(!(seat.moment_error_N_mm<=1e-7))reasons.push(`${name}: seat moment error exceeds 1e-7 N mm.`);
