@@ -28,9 +28,13 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await p.locator('#walls').fill('5');const edited=await p.evaluate(()=>draftFormState());
  accept=false;await upload(raw);assert.match(await p.locator('#work-status').innerText(),/cancelled/);assert.equal(await p.evaluate(()=>draftFormState()),edited);accept=true;
  const count=dialogs;
- for(const bad of [{...raw,pose_notes:{'absent':'note'}},{...raw,pose_notes:{[raw.pose]:42}},{...raw,pose_notes:{[raw.pose]:'mismatched'}},{...raw,orientation_table_sha256:'0'.repeat(64)},{...raw,pose:'absent'},{...raw,helpers:[raw.helpers[0],raw.helpers[0]]},{...raw,helpers:[{...raw.helpers[0],fields:{...raw.helpers[0].fields,'size_mm:0':null}}]}]){
-  await upload(bad);assert.match(await p.locator('#work-status').innerText(),/Could not reopen work/);assert.equal(await p.evaluate(()=>draftFormState()),edited);
+ for(const bad of [{...raw,proposal:{generator:'malformed',label:{toString:null}}},{...raw,pose_notes:{'absent':'note'}},{...raw,pose_notes:{[raw.pose]:42}},{...raw,pose_notes:{[raw.pose]:'mismatched'}},{...raw,orientation_table_sha256:'0'.repeat(64)},{...raw,pose:'absent'},{...raw,helpers:[raw.helpers[0],raw.helpers[0]]},{...raw,helpers:[{...raw.helpers[0],fields:{...raw.helpers[0].fields,'size_mm:0':null}}]}]){
+  await upload(bad);assert.match(await p.locator('#work-status').innerText(),/Could not reopen work/);assert.equal(await p.evaluate(()=>draftFormState()),edited);assert.deepEqual(await p.evaluate(()=>proposalOrigin),proposal);
  }
+ const malformedDraft=JSON.parse(require('node:fs').readFileSync(path.join(__dirname,'fixtures/seed-draft.json'),'utf8'));malformedDraft.proposal={generator:'malformed',label:{toString:null}};
+ await p.locator('#draft-file').setInputFiles({name:'bad-draft.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(malformedDraft))});
+ await p.waitForFunction(()=>document.getElementById('draft-status').textContent.startsWith('Could not reopen draft'));
+ assert.equal(await p.evaluate(()=>draftFormState()),edited);assert.deepEqual(await p.evaluate(()=>proposalOrigin),proposal);
  assert.equal(dialogs,count);assert(await p.evaluate(()=>hasDraftEdits()));
  // Hidden helper fields remain recoverable even when shell-only is selected.
  const hidden={...raw,shell_only:true};await upload(hidden);

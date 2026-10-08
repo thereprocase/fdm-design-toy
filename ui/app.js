@@ -650,7 +650,8 @@ byId('draft-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=tableRequest,openRequest=++draftRequest;
   try{
     const raw=JSON.parse(await file.text());if(openRequest!==draftRequest)return;if(request!==tableRequest)throw Error('The analysis changed while opening the draft. Open it again.');
-    Plan.restore(raw,analysis,fingerprint); // Reject an incompatible file before asking to discard edits.
+    const checked=Plan.restore(raw,analysis,fingerprint); // Reject before asking to discard edits.
+    renderProposal(checked.input.proposal||null,document.createElement('section'));
     if(!allowDraftReplacement('open this saved draft')){byId('draft-status').textContent='Draft replacement cancelled. Current edits are unchanged.';event.target.value='';return;}
     restoreDraft(raw);
   }catch(error){if(openRequest!==draftRequest)return;byId('draft-status').textContent='Could not reopen draft: '+error.message;}
@@ -712,6 +713,7 @@ function validateWorkSnapshot(raw){
   const f=h.fields;if(!f||typeof f!=='object'||Array.isArray(f)||Object.keys(f).length!==keys.length||keys.some(k=>!Object.hasOwn(f,k)))fail('Snapshot helper fields do not match this table.');
   if(texts.some(k=>typeof f[k]!=='string')||numbers.some(k=>!numeric(f[k]))||checks.some(k=>typeof f[k]!=='boolean'))fail('Invalid snapshot helper values.');
  }
+ renderProposal(raw.proposal,document.createElement('section'));
  return candidate;
 }
 byId('save-work').onclick=()=>{
@@ -820,6 +822,7 @@ byId('export').onclick=()=>{
 
 function restoreDraft(raw){
     const restored=Plan.restore(raw,analysis,fingerprint),input=restored.input;
+    renderProposal(input.proposal||null,document.createElement('section'));
     byId('work-status').textContent='';
     clearRemovalHistory();
     clearDraftError();clearReviewContext();
@@ -893,10 +896,10 @@ for(const selector of ['preview-helper','planning-helper'])byId(selector).onchan
  if(box){box.scrollIntoView({block:'center'});box.querySelector('[data-key="name"]').focus({preventScroll:true});}
 };
 
-function renderProposal(){
- const panel=byId('proposal-evidence');panel.replaceChildren();panel.hidden=!proposalOrigin;
- if(!proposalOrigin)return;
- const p=proposalOrigin;
+function renderProposal(proposal=proposalOrigin,panel=byId('proposal-evidence')){
+ panel.replaceChildren();panel.hidden=!proposal;
+ if(!proposal)return;
+ const p=proposal;
  text('h3','Original machine proposal',panel);
  text('p','Historical proposal provenance. Editing helpers, shell settings or the pose does not rerun the seed or its checks. Export and verify the current plan again.',panel).className='warning';
  text('p',p.label||'A proposal for review; not an optimum or a strength result.',panel);

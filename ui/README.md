@@ -1100,3 +1100,8 @@ and are named in the draft status, even after a successful draft export. This
 does not mark the exported CLI inputs stale when only other poses’ notes differ.
 Download a work snapshot to preserve every pose’s notes. Deleting a previously
 saved note also counts as an unsaved change until saved again.
+
+Imports also check that historical proposal metadata can be displayed before
+asking to discard edits. A rendering error in that metadata leaves the current
+form and proposal intact, for both work snapshots and normal planning drafts.
+This is an import-integrity check, not verification of the proposal’s claims.
