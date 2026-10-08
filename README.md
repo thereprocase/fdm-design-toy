@@ -58,18 +58,30 @@ fdmgen orient problems/spool-rack-g2-ef/problem.yaml --voxel     # needs the sou
 fdmgen coupons --out out/coupons         # overhang + bridge ladder plate (STL + rung metadata)
 fdmgen coupons-evidence out/coupons/ladder-plate.json plate_1.gcode
 
-# massing round trip: draft from the ui/ workspace -> project -> slice both -> read back
+# massing round trip: draft from the ui/ workspace -> project -> slice both -> one evidence bundle
 fdmgen massing draft.json --table TABLE.json --template ORCA_TEMPLATE.3mf --out out/massing
 #   slice out/massing/*-massing.3mf and *-massing-shell-only.3mf with the same Orca (arrange and orient off)
-fdmgen massing-evidence out/massing/*-massing.json project.gcode --baseline shell-only.gcode
-fdmgen shell-check project.gcode --table TABLE.json --pose POSE --cell 0.1    # SHELL-001 at T; heavy below 0.2 mm
-fdmgen orient-shell TABLE.json --receipt out/shell-check.json shell-only --out TABLE.shell.json
+fdmgen evidence out/massing/*-massing.json project.gcode shell-only.gcode --table TABLE.json --pose POSE --out out/evidence
+#   helper material + SHELL-001 + pose-bound BRG-001 on both slices, manifest evidence-bundle.json; load it in ui/
+
+# orientation evidence: one slice per pose -> shell and bridge columns on a new table
+fdmgen orient-evidence TABLE.json --slice POSE shell-only POSE.gcode [--slice ...] --out out/orient-evidence
+
+# single checks and viewer geometry
+fdmgen shell-check slice.gcode --table TABLE.json --pose POSE --cell 0.1   # SHELL-001 at T; heavy below 0.2 mm
+fdmgen bridge-check slice.gcode --table TABLE.json --pose POSE             # BRG-001 at T, with worst-road locations
+fdmgen keepout-render TABLE.json --problem problems/spool-rack-g2-ef/problem.yaml --out out/keepouts.json
 ```
 
 Commands that read the example part need a checkout of its source repository next to this one
 (or `SPOOL_RACK_ROOT`); without it they say so and stop. Output goes to `out/`, which git ignores.
-`fdmgen massing`, `fdmgen massing-evidence` and `fdmgen shell-check` exit with status 2 when any check
-fails, so they can gate a script.
+`fdmgen massing`, `massing-evidence`, `shell-check`, `bridge-check`, `evidence` and `orient-evidence` exit
+with status 2 when a completed run contains a FAIL, so they can gate a script; 1 means the run could not
+complete. On 1, `shell-check`, `bridge-check` and `keepout-render` leave no output file, and `evidence` and
+`orient-evidence` leave no manifest (receipts written before the failure may remain and are not a bundle).
+Slices must keep the exported pose (arrange and orient off): `shell-check` and `bridge-check` verify it
+against the posed body and refuse otherwise; `massing-evidence` matches the footprint only.
+The step-by-step guide for the browser workspace is [`ui/WORKFLOW.md`](ui/WORKFLOW.md).
 
 ## Ground rules for work in this repo
 
