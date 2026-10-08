@@ -693,3 +693,9 @@ ASCII letters, digits, underscores or hyphens, beginning with a letter or digit,
 and unique within the draft. Invalid imported identifiers are reported before
 replacing the current plan; they are not silently renamed. Display names remain
 free text. Generated helper identifiers already meet this rule.
+
+Current-format draft imports must explicitly record a boolean shell-only choice
+and a helper list. A shell-only draft containing helpers is rejected rather than
+silently discarding them. The current form remains available after rejection.
+Deliberately choosing Shell only in the editor still exports an empty helper list;
+legacy free-text-note migration retains its separate behavior.

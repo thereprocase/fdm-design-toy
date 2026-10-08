@@ -71,7 +71,11 @@ const Plan = (() => {
     let helperRegions=m.helper_regions;
     const migrated=draft.schema==='fdmgen.massing-plan.v0.1';
     if(migrated)helperRegions=[{id:'helper-1',name:'Imported helper intent',location:'',purpose:requireText(m.helper_intent,'Legacy helper intent'),keep_clear:'',geometry_status:'not_created'}];
-    else helperRegions=regions(helperRegions,m.shell_only===true,analysis.interfaces||[],analysis.keep_outs||[]);
+    else {
+      if(typeof m.shell_only!=='boolean'||!Array.isArray(helperRegions))throw Error('Draft must record a boolean shell-only choice and a helper list.');
+      if(m.shell_only&&helperRegions.length)throw Error('Shell-only draft contains helpers. Resolve that choice in the source draft before reopening; no helpers have been discarded.');
+      helperRegions=regions(helperRegions,m.shell_only,analysis.interfaces||[],analysis.keep_outs||[]);
+    }
     return {candidate,input:{walls:m.walls,skin_mm:m.skin_mm,rationale:requireText(draft.orientation?.designer_decision?.rationale,'Choice rationale'),shell_only:m.shell_only===true,helper_regions:helperRegions,...(draft.proposal?{proposal:proposal(draft.proposal)}:{})},migrated};
   }
   function filename(draft) {

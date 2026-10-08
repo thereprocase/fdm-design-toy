@@ -53,6 +53,15 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.includes('Helper 1 identifier must be'));
   assert.equal(await page.evaluate(()=>draftFormState()),beforeInvalidId);
   assert.deepEqual(await download(),original);
+  for(const [choice,message] of [[true,'Shell-only draft contains helpers'],['false','boolean shell-only choice']]){
+    const inconsistent=structuredClone(original);inconsistent.massing.shell_only=choice;
+    await page.locator('#draft-file').setInputFiles({name:'inconsistent.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(inconsistent))});
+    await page.waitForFunction(message=>document.querySelector('#draft-status').textContent.includes(message),message);
+    assert.equal(await page.evaluate(()=>draftFormState()),beforeInvalidId);
+    assert.equal(await page.locator('.helper-region').count(),2);
+  }
+  assert.deepEqual(await download(),original);
+
 
   assert.match(await page.locator('#handoff-snapshot').innerText(),/describe the last downloaded draft/);
   await page.locator('#walls').fill('5');

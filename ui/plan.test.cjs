@@ -106,3 +106,16 @@ test('helper identifiers follow the exporter slug contract without changing vali
  const duplicate={...input,helper_regions:[input.helper_regions[0],input.helper_regions[0]]};
  assert.throws(()=>Plan.create(analysis,hash,candidate,duplicate),/unique/);
 });
+
+test('current draft imports reject contradictory shell intent instead of discarding helpers',()=>{
+ for(const schema of ['fdmgen.massing-plan.v0.2','fdmgen.massing-plan.v0.3']){
+  const draft=Plan.create(analysis,hash,candidate,input);draft.schema=schema;
+  draft.massing.shell_only=true;const before=JSON.stringify(draft);
+  assert.throws(()=>Plan.restore(draft,analysis,hash),/Shell-only draft contains helpers/);
+  assert.equal(JSON.stringify(draft),before);
+  draft.massing.helper_regions=[];assert.equal(Plan.restore(draft,analysis,hash).input.shell_only,true);
+  for(const value of ['true',1,null,undefined]){draft.massing.shell_only=value;assert.throws(()=>Plan.restore(draft,analysis,hash),/boolean shell-only choice/);}
+  draft.massing.shell_only=true;draft.massing.helper_regions=null;
+  assert.throws(()=>Plan.restore(draft,analysis,hash),/helper list/);
+ }
+});
