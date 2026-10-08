@@ -128,6 +128,12 @@ undersized-edge warnings focus the dimension that needs attention. Invalid-box
 warnings focus the actual blank or invalid coordinate or dimension, opening a
 collapsed editor when necessary.
 
+Helper spacing warnings distinguish a box-to-box gap from a small overlap. For
+overlap they name the design axis with the least overlap (zero means touching).
+These are measurements of the unclipped planning boxes against the nominal
+0.84 mm screen, not checks of body bonding or the sliced toolpaths. Use either
+helper’s **Edit** button to inspect its position before choosing a change.
+
 ## Inspect the geometry
 
 To inspect a small region, select it with **Helper to edit** and press **Focus

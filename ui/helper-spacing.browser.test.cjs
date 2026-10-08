@@ -1,0 +1,22 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+ await p.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));
+ await p.getByRole('button',{name:'facet-00',exact:true}).click();
+ await p.evaluate(()=>{byId('helper-regions').replaceChildren();for(const [id,x] of [['a',0],['b',2.5]])addHelper({id,name:'Backing',geometry:{type:'box',frame:'design',center_mm:[x,0,0],size_mm:[2,2,2]}});updateRegions();});
+ const warning=p.locator('#region-warnings');
+ assert.match(await warning.innerText(),/Backing \(helper 1\) \/ Backing \(helper 2\): box gap is about 0.5 mm/);
+ assert.match(await warning.innerText(),/Unclipped planning boxes only; body bonding and toolpaths are not checked/);
+ const before=await p.evaluate(()=>draftFormState());await warning.getByRole('button',{name:'Edit Backing (helper 2)',exact:true}).click();
+ assert.equal(await p.evaluate(()=>draftFormState()),before);assert(await p.locator('.helper-region').nth(1).locator('[data-geometry="center_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));
+ const centre=async values=>{for(let k=0;k<3;k++)await p.locator('.helper-region').nth(1).locator(`[data-geometry="center_mm"][data-axis="${k}"]`).fill(String(values[k]));};
+ await centre([1.5,0,0]);assert.match(await warning.innerText(),/minimum box overlap is about 0.5 mm along design X/);
+ await centre([2,0,0]);assert.match(await warning.innerText(),/minimum box overlap is about 0 mm along design X/);
+ await centre([1.5,1.5,0]);assert.match(await warning.innerText(),/minimum box overlap is about 0.5 mm along design X\/Y/);
+ await centre([2.3,2.4,0]);assert.match(await warning.innerText(),/box gap is about 0.5 mm/);
+ await centre([2.6,2.8,0]);assert.equal(await warning.locator('li').count(),0);
+ await centre([1,0,0]);assert.equal(await warning.locator('li').count(),0);
+ assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ console.log('PASS known-answer gap, diagonal gap, overlap, touching, tied axes, duplicate-name navigation, unchanged edit state and mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

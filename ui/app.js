@@ -640,7 +640,12 @@ function updateRegions(){
  }
  for(let i=0;i<valid.length;i++)for(let j=i+1;j<valid.length;j++){
   if(['center_mm','size_mm'].every(key=>valid[i].geometry[key].every((v,k)=>v===valid[j].geometry[key][k])))warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: identical planning boxes. Move, resize or remove the redundant copy as needed.`,[valid[i].id,valid[j].id]);
-  if(Plan.boxSeparation(valid[i].geometry,valid[j].geometry).needs_review)warn(`${valid[i].name||'Region'} / ${valid[j].name||'Region'}: overlap or separation is below the nominal 0.84 mm screen. Review sliver modifiers.`,[valid[i].id,valid[j].id]);
+  const separation=Plan.boxSeparation(valid[i].geometry,valid[j].geometry);
+  if(separation.needs_review){
+    const minimum=Math.min(...separation.overlap_mm),axes=separation.overlap_mm.flatMap((v,k)=>v===minimum?['XYZ'[k]]:[]).join('/');
+    const measurement=separation.gap_mm>0?`box gap is about ${metricNumber(separation.gap_mm)} mm`:`minimum box overlap is about ${metricNumber(minimum)} mm along design ${axes}`;
+    warn(`${helperLabel(editors.get(valid[i].id))} / ${helperLabel(editors.get(valid[j].id))}: ${measurement}, below the nominal 0.84 mm screen. Review the gap or overlap before export. Unclipped planning boxes only; body bonding and toolpaths are not checked.`,[valid[i].id,valid[j].id]);
+  }
  }
  for(const box of editors.values())box.querySelector('[data-view-helper]').disabled=!viewer.vertices||!valid.some(r=>r.id===box.dataset.id);
  viewer.setRegions(valid);byId('focus-helper').disabled=!viewer.vertices||!valid.some(r=>r.active);updateDraftState();
