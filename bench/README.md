@@ -542,3 +542,28 @@ short-term nor sustained dimensional movement prediction. The receipt retains
 borrowed/assumed evidence tags. Explicit synthetic studies can instead use
 `--shear-ratios`, `--nu-p` and `--nu-pz`; mixing those overrides with card mode
 is refused. Previous receipts and the original synthetic defaults stay intact.
+
+Card-ratio run (`receipts/bracket-r1-card-corners-emin003.json`, harness `1f46cab`)
+uses the pinned T0 PolyLite ASA card's Ez/Ep endpoints (borrowed vendor ratio),
+Gz/Ez endpoints (assumption), and nominal `nu_p=0.38`, `nu_pz=0.36`. Same R1
+mask, loads, restraints, density/stiffness fields and active DOFs as the preceding
+synthetic run were verified by their hashes. Grid-Z axis, energy interpolation,
+E_min=1e-3 and per-case seed 0 remain fixed.
+
+| Ez/Ep | Gz/Ez | Uniform CG / residual | Banded CG / residual |
+|---:|---:|---:|---:|
+| 0.85 | 0.20 | 33 / 5.82e-7 | 150 cap / 1.98e-2 |
+| 0.85 | 0.36 | 28 / 5.68e-7 | 150 cap / 5.79e-3 |
+| 0.92 | 0.20 | 33 / 5.24e-7 | 150 cap / 2.18e-2 |
+| 0.92 | 0.36 | 28 / 4.26e-7 | 150 cap / 6.22e-3 |
+
+All uniform cases converged; all four band cases missed the 1e-6 target and the
+run exited 2. Lower shear ratio increased the uniform iteration count in these
+cases; the longitudinal ratio endpoints had no iteration-count difference.
+Neither observation is a general condition-number bound. Banded residuals at the
+cap remain too large to interpret the saved compliance iterates as converged
+predictions. This uses card ratio intervals for a normalized conditioning study,
+not measured anisotropy or either dimensional modulus basis. It is not a complete
+card uncertainty or orientation sweep. Full remote suite: 258 passed, 6 CUDA-only
+skips; card matrices checked against the independently invoked card API after
+normalization. Source and card hashes match the published files.
