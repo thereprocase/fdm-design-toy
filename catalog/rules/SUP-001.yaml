@@ -20,6 +20,8 @@ parameters:
     unit: mm
     tag: U
     status: PROVISIONAL
+checkers:
+  T: fdmgen.catalog.checks.toolpath.check_support_interfaces
 sources:
 - tag: U
   ref: research/final/frodo.md section 3.1 (master table)

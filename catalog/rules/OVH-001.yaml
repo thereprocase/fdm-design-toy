@@ -53,6 +53,7 @@ parameters:
 checkers:
   V: fdmgen.catalog.checks.ovh.check_voxel
   M: fdmgen.catalog.checks.ovh.check_mesh
+  T: fdmgen.catalog.checks.toolpath.check_support
 slicer_keys:
 - support_threshold_angle
 - enable_support

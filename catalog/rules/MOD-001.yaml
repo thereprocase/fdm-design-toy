@@ -23,6 +23,8 @@ parameters:
     tag: U
     status: PROVISIONAL
     note: 2w apart or overlapping by >= 2w
+checkers:
+  M: fdmgen.massing.export.check_helpers
 sources:
 - tag: U
   ref: research/final/frodo.md section 3.1 (master table)

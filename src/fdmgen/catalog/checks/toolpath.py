@@ -53,10 +53,11 @@ def support_by_region(tp: Toolpath, regions: dict, shift_xy, offset=(0.0, 0.0, 0
 
 
 def check_support(tp: Toolpath, regions: dict, design_bbox, *, offset=(0.0, 0.0, 0.0), rule="OVH-001",
-                  slicer_settings: dict | None = None) -> CheckResult:
-    """T level: FAIL when the slice puts support roads under any region where support is forbidden."""
+                  slicer_settings: dict | None = None, margin_mm: float = 1.0) -> CheckResult:
+    """T level: FAIL when the slice puts support roads under any region where support is forbidden.
+    A support road counts for a region when its midpoint lies in the region's XY box widened by margin_mm."""
     shift = locate(tp, design_bbox[0][:2], design_bbox[1][:2], offset)
-    per = support_by_region(tp, regions, shift, offset)
+    per = support_by_region(tp, regions, shift, offset, margin_mm=margin_mm)
     bad = {k: v for k, v in per.items() if not k.startswith("_") and v["support_segments"] > 0}
     metrics = {"per_region": per, "shift_xy_mm": np.round(shift, 4).tolist(), "slicer_settings": slicer_settings or {}}
     does_not = "How the region prints (P level); support is the slicer's decision under the stated settings only."
@@ -67,6 +68,14 @@ def check_support(tp: Toolpath, regions: dict, design_bbox, *, offset=(0.0, 0.0,
                            does_not)
     return CheckResult(rule, "T", Verdict.PASS, f"{rule} T PASS: no support roads under any of {len(regions)} regions.",
                        False, metrics, [], "The slicer generated no support under these regions.", does_not)
+
+
+def check_support_interfaces(tp: Toolpath, regions: dict, design_bbox, *, offset=(0.0, 0.0, 0.0),
+                             interface_clearance_mm: float = 0.6, slicer_settings: dict | None = None) -> CheckResult:
+    """SUP-001 at T: no support roads on interface faces. regions are the interfaces' XY boxes; a support road
+    within interface_clearance_mm of one counts against it. Same measurement as check_support, under SUP-001."""
+    return check_support(tp, regions, design_bbox, offset=offset, rule="SUP-001", slicer_settings=slicer_settings,
+                         margin_mm=interface_clearance_mm)
 
 
 def bridge_spans(tp: Toolpath, *, offset=(0.0, 0.0, 0.0), cell_mm: float = 0.1, support_density: float = 0.5,

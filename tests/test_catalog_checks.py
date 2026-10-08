@@ -491,3 +491,34 @@ def test_bridge_check_locates_the_worst_roads_in_plate_print_and_design_frames(t
     assert np.allclose(np.array(s["plate_mm"]["run_start"]) - s["print_mm"]["run_start"], measured, atol=1e-3)
     c = w["external"]["ceiling"]
     assert c["design_mm"]["witness"][0] == pytest.approx(5.0 + gap / 2, abs=0.15)   # farthest from both pads
+
+
+def test_registered_checkers_and_their_catalog_defaults():
+    """Catalog checker slots point at real code, and the defaults those checkers use come from the catalog."""
+    import inspect
+
+    from fdmgen.catalog import load_rules
+    from fdmgen.catalog.checks.toolpath import check_support_interfaces
+    rules = load_rules()
+    assert rules["OVH-001"].data["checkers"]["T"] == "fdmgen.catalog.checks.toolpath.check_support"
+    assert rules["SUP-001"].data["checkers"]["T"] == "fdmgen.catalog.checks.toolpath.check_support_interfaces"
+    assert rules["MOD-001"].data["checkers"]["M"] == "fdmgen.massing.export.check_helpers"
+    sig = inspect.signature(check_support_interfaces).parameters
+    assert sig["interface_clearance_mm"].default == rules["SUP-001"].parameters["interface_clearance_mm"]["value"]
+
+
+def test_sup001_t_uses_its_interface_clearance_not_the_overhang_margin():
+    """A support road 1 mm past an interface box: inside OVH-001's 1 mm margin, outside SUP-001's 0.6 mm."""
+    from fdmgen.catalog.checks.toolpath import check_support, check_support_interfaces
+    from fdmgen.gcode import read_gcode
+    g = ("; filament_diameter: 1.75\nM83\nG90\n; printing object part\n;TYPE:Outer wall\n;Z:0.2\n;HEIGHT:0.2\n"
+         "G1 X10.21 Y10.21 Z0.2\nG1 X29.79 Y10.21 E1\nG1 X29.79 Y29.79 E1\nG1 X10.21 Y29.79 E1\nG1 X10.21 Y10.21 E1\n"
+         ";TYPE:Support\nG1 X25 Y12\nG1 X25 Y15 E0.5\nG1 X25 Y18 E0.5\n; stop printing object part\n")
+    tp = read_gcode(g, footer_rel_tol=None)
+    design = ([10, 10, 0], [30, 30, 5])
+    seat = {"seat": ([22, 10], [24, 30])}                                  # support midpoints at x = 25
+    ovh = check_support(tp, seat, design)
+    sup = check_support_interfaces(tp, seat, design)
+    assert ovh.rule == "OVH-001" and ovh.verdict.value == "FAIL"
+    assert sup.rule == "SUP-001" and sup.verdict.value == "PASS"
+    assert check_support_interfaces(tp, seat, design, interface_clearance_mm=1.0).verdict.value == "FAIL"
