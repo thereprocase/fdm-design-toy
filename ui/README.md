@@ -806,3 +806,5 @@ Bundle pairing errors identify whether the export report, orientation table or
 pose differs. A report mismatch directs users to its matching bundle or to rerun
 `fdmgen evidence` with the current report and matching inputs. Identical 3MF bytes
 do not override a bundle manifest's report fingerprint.
+
+The review summary exposes current SHA-256 input fingerprints in an expandable panel. Draft and export-report hashes are calculated from opened bytes; table, template and project hashes are recorded provenance, not browser verification of those files. Rejected replacement reports retain the previously matched identities.

@@ -11,11 +11,13 @@ el('review-draft').onchange=async e=>{
 };
 el('review-receipt').onchange=async e=>{
  const file=e.target.files[0];if(!file||!saved)return;const request=++receiptGeneration,current=generation;
- try{const raw=await file.arrayBuffer(),reportHash=await EvidenceBundle.digest(raw),r=MassingReview.pair(saved,digest,JSON.parse(new TextDecoder().decode(raw)));if(current!==generation||request!==receiptGeneration)return;render(r);matchedReportHash=reportHash;el('review-status').textContent='Receipt fingerprint matched this saved draft.';}catch(err){if(current===generation&&request===receiptGeneration)el('review-status').textContent=err.message+' Previous matched results, if any, remain below.';}
+ try{const raw=await file.arrayBuffer(),reportHash=await EvidenceBundle.digest(raw),r=MassingReview.pair(saved,digest,JSON.parse(new TextDecoder().decode(raw)));if(current!==generation||request!==receiptGeneration)return;render(r,reportHash);matchedReportHash=reportHash;el('review-status').textContent='Receipt fingerprint matched this saved draft.';}catch(err){if(current===generation&&request===receiptGeneration)el('review-status').textContent=err.message+' Previous matched results, if any, remain below.';}
 };
-function render(r){
+function render(r,reportHash){
  clearSlice();matchedReport=r;el('review-bundle').disabled=false;el('review-slice').disabled=false;
  el('review-workspace').hidden=false;el('review-title').textContent=`${r.plan.problem} · ${r.plan.candidate_id}`;
+ const hashes=el('review-input-hashes');hashes.replaceChildren();
+ for(const [label,value] of [['Saved draft — calculated',digest],['Export report — calculated',reportHash],['Orientation table — recorded',r.plan.table_sha256],['Template 3MF — recorded',r.template_3mf_sha256],['Project 3MF — recorded',r.project_3mf_sha256]]){add('dt',label,hashes);add('code',value,add('dd','',hashes));}
  el('review-context').textContent=r.capability_context_matches_template?'Template fingerprint matches the capability context. This does not validate every changed value or combination.':'Template differs from the measured capability context. Helper settings are unverified for this profile.';
  if(r.warning)el('review-context').textContent+=' '+r.warning;
  el('review-scope').textContent=`${r.establishes||''} Does not establish: ${r.does_not_establish||'printed performance or strength.'}`;

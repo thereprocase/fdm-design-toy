@@ -5,6 +5,12 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  const draftPath=path.join(__dirname,'../tests/fixtures/massing/sample-draft.json'),receiptPath=path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json');
  await page.locator('#review-draft').setInputFiles(draftPath);await page.locator('#review-receipt').setInputFiles(receiptPath);
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
+ const sha=file=>require('node:crypto').createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+ const report=JSON.parse(fs.readFileSync(receiptPath));
+ await page.getByText('Current input fingerprints (SHA-256)',{exact:true}).click();
+ const expectedHashes=[sha(draftPath),sha(receiptPath),report.plan.table_sha256,report.template_3mf_sha256,report.project_3mf_sha256];
+ assert.deepEqual(await page.locator('#review-input-hashes code').allTextContents(),expectedHashes);
+ assert.match(await page.locator('#review-input-hashes').innerText(),/Export report — calculated/);
  const sliceNav=page.locator('[data-review-target="slice-results"]');
  assert(await sliceNav.isDisabled());assert.match(await sliceNav.innerText(),/not loaded/);
  await page.locator('[data-review-target="helper-results"]').click();
@@ -41,6 +47,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#review-receipt').setInputFiles({name:'wrong.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.includes('does not match'));
  assert(await page.locator('#review-workspace').isVisible());
+ assert.deepEqual(await page.locator('#review-input-hashes code').allTextContents(),expectedHashes,'Rejected replacement retains the matched input identities');
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-draft').setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{}')});
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.includes('current planning draft'));
