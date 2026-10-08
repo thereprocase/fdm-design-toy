@@ -558,7 +558,15 @@ error marker; export still runs the authoritative draft validation. No values
 are filled in or repaired automatically.
 
 The pose table scrolls within a bounded, keyboard-focusable region with sticky
-column headings. **Plan this pose** sits beside the selected-pose heading, with a
+column headings and pinned pose IDs. The **Bridge strands · T** column compares
+external and internal strand maxima with recorded verdicts and slice kinds;
+validated zero-road coverage is labelled as not a bridge trial. Scroll sideways
+to reach it on a narrow screen. Select a pose for limits, coverage and method
+context; the column does not rank poses or override bridge failures with ceiling
+metrics. The [sliced-pose walkthrough](WORKFLOW.md#try-the-sliced-pose-example)
+uses the pinned real example to compare these tradeoffs.
+
+**Plan this pose** sits beside the selected-pose heading, with a
 link to its recorded checks. Evidence remains visible below; the action only
 opens the massing controls and does not approve the pose or its checks.
 

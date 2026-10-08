@@ -57,6 +57,14 @@ orientation evidence bundle** and select all six JSON files in
 separate example from the seed draft above: it opens an enriched table with a
 different fingerprint, so that older draft cannot be reopened against it.
 
+In **Compare poses**, scroll horizontally to **Bridge strands · T**. Pose IDs
+remain pinned on the left. This example records shell-only slices: facet-00 has
+an external maximum of 3.15 mm (PASS) and an internal maximum of 122.1 mm (FAIL);
+facet-01 has 52.2 mm external and 53.95 mm internal (both FAIL). These are
+independent strand maxima under provisional toolpath limits. The lower internal
+number does not clear the external failure or establish the better print pose.
+Use the following steps to inspect where the recorded roads lie.
+
 1. Choose **Review facet-01** in the verified bundle summary.
 2. Under **Recorded checks needing review**, use **Locate recorded strand** for
    the external bridge. It opens the preview's location controls and selects the
@@ -89,6 +97,13 @@ The workspace does not change helper geometry when you select a road.
    **Context** to compare methods and settings. The reference is only a viewing
    aid; the selected pose is the one saved in your draft.
 5. Record **Why choose this pose?**, then press **Plan this pose**.
+
+The **Bridge strands · T** column shows recorded external and internal maxima,
+verdicts and slice kinds. **No roads of this type evaluated** means the producer
+recorded zero coverage, not a successful bridge trial. Missing evidence remains
+**Not checked**; missing slice kind is stated explicitly. Select the pose and
+read **Unsupported bridge runs** for limits, road counts, method and source
+records. Comparing two numbers alone does not verify matching slicer settings.
 
 Tab and Shift+Tab move between pose buttons; Enter or Space selects one.
 Filters can hide the selected pose without changing it; **Show selected pose**
