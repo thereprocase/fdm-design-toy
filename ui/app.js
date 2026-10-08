@@ -129,7 +129,11 @@ function renderRows() {
   byId('pose-count').textContent=`Showing ${rows.length} of ${analysis.candidates.length} poses; ${sliced} have measured slices.${selected&&!rows.some(c=>c.id===selected.id)?' Selected pose '+selected.id+' is hidden by this filter.':''}`;
   for(const c of rows) {
     const tr=text('tr','',byId('rows'));if(c.id===selected?.id)tr.className='selected';
-    const button=text('button',c.id,text('td','',tr));button.type='button';button.setAttribute('aria-pressed',String(c.id===selected?.id));button.onclick=()=>choose(c);
+    const button=text('button',c.id,text('td','',tr));button.type='button';button.setAttribute('aria-pressed',String(c.id===selected?.id));button.onclick=()=>{
+      choose(c);
+      // Row rendering replaces the activated button; preserve keyboard position.
+      byId('rows').querySelector('[aria-pressed="true"]')?.focus({preventScroll:true});
+    };
     for(const key of ['F_L_max','ovh_fail_mm2','contact_mm2','t_support_segments'])text('td',formatted(c.columns?.[key]),tr);
     text('td',shellSummary(c),tr);
     const failures=failedColumns(c).length;

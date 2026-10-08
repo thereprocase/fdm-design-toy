@@ -628,3 +628,7 @@ loading the saved draft and report. Evidence exit 2 means recorded FAIL results;
 exit 1 means an error without a completed manifest. Toolpath checks do not replace
 physical qualification. Generated commands fill ordinary part/pose identifiers;
 unusual identifiers remain explicit placeholders to replace with exact paths.
+
+Pose buttons retain keyboard focus after selection. Use Tab or Shift+Tab to move
+between them, and Enter or Space to select; selection updates the detail panel
+without moving focus away from the comparison table.
