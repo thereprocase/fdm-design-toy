@@ -287,6 +287,20 @@ byId('reveal-pose').onclick=()=>{
   const button=byId('rows').querySelector('[aria-pressed="true"]');
   button?.focus();button?.scrollIntoView({block:'nearest',inline:'nearest'});
 };
+function validateTableDisplay(data){
+ for(const list of ['interfaces','keep_outs'])for(const item of data[list]||[])for(const field of ['type','axis','support','frame','rule','derivation'])if(item[field]!=null&&typeof item[field]!=='string')throw Error(`${list} ${item.id}: ${field} must be text.`);
+ const problem=data.problem;
+ if(problem!=null&&typeof problem!=='string'&&(typeof problem!=='object'||Array.isArray(problem)||(problem.id!=null&&typeof problem.id!=='string')))throw Error('Problem identifier must be text.');
+ for(const candidate of data.candidates){
+  if(candidate.reasons!=null&&(!Array.isArray(candidate.reasons)||candidate.reasons.some(reason=>typeof reason!=='string')))throw Error(`Candidate ${candidate.id}: reasons must be a list of text strings.`);
+  for(const [key,column] of Object.entries(candidate.columns)){
+   if(column==null)continue;
+   if(typeof column!=='object'||Array.isArray(column))throw Error(`Candidate ${candidate.id}, column ${key}: expected a column object.`);
+   for(const field of ['rule','level','verdict','unit','fidelity'])if(column[field]!=null&&typeof column[field]!=='string')throw Error(`Candidate ${candidate.id}, column ${key}: ${field} must be text.`);
+   try{formatted(column);}catch{throw Error(`Candidate ${candidate.id}, column ${key}: value cannot be displayed.`);}
+  }
+ }
+}
 async function loadOrientationTable(file,request,bundle=null){
   try {
     const bytes=await file.arrayBuffer(), raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes), data=JSON.parse(raw);
@@ -303,6 +317,7 @@ async function loadOrientationTable(file,request,bundle=null){
     }
     const ids=new Set();
     for(const c of data.candidates){if(!c||typeof c.id!=='string'||!c.id||ids.has(c.id)||!c.columns||typeof c.columns!=='object'||Array.isArray(c.columns)||!Array.isArray(c.build_dir_design)||c.build_dir_design.length!==3||!c.build_dir_design.every(Number.isFinite))throw Error('Each candidate needs a unique id, columns and a finite build direction.');ids.add(c.id);try{Plan.validatePose(c);}catch(error){throw Error(`Candidate ${c.id}: ${error.message}`);}}
+    validateTableDisplay(data);
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';return false;}
