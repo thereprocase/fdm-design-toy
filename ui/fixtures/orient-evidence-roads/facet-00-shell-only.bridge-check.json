@@ -1,0 +1,409 @@
+{
+ "schema": "fdmgen/bridge-check@0.2",
+ "result": {
+  "rule": "BRG-001",
+  "level": "T",
+  "verdict": "FAIL",
+  "message": "BRG-001 T FAIL: the slice bridges internal 122.1 mm > 18.",
+  "provisional": true,
+  "metrics": {
+   "bridge_roads": 2659,
+   "external_roads": 111,
+   "internal_roads": 2548,
+   "worst": {
+    "external": {
+     "strand": {
+      "road_index": 252984,
+      "role": "Bridge",
+      "z_mm": 22.6,
+      "value_mm": 3.15,
+      "plate_mm": {
+       "road_start": [
+        41.714,
+        105.977,
+        22.6
+       ],
+       "road_end": [
+        34.289,
+        112.115,
+        22.6
+       ],
+       "run_start": [
+        39.5559,
+        107.761,
+        22.6
+       ],
+       "run_end": [
+        37.1281,
+        109.768,
+        22.6
+       ]
+      },
+      "print_mm": {
+       "road_start": [
+        41.7145,
+        105.972,
+        22.6
+       ],
+       "road_end": [
+        34.2895,
+        112.11,
+        22.6
+       ],
+       "run_start": [
+        39.5564,
+        107.756,
+        22.6
+       ],
+       "run_end": [
+        37.1286,
+        109.763,
+        22.6
+       ]
+      },
+      "design_mm": {
+       "road_start": [
+        17.4675,
+        37.2308,
+        22.6
+       ],
+       "road_end": [
+        10.0425,
+        43.3688,
+        22.6
+       ],
+       "run_start": [
+        15.3094,
+        39.0148,
+        22.6
+       ],
+       "run_end": [
+        12.8816,
+        41.0218,
+        22.6
+       ]
+      }
+     },
+     "ceiling": {
+      "road_index": 248890,
+      "role": "Bridge",
+      "z_mm": 22.6,
+      "value_mm": 2.0,
+      "plate_mm": {
+       "road_start": [
+        34.265,
+        229.355,
+        22.6
+       ],
+       "road_end": [
+        34.265,
+        235.967,
+        22.6
+       ],
+       "witness": [
+        34.265,
+        232.68,
+        22.6
+       ]
+      },
+      "print_mm": {
+       "road_start": [
+        34.2655,
+        229.35,
+        22.6
+       ],
+       "road_end": [
+        34.2655,
+        235.962,
+        22.6
+       ],
+       "witness": [
+        34.2655,
+        232.675,
+        22.6
+       ]
+      },
+      "design_mm": {
+       "road_start": [
+        10.0185,
+        160.6088,
+        22.6
+       ],
+       "road_end": [
+        10.0185,
+        167.2208,
+        22.6
+       ],
+       "witness": [
+        10.0185,
+        163.9338,
+        22.6
+       ]
+      }
+     }
+    },
+    "internal": {
+     "strand": {
+      "road_index": 48875,
+      "role": "Internal Bridge",
+      "z_mm": 2.8,
+      "value_mm": 122.1,
+      "plate_mm": {
+       "road_start": [
+        26.525,
+        108.491,
+        2.8
+       ],
+       "road_end": [
+        26.524,
+        231.4,
+        2.8
+       ],
+       "run_start": [
+        26.525,
+        109.041,
+        2.8
+       ],
+       "run_end": [
+        26.524,
+        231.141,
+        2.8
+       ]
+      },
+      "print_mm": {
+       "road_start": [
+        26.5255,
+        108.486,
+        2.8
+       ],
+       "road_end": [
+        26.5245,
+        231.395,
+        2.8
+       ],
+       "run_start": [
+        26.5255,
+        109.036,
+        2.8
+       ],
+       "run_end": [
+        26.5245,
+        231.136,
+        2.8
+       ]
+      },
+      "design_mm": {
+       "road_start": [
+        2.2785,
+        39.7448,
+        2.8
+       ],
+       "road_end": [
+        2.2775,
+        162.6538,
+        2.8
+       ],
+       "run_start": [
+        2.2785,
+        40.2948,
+        2.8
+       ],
+       "run_end": [
+        2.2775,
+        162.3948,
+        2.8
+       ]
+      }
+     },
+     "ceiling": {
+      "road_index": 251729,
+      "role": "Internal Bridge",
+      "z_mm": 22.6,
+      "value_mm": 15.678,
+      "plate_mm": {
+       "road_start": [
+        128.817,
+        40.044,
+        22.6
+       ],
+       "road_end": [
+        124.684,
+        58.252,
+        22.6
+       ],
+       "witness": [
+        126.9631,
+        48.2112,
+        22.6
+       ]
+      },
+      "print_mm": {
+       "road_start": [
+        128.8175,
+        40.039,
+        22.6
+       ],
+       "road_end": [
+        124.6845,
+        58.247,
+        22.6
+       ],
+       "witness": [
+        126.9636,
+        48.2062,
+        22.6
+       ]
+      },
+      "design_mm": {
+       "road_start": [
+        104.5705,
+        -28.7022,
+        22.6
+       ],
+       "road_end": [
+        100.4375,
+        -10.4942,
+        22.6
+       ],
+       "witness": [
+        102.7166,
+        -20.535,
+        22.6
+       ]
+      }
+     }
+    }
+   },
+   "max_span_external_mm": 3.15,
+   "max_span_internal_mm": 122.1,
+   "max_ceiling_span_external_mm": 2.0,
+   "max_ceiling_span_internal_mm": 15.678,
+   "max_cantilever_mm": 35.95,
+   "limits_mm": {
+    "external": 10.0,
+    "internal": 18.0
+   },
+   "cell_mm": 0.1,
+   "bridge_layers_z_mm": [
+    2.6,
+    2.8,
+    4.6,
+    4.8,
+    22.6
+   ],
+   "worst_frames": {
+    "plate_mm": "G-code coordinates with the extruder offset restored",
+    "print_mm": "plate minus the measured placement shift (the pose's print frame)",
+    "design_mm": "R_design_to_print^T (print - t_mm)"
+   }
+  },
+  "fixes": [
+   "shorten the span with a pillar or rib",
+   "or re-orient"
+  ],
+  "establishes": "",
+  "does_not_establish": "Sag or anchor quality in print (P level); spans are measured on a cell_mm raster of the layer below, so they carry about one cell of error; cantilevers (runs reaching a road end) are reported, not judged. The verdict uses the strand span along each road; the ceiling span (twice the distance to the nearest support) is reported beside it and is much smaller where strands run along a narrow channel."
+ },
+ "gcode": {
+  "gcode_sha256": "494c9ec43d5dc7417ce4c392d49ec6b4f4e65422ab68f5c046a950e38b01d4c6",
+  "generator": "OrcaSlicer",
+  "version": "2.4.2",
+  "printer_model": "Bambu Lab P1S",
+  "print_settings_id": "Part P1S ASA 4w 8-skin screen",
+  "filament_settings_id": "\"ASA print-control screen\"",
+  "layer_height": "0.2",
+  "wall_loops": "4",
+  "sparse_infill_density": "0%",
+  "filament_shrink": "100%",
+  "enable_support": "0",
+  "extruder_offset_mm": [
+   0.0,
+   2.0,
+   0.0
+  ]
+ },
+ "pose": {
+  "id": "facet-00",
+  "R_design_to_print": [
+   [
+    1.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    1.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    1.0
+   ]
+  ],
+  "t_mm": [
+   24.246979,
+   68.741209,
+   0.0
+  ]
+ },
+ "table": {
+  "name": "spool-rack-g2-ef.with-keep-outs.orientation-table.json",
+  "sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a"
+ },
+ "mesh": {
+  "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+  "source": "spool-wall-rack",
+  "frame": "design",
+  "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e"
+ },
+ "placement": {
+  "shift_xy_mm": [
+   -0.0005,
+   0.005
+  ],
+  "bands": [
+   {
+    "z_mm": 2.4,
+    "inside_fraction": 1.0,
+    "points": 6390
+   },
+   {
+    "z_mm": 7.2,
+    "inside_fraction": 1.0,
+    "points": 6024
+   },
+   {
+    "z_mm": 12.0,
+    "inside_fraction": 1.0,
+    "points": 5952
+   },
+   {
+    "z_mm": 16.8,
+    "inside_fraction": 1.0,
+    "points": 6042
+   },
+   {
+    "z_mm": 21.6,
+    "inside_fraction": 1.0,
+    "points": 6516
+   }
+  ],
+  "tol_mm": 0.5,
+  "min_inside": 0.99,
+  "verified": "consistent with this pose: slice road points lie inside the posed body section (+0.5 mm) at 5 heights; one-way containment, not proof of pose identity"
+ },
+ "method": {
+  "cell_mm": 0.1,
+  "support_density": 0.5,
+  "margin_mm": 2.0,
+  "caps": true,
+  "max_span_external_mm": 10.0,
+  "max_span_internal_mm": 18.0
+ },
+ "source_sha256": {
+  "fdmgen/catalog/checks/toolpath.py": "eeb43a2ecd24b8e953c6d4f096ab801417c9443c0be8dd5e6e86a74c9f1247b6",
+  "fdmgen/gcode/occupancy.py": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
+  "fdmgen/gcode/reader.py": "8d7bc6b5a1472a22f276445cd385868502e5544d0c5706b031754586d329674b"
+ }
+}

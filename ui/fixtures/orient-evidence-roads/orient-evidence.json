@@ -1,0 +1,73 @@
+{
+ "schema": "fdmgen/orient-evidence@0.1",
+ "table": {
+  "name": "spool-rack-g2-ef.with-keep-outs.orientation-table.json",
+  "input_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a",
+  "root_sha256": "82717d04ab796258b3cbc65ded116909a0efec328f537973b49bc413cd17ea6a"
+ },
+ "slices": [
+  {
+   "pose": "facet-00",
+   "slice_kind": "shell-only",
+   "gcode_sha256": "494c9ec43d5dc7417ce4c392d49ec6b4f4e65422ab68f5c046a950e38b01d4c6"
+  },
+  {
+   "pose": "facet-01",
+   "slice_kind": "shell-only",
+   "gcode_sha256": "de6d2af48fdcabc43e1304e7782cfc0c2fecce34fd0155161c1f07d8b54e2cc0"
+  }
+ ],
+ "receipts": [
+  {
+   "check": "shell-check",
+   "pose": "facet-00",
+   "slice_kind": "shell-only",
+   "gcode_sha256": "494c9ec43d5dc7417ce4c392d49ec6b4f4e65422ab68f5c046a950e38b01d4c6",
+   "path": "facet-00-shell-only.shell-check.json",
+   "sha256": "41fb6e539d4c7c093294d39168d861b35f651e0d831e2d6da55a8fdb108d6eb8",
+   "schema": "fdmgen/shell-check@0.3",
+   "verdict": "PASS"
+  },
+  {
+   "check": "bridge-check",
+   "pose": "facet-00",
+   "slice_kind": "shell-only",
+   "gcode_sha256": "494c9ec43d5dc7417ce4c392d49ec6b4f4e65422ab68f5c046a950e38b01d4c6",
+   "path": "facet-00-shell-only.bridge-check.json",
+   "sha256": "6d9c291875ded0fb338ffaa35a0c67b9876f72fd63c21b5b615c2f1081b46fb0",
+   "schema": "fdmgen/bridge-check@0.2",
+   "verdict": "FAIL"
+  },
+  {
+   "check": "shell-check",
+   "pose": "facet-01",
+   "slice_kind": "shell-only",
+   "gcode_sha256": "de6d2af48fdcabc43e1304e7782cfc0c2fecce34fd0155161c1f07d8b54e2cc0",
+   "path": "facet-01-shell-only.shell-check.json",
+   "sha256": "b609bbbc3ab8d6f058c0cc362f5e70d26c944be4409d8536cb1fc68da712b460",
+   "schema": "fdmgen/shell-check@0.3",
+   "verdict": "PASS"
+  },
+  {
+   "check": "bridge-check",
+   "pose": "facet-01",
+   "slice_kind": "shell-only",
+   "gcode_sha256": "de6d2af48fdcabc43e1304e7782cfc0c2fecce34fd0155161c1f07d8b54e2cc0",
+   "path": "facet-01-shell-only.bridge-check.json",
+   "sha256": "2342cbeb6c1e4d9c2d6f036b61140aace0f65ae498cdf0dce7fdc56440127aa9",
+   "schema": "fdmgen/bridge-check@0.2",
+   "verdict": "FAIL"
+  }
+ ],
+ "enriched_table": {
+  "path": "orientation-table.enriched.json",
+  "sha256": "3930a5e60a2db0fe50ac03376aca04cba136e43dba9f89e50282fb217f1cb52b",
+  "columns_added": [
+   "t_shell_thin_fraction",
+   "t_bridge_span_external_mm",
+   "t_bridge_span_internal_mm"
+  ]
+ },
+ "establishes": "Which T-level shell and bridge checks each listed pose's slice passes, pinned by hash, and one orientation table carrying them as columns.",
+ "does_not_establish": "Anything for poses without a slice, at P level, or a ranking of the poses."
+}

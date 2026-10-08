@@ -992,3 +992,11 @@ uses that pose's receipt and root-table provenance, draws with the current pose,
 and stays out of the planning draft. Changing pose or table clears the overlay.
 A table alone does not carry verified source receipts, so it supplies no road
 overlay. Existing bundles without locations keep their numeric results.
+
+The road-overlay regression uses the complete two-pose producer bundle in
+`fixtures/orient-evidence-roads/` (producer `cf93950`, manifest `e1428bf1…`,
+enriched table `3930a5e6…`), preserved byte for byte. Both bridge checks report
+FAIL; showing their locations does not change those verdicts. The remote browser
+check covers the flipped pose, selection before mesh loading, unchanged draft
+state, keyboard focus and clearing on pose/table replacement. Earlier fixtures
+remain separate so receipts without road geometry retain coverage.

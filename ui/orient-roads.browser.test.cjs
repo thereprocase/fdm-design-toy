@@ -1,14 +1,12 @@
 const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict');
 (async()=>{const b=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,headless:true,args:['--no-sandbox']});try{
  const p=await b.newPage({viewport:{width:1366,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
- const dir=path.join(__dirname,'fixtures/orient-evidence'),sha=v=>crypto.createHash('sha256').update(v).digest('hex');
- // Synthetic recombination: original shell receipts plus untouched newer bridge receipts.
- const data=new Map(fs.readdirSync(dir).map(n=>[n,fs.readFileSync(path.join(dir,n))])),m=JSON.parse(data.get('orient-evidence.json')),table=JSON.parse(data.get('orientation-table.enriched.json'));
- for(const e of m.receipts.filter(e=>e.check==='bridge-check')){
-  const bytes=fs.readFileSync(path.join(__dirname,'fixtures/bridge-locations',e.pose+'-shell-only.bridge-check.json')),r=JSON.parse(bytes);data.set(e.path,bytes);e.sha256=sha(bytes);
-  for(const col of Object.values(table.candidates.find(c=>c.id===e.pose).columns).filter(c=>c.rule==='BRG-001'&&c.level==='T')){col.receipt.sha256=e.sha256;col.receipt.source_sha256=r.source_sha256;}
- }
- data.set(m.enriched_table.path,Buffer.from(JSON.stringify(table)));m.enriched_table.sha256=sha(data.get(m.enriched_table.path));data.set('orient-evidence.json',Buffer.from(JSON.stringify(m)));
+ const dir=path.join(__dirname,'fixtures/orient-evidence-roads'),sha=v=>crypto.createHash('sha256').update(v).digest('hex');
+ // Exact complete producer output, preserved without reserialising any receipt or manifest.
+ const data=new Map(fs.readdirSync(dir).map(n=>[n,fs.readFileSync(path.join(dir,n))])),m=JSON.parse(data.get('orient-evidence.json'));
+ assert.equal(sha(data.get('orient-evidence.json')),'e1428bf185be2f328473cdd0b4dc4bf802473cee51fde7c2f76d33c6bdf44bd0');
+ assert.equal(sha(data.get(m.enriched_table.path)),'3930a5e60a2db0fe50ac03376aca04cba136e43dba9f89e50282fb217f1cb52b');
+ for(const e of m.receipts) assert.equal(sha(data.get(e.path)),e.sha256);
  const files=()=>[...data].map(([name,buffer])=>({name,buffer,mimeType:'application/json'}));
  await p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);await p.locator('#orientation-bundle-options > summary').click();await p.locator('#orientation-bundle-files').setInputFiles(files());
  await p.waitForFunction(()=>document.querySelector('#orientation-bundle-status').textContent.startsWith('Complete bundle verified'));
