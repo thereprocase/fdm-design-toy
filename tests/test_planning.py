@@ -123,3 +123,19 @@ def test_keep_out_references_are_pinned_and_preserved():
         refs['keep_out_ids'] = ids
         with pytest.raises(ValueError, match='keep-out reference'):
             load_draft(json.dumps(draft).encode(), table, body)
+
+
+@pytest.mark.parametrize('otherwise_valid', [False, True])
+def test_unfinished_work_snapshot_is_not_a_backend_draft(otherwise_valid):
+    draft, table, body = inputs()
+    # Prove the control reaches the parser successfully before changing only its
+    # schema; rejection must not depend on unfinished fields being invalid.
+    assert load_draft(json.dumps(draft).encode(), table, body).walls == 4
+    snapshot = draft if otherwise_valid else {
+        'orientation_table_sha256': hashlib.sha256(table).hexdigest(),
+        'pose': 'side', 'walls': '', 'skin': '1.6', 'rationale': '',
+        'shell_only': False, 'proposal': None, 'helpers': [],
+    }
+    snapshot['schema'] = 'fdmgen.work-snapshot.v0.1'
+    with pytest.raises(ValueError, match='v0.3 is required'):
+        load_draft(json.dumps(snapshot).encode(), table, body)
