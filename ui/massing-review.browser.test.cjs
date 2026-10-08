@@ -2,6 +2,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
 (async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
  const page=await browser.newPage({locale:'en-US'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(pathToFileURL(path.join(__dirname,'massing-review.html')).href);
+ assert(await page.locator('#review-draft').isVisible());assert(await page.locator('#review-bundle').isVisible());
+ assert(await page.locator('#review-slice').isHidden());
+ const manual=page.locator('#individual-receipts > summary');await manual.focus();await manual.press('Enter');
+ assert(await page.locator('#review-slice').isVisible());assert(await page.locator('#review-mechanics').isVisible());
  const draftPath=path.join(__dirname,'../tests/fixtures/massing/sample-draft.json'),receiptPath=path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json');
  await page.locator('#review-draft').setInputFiles(draftPath);await page.locator('#review-receipt').setInputFiles(receiptPath);
  await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));

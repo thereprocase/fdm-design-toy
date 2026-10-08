@@ -814,3 +814,5 @@ Add, duplicate and undo-remove actions focus and reveal the helper name, includi
 Reference pose comparisons include supplementary bridge ceiling maxima beside strand maxima. These are independent per-measure maxima, potentially on different roads; the strand verdict remains authoritative for the recorded screen. Missing ceiling measurements remain explicitly unrecorded.
 
 An incomplete bundle selection lists every missing receipt filename and asks for the manifest and all five receipts together. Each picker selection replaces the selected files; a rejected set leaves previously verified results intact.
+
+Review keeps draft, export report and full bundle inputs visible. Expand **Optional: load individual receipts or a mechanics pilot** for the manual route and its status messages; those controls preserve the same pairing checks.
