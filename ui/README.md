@@ -1000,3 +1000,8 @@ FAIL; showing their locations does not change those verdicts. The remote browser
 check covers the flipped pose, selection before mesh loading, unchanged draft
 state, keyboard focus and clearing on pose/table replacement. Earlier fixtures
 remain separate so receipts without road geometry retain coverage.
+
+A failed bridge in the selected pose's check summary offers **Locate recorded
+strand** when the verified bundle supplies matching road geometry. It opens the
+locator, selects that role's strand maximum and moves keyboard focus to its
+control. Tables without verified receipt geometry offer no location shortcut.

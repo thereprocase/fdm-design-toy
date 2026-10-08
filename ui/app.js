@@ -16,7 +16,7 @@ function renderPoseRoads(){
   const roads=BridgeLocations.locations(item.receipt,{orientation:selected,source:{mesh:analysis.mesh,orientation_table_sha256:orientationEvidenceBundle.manifest.table.root_sha256}});
   byId('pose-road-status').textContent=selected.id+' · '+item.entry.slice_kind+' · '+(roads.length?'Choose a recorded maximum. Matching STL required to draw it.':'This receipt has no location geometry; numeric bridge checks remain available.');
   byId('pose-road-source').textContent=JSON.stringify({receipt_sha256:item.entry.sha256,receipt:item.receipt},null,2);byId('pose-road-provenance').hidden=false;
-  for(const road of roads){const button=text('button',road.role+' '+road.model+' · '+road.value_mm+' mm',byId('pose-road-buttons'));button.type='button';button.className='secondary';button.setAttribute('aria-pressed','false');
+  for(const road of roads){const button=text('button',road.role+' '+road.model+' · '+road.value_mm+' mm',byId('pose-road-buttons'));button.type='button';button.className='secondary';button.dataset.roadId=road.id;button.setAttribute('aria-pressed','false');
    button.onclick=()=>{cancelSurfacePlacement();orientationRoad=road;for(const choice of byId('pose-road-buttons').children)choice.setAttribute('aria-pressed',String(choice===button));viewer.setRoadWitness(road.source.design_mm);byId('pose-road-hide').hidden=false;byId('pose-road-selected').textContent=selected.id+' · '+item.entry.slice_kind+' · '+road.role+' '+road.model+' · '+road.value_mm+' mm. Dashed: full road; solid: bounded unsupported run; dot: ceiling witness. Drawn through the body for location only. Slicer roles do not prove open-air/core geometry or a helper remedy. Recorded slice only; not a check of current helper edits. This display does not change the draft.';};
   }
  }catch(error){byId('pose-road-status').textContent=error.message+' Numeric bridge checks remain available.';}
@@ -173,6 +173,13 @@ function renderFailedChecks(candidate) {
   for(const [key,c] of failures){
     const item=text('li','',list);text('strong',`${names[key]||key.replaceAll('_',' ')} · ${c.rule||'rule not recorded'} · ${c.level||'level not recorded'}${c.provisional?' · provisional':''}`,item);
     text('p',c.fidelity||'No producer explanation supplied; inspect this recorded column.',item);
+    const role={t_bridge_span_external_mm:'external',t_bridge_span_internal_mm:'internal'}[key];
+    const road=role&&byId('pose-road-buttons').querySelector(`[data-road-id="${role}-strand"]`);
+    if(road){
+      const locate=text('button','Locate recorded strand',item);locate.type='button';locate.className='secondary';locate.dataset.locateFailedBridge=role;
+      locate.onclick=()=>{byId('pose-road-options').open=true;road.click();road.scrollIntoView({block:'center'});road.focus({preventScroll:true});};
+    }
+
   }
 }
 function remember() {if(selected) decisions.set(selected.id,byId('rationale').value);}
@@ -310,11 +317,11 @@ byId('table-file').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;const accepted=await loadOrientationTable(file,++tableRequest);if(accepted===false)event.target.value='';
 };
 function clearOrientationBundle(){
- orientationEvidenceBundle=null;renderPoseRoads();
+ orientationEvidenceBundle=null;renderPoseRoads();if(selected)renderFailedChecks(selected);
  byId('orientation-bundle-summary').hidden=true;byId('orientation-bundle-poses').replaceChildren();byId('orientation-bundle-manifest').textContent='';byId('orientation-bundle-status').textContent='No orientation bundle verified for this table.';
 }
 function renderOrientationBundle(bundle){
- orientationEvidenceBundle=bundle;renderPoseRoads();
+ orientationEvidenceBundle=bundle;renderPoseRoads();if(selected)renderFailedChecks(selected);
  const m=bundle.manifest,failures=m.receipts.filter(r=>r.verdict==='FAIL').length;
  byId('orientation-bundle-summary').hidden=false;
  byId('orientation-bundle-count').textContent=`${m.slices.length} pose slices; ${m.receipts.length} receipt fingerprints checked; ${failures} FAIL receipts. File verification does not qualify a pose.`;

@@ -10,10 +10,13 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
  const files=()=>[...data].map(([name,buffer])=>({name,buffer,mimeType:'application/json'}));
  await p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);await p.locator('#orientation-bundle-options > summary').click();await p.locator('#orientation-bundle-files').setInputFiles(files());
  await p.waitForFunction(()=>document.querySelector('#orientation-bundle-status').textContent.startsWith('Complete bundle verified'));
- await p.getByRole('button',{name:'Review facet-01',exact:true}).click();await p.locator('#pose-road-options > summary').click();
+ await p.getByRole('button',{name:'Review facet-01',exact:true}).click();
  assert.equal(await p.locator('#pose-road-buttons button').count(),4);
  const before=await p.evaluate(()=>draftFormState());
- await p.locator('#pose-road-buttons').getByRole('button',{name:'external strand · 52.2 mm',exact:true}).click();
+ await p.locator('[data-locate-failed-bridge=external]').click();
+ assert.equal(await p.locator('#pose-road-options').getAttribute('open'),'');
+ assert.match(await p.evaluate(()=>document.activeElement.textContent),/external strand · 52.2 mm/);
+ assert.equal(await p.locator('#pose-road-buttons [aria-pressed=true]').count(),1);
  await p.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);await p.waitForFunction(()=>document.querySelector('#mesh-status').textContent.startsWith('Mesh fingerprint matched'));
  const real=JSON.parse(data.get(m.receipts.find(e=>e.pose==='facet-01'&&e.check==='bridge-check').path));
  assert.deepEqual(await p.evaluate(()=>viewer.roadWitness),real.result.metrics.worst.external.strand.design_mm);
@@ -27,5 +30,6 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
  await p.waitForFunction(()=>document.querySelector('#pose-name').textContent==='Choose a candidate');
  assert.equal(await p.locator('#pose-road-buttons button').count(),0);assert.equal(await p.evaluate(()=>viewer.roadWitness),null);
  await p.getByRole('button',{name:'facet-01',exact:true}).click();assert.equal(await p.locator('#pose-road-buttons button').count(),0);
+ assert.equal(await p.locator('[data-locate-failed-bridge]').count(),0);
  assert.deepEqual(errors,[]);console.log('PASS orientation bundle road locations, flipped pose, mesh-load persistence, view-only draft state, pose/table reset and mobile');
 }finally{await b.close();}})().catch(e=>{console.error(e);process.exit(1)});
