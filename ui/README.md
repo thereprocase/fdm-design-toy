@@ -639,3 +639,8 @@ support, shell and bridge values without calculating a winner. Expand each
 cell's Context to inspect its method and settings; unchecked values stay unchecked.
 The reference survives filtering, but clears when a new table is accepted. It is
 view state only: the selected pose remains the one saved in the planning draft.
+
+The preview's Design axes indicator rotates with the pose and camera, matching
+helper centre/nudge coordinates. A circled dot indicates an axis toward the viewer;
+a circled cross points away. The bed remains the print Z=0 plane. In top view,
+print Z points toward the viewer rather than upward on screen.

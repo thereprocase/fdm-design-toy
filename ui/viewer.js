@@ -37,6 +37,13 @@ function pickSurface(vertices,project,x,y) {
   }
   return best;
 }
+function designAxesInView(R,yaw,pitch){
+  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+  return [0,1,2].map(a=>{
+    const x=R[0][a],y=R[1][a],z=R[2][a],yy=sy*x+cy*y;
+    return [cy*x-sy*y,sp*yy-cp*z,cp*yy+sp*z];
+  });
+}
 class PartViewer {
   constructor(canvas) {
     this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;
@@ -86,7 +93,24 @@ class PartViewer {
       for(let i=0;i<8;i++)for(let a=0;a<3;a++){const j=i^(1<<a);if(j>i){ctx.moveTo(points[i][0],points[i][1]);ctx.lineTo(points[j][0],points[j][1]);}}
       ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';ctx.fillStyle=region.active?'#174d89':'#84360f';ctx.fillText((region.active?'Editing: ':'')+(region.name||'Planning region'),points[7][0]+5,points[7][1]-5);
     }
-    ctx.fillStyle='#344d40';ctx.font='12px system-ui';ctx.fillText('Print Z ↑ · ground at Z = 0 · dimensions in mm',14,height-15);
+    // Directions follow both the design-to-print rotation and camera, without translation.
+    ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(8,8,122,116);
+    ctx.fillStyle='#344d40';ctx.font='12px system-ui';ctx.fillText('Design axes',18,26);
+    const origin=[67,75],length=28,colors=['#a52e2e','#267142','#235ca4'];
+    designAxesInView(this.R,this.yaw,this.pitch).forEach(([x,y,depth],i)=>{
+      const tip=[origin[0]+length*x,origin[1]+length*y];ctx.strokeStyle=colors[i];ctx.fillStyle=colors[i];ctx.lineWidth=2;
+      ctx.beginPath();
+      if(Math.hypot(x,y)<.1){
+        ctx.arc(...origin,4,0,Math.PI*2);ctx.stroke();
+        if(depth>0){ctx.beginPath();ctx.arc(...origin,1.5,0,Math.PI*2);ctx.fill();}
+        else {ctx.beginPath();ctx.moveTo(origin[0]-3,origin[1]-3);ctx.lineTo(origin[0]+3,origin[1]+3);ctx.moveTo(origin[0]+3,origin[1]-3);ctx.lineTo(origin[0]-3,origin[1]+3);ctx.stroke();}
+        ctx.fillText('+'+'XYZ'[i],origin[0]+8,origin[1]-8);
+      }else{
+        ctx.moveTo(...origin);ctx.lineTo(...tip);ctx.stroke();ctx.beginPath();ctx.arc(...tip,2,0,Math.PI*2);ctx.fill();
+        ctx.fillText('+'+'XYZ'[i],tip[0]+(x<0?-18:4),tip[1]+(y>0?13:-4));
+      }
+    });
+    ctx.fillStyle='#344d40';ctx.font='11px system-ui';ctx.fillText('Bed plane: print Z = 0 · mm',14,height-15);
   }
 }
-if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface};
+if(typeof module!=='undefined')module.exports={parseSTL,transformMesh,boxCorners,pickSurface,designAxesInView};

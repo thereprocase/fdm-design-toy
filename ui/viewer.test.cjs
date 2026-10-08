@@ -31,3 +31,12 @@ test('box corners rotate with the part and preserve edge lengths',()=>{
  const rotated=transformMesh(c,[[0,-1,0],[1,0,0],[0,0,1]],[0,0,0]);
  assert.deepEqual(Array.from(rotated.slice(0,3)),[-18,9,27]);
 });
+
+test('axis indicator follows pose rotation and camera without translation',()=>{
+ const {designAxesInView}=require('./viewer.js'),I=[[1,0,0],[0,1,0],[0,0,1]];
+ const close=(actual,expected)=>actual.flat().forEach((v,i)=>assert(Math.abs(v-expected.flat()[i])<1e-12));
+ close(designAxesInView(I,0,Math.PI/2),[[1,0,0],[0,1,0],[0,0,1]]); // top: Z toward camera
+ close(designAxesInView(I,0,0),[[1,0,0],[0,0,1],[0,-1,0]]); // front: Z screen-up
+ close(designAxesInView([[0,-1,0],[1,0,0],[0,0,1]],0,Math.PI/2),[[0,1,0],[-1,0,0],[0,0,1]]);
+ close(designAxesInView(I,Math.PI/2,0),[[0,0,1],[-1,0,0],[0,-1,0]]);
+});
