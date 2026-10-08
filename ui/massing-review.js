@@ -205,6 +205,10 @@ el('review-bundle').onchange=async e=>{
   for(const [kind,r]of Object.entries(bundle.bridges)){
    const row=add('article','',el('bundle-bridges')),m=r.result.metrics,num=v=>v.toLocaleString(undefined,{maximumFractionDigits:3});
    add('h3',`${kind==='project'?'Project':'Shell-only baseline'} bridges · T ${r.result.verdict}${r.result.provisional?' · provisional':''}`,row);
+   if(r.result.verdict==='FAIL'){
+    const note=add('p','This tool provides no verified helper-edit remedy for this bridge failure. The recorded FAIL uses the strand model. Changing helper boxes does not establish a fix; revised geometry needs fresh slicing and checks.',row);note.className='warning';note.dataset.bridgeRemedy='';
+    for(const [label,url]of [['Bracket bridge-model investigation (#9)', 'https://github.com/thereprocase/fdm-design-toy/issues/9'], ['Bridge coupon work (#12)', 'https://github.com/thereprocase/fdm-design-toy/issues/12']]){note.append(document.createTextNode(' '));const link=add('a',label,note);link.href=url;link.target='_blank';link.rel='noopener';}
+   }
    add('p',`Strand maxima — external: ${num(m.max_span_external_mm)} mm (limit ${num(r.method.max_span_external_mm)} mm); internal: ${num(m.max_span_internal_mm)} mm (limit ${num(r.method.max_span_internal_mm)} mm). ${m.external_roads} external and ${m.internal_roads} internal roads evaluated.`,row);
    add('p','The recorded verdict uses strand spans along individual roads between their anchors.',row);
    const ceiling=key=>Number.isFinite(m[key])?num(m[key])+' mm':'not recorded';

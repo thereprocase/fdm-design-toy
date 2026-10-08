@@ -44,6 +44,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.equal(real.receipts.find(r=>r.check==='bridge-check'&&r.slice_kind==='project').sha256,'e82806aa7543dff15d94459ab1eff1d7af221bd06a871ad905ba687eb46fd76b');
  assert.match(await page.locator('#bundle-bridges').innerText(),/Project bridges · T FAIL/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/Shell-only baseline bridges · T FAIL/);
+ assert.equal(await page.locator('#bundle-bridges [data-bridge-remedy]').count(),2);
+ assert.match(await page.locator('#bundle-bridges [data-bridge-remedy]').first().innerText(),/no verified helper-edit remedy/);
+ assert.deepEqual(await page.locator('#bundle-bridges [data-bridge-remedy]').first().locator('a').evaluateAll(a=>a.map(x=>x.href)),['https://github.com/thereprocase/fdm-design-toy/issues/9','https://github.com/thereprocase/fdm-design-toy/issues/12']);
+
  assert.match(await page.locator('#bundle-bridges').innerText(),/internal: 122.1 mm \(limit 18 mm\)/);
  assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

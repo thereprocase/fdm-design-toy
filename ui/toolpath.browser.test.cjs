@@ -86,6 +86,9 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  // Real chained shell + bridge evidence, preserving separate verdicts and original receipt hashes.
  await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell-bridge.orientation-table.json'));
  await page.getByRole('button',{name:'facet-00',exact:true}).click();
+ assert.equal(await page.locator('#pose-bridges [data-bridge-remedy]').count(),1);
+ assert.match(await page.locator('#pose-bridges [data-bridge-remedy]').innerText(),/no verified helper-edit remedy/);
+ assert.deepEqual(await page.locator('#pose-bridges [data-bridge-remedy] a').evaluateAll(a=>a.map(x=>x.href)),['https://github.com/thereprocase/fdm-design-toy/issues/9','https://github.com/thereprocase/fdm-design-toy/issues/12']);
  assert.match(await page.locator('#pose-bridges').innerText(),/PASS · 3.15 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122.1 mm/);
  assert.match(await page.locator('#failed-checks').innerText(),/Internal bridge span · BRG-001 · T · provisional/);
  assert.doesNotMatch(await page.locator('#failed-checks').innerText(),/External bridge span/);

@@ -717,3 +717,9 @@ first reason in the bundle summary and the full reason list verbatim as text.
 Producer-withheld shell comparisons do not display a numeric delta in the bundle
 view. These manifest notes are labelled producer-reported; receipt validation
 remains separate, and manifest numeric deltas are not promoted as validated results.
+
+Failed BRG-001 toolpath screens now state that this workspace supplies no verified
+helper-edit remedy. They retain the strand-model FAIL and link to the bracket
+bridge-model investigation (#9) and coupon work (#12). This is not a claim that
+helpers can never improve a bridge; a changed design needs new slices and checks,
+and physical behaviour remains a separate question.
