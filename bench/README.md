@@ -129,9 +129,20 @@ isotropic FP64 CPU test, not the TI/E_min/mixed-precision production gate.
 `compare_occupancy.py` compares thresholded baseline/project occupancy on the
 pinned solver grid. It validates the grid receipt, body mesh, pose and boundary
 selection before assembling anything. The reference loads are retained exactly;
-missing loaded DOFs, face-disconnected pieces, or insufficient restraints block
+missing loaded or fixed DOFs, face-disconnected pieces, or insufficient restraints block
 a solve. Edge/point connections are counted separately. There is no ersatz
 material and no implicit force redistribution.
+
+**Historical audit correction:** earlier receipts recorded original and retained
+fixed-DOF counts but did not block a solve when some restraints disappeared while
+the remaining restraints still constrained six global rigid modes. The original
+R1 threshold-0.5 pair retained 1,978 of 2,071 fixed DOFs; the h/16 pair retained
+1,993, the capped h/16 pair 2,015, and the threshold-0.75 pair only 220. Their
+reported deltas describe those reduced-restraint discretisations, not preservation
+of the original restraints. Existing receipts remain unchanged. The current audit
+blocks missing fixed DOFs, and the review UI withholds those historical comparisons
+using the recorded counts. Zero loss during fragment removal alone does not prove
+that rasterisation and thresholding preserved the original restraints.
 
 ```bash
 python bench/compare_occupancy.py --root /path/to/part-checkout \

@@ -322,6 +322,15 @@ still be withheld if its detailed audit contradicts that status. Pair-only sampl
 mismatches withhold the delta while leaving individually valid model rows visible.
 Raw measurements remain in the complete receipt.
 
+The audit displays original and retained fixed-DOF counts. Any missing original
+restraint withholds the affected row and comparison, even for legacy receipts
+labelled ready with all six global rigid modes constrained. Missing or inconsistent
+counts also withhold the result. The original threshold-0.5 pair retains only
+1,978 of 2,071 fixed DOFs; its historical −2.924% delta remains in provenance but
+is not displayed as an established comparison. Zero restraints lost during
+fragment removal does not account for restraints lost earlier during rasterisation
+or thresholding.
+
 Withheld comparisons identify the first failed condition beside the summary and
 list every blocking domain, load, restraint, convergence or seat-conservation
 condition in the audit section. These explain the recorded model checks; they
@@ -371,7 +380,8 @@ refinement, contact realism and physical qualification remain unresolved.
 For a sensitivity comparison, load the same seed draft/export/slice and switch
 the mechanics input between the threshold-0.25, 0.50 and 0.75 receipts listed in
 `bench/README.md`. The recorded compliance changes are −1.387%, −2.924% and
-+1.317%. These use different common nodal load sets across thresholds, and the
++1.317%. The latter two also lose original restraints and are now withheld by
+the review. These use different common nodal load sets across thresholds, and the
 0.75 model predicts movements outside a physical small-displacement
 interpretation. The isolated 0.50 decrease is not a robust design benefit.
 

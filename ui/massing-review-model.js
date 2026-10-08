@@ -177,6 +177,12 @@ const MassingReview = (() => {
    for(const reason of a.reasons)note('audit reports '+String(reason));
    if(a.face_components!==1)note(`${a.face_components} face-connected components; one is required.`);
    if(a.missing_loaded_dofs!==0)note(`${a.missing_loaded_dofs} loaded DOFs are absent.`);
+   if(!Number.isSafeInteger(a.original_fixed_dofs)||!Number.isSafeInteger(a.retained_fixed_dofs)||a.original_fixed_dofs<0||a.retained_fixed_dofs<0||a.retained_fixed_dofs>a.original_fixed_dofs)note('original restraint retention is not established.');
+   else{
+    const lost=a.original_fixed_dofs-a.retained_fixed_dofs;
+    if(lost)note(`${lost} original fixed DOFs are absent (${a.retained_fixed_dofs} of ${a.original_fixed_dofs} retained).`);
+    if(Object.hasOwn(a,'missing_fixed_dofs')&&a.missing_fixed_dofs!==lost)note('missing fixed DOF count disagrees with original and retained counts.');
+   }
    if(a.loaded_fixed_dofs!==0)note(`${a.loaded_fixed_dofs} loaded DOFs are also fixed.`);
    if(a.restrained_rigid_modes!==6)note(`${a.restrained_rigid_modes} of 6 rigid modes restrained.`);
    if(weighted){

@@ -32,7 +32,7 @@ test('revised slice matches its project and baseline context, not the old projec
 
 const seedReport=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-export-report.json'))),seedSlice=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/seed-slice-evidence.json'))),mechanics=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-connected-sensitivity-r1.json')));
 test('mechanics pairs exact project, plan, both Gcodes and grid provenance',()=>{
- assert.equal(Review.mechanics(seedReport,seedSlice,mechanics),mechanics);assert(Review.mechanicsComparable(mechanics));
+ assert.equal(Review.mechanics(seedReport,seedSlice,mechanics),mechanics);assert.equal(Review.mechanicsComparable(mechanics),false);
  for(const mutate of [r=>r.inputs.project.provenance.project_3mf_sha256='a'.repeat(64),r=>r.inputs.baseline.provenance.gcode_sha256='a'.repeat(64),r=>r.inputs.project.provenance.plan.draft_sha256='a'.repeat(64),r=>r.inputs.baseline.provenance.grid.shape=[1,2,3],r=>r.solves.project.compliance_N_mm=NaN,r=>delete r.fragment_removal.project,r=>r.does_not_establish='bad scope']){
   const r=structuredClone(mechanics);mutate(r);assert.throws(()=>Review.mechanics(seedReport,seedSlice,r));
  }
@@ -126,9 +126,10 @@ test('mechanics withholding names load, solver and seat conservation failures',(
  const reasons=Review.mechanicsReasons(weighted);
  assert(reasons.some(x=>x.includes('Project: 1 N')));assert(reasons.some(x=>x.includes('Shell-only: true relative residual')));
  const binary=read('../bench/receipts/occupancy-connected-sensitivity-r1.json');
- assert.deepEqual(Review.mechanicsReasons(binary),[]);
+ const restraintReasons=Review.mechanicsReasons(binary);
+ assert.equal(restraintReasons.length,2);assert(restraintReasons.every(x=>x.includes("93 original fixed DOFs are absent")));
  const name=Object.keys(binary.seats)[0];binary.seats[name].moment_error_N_mm=1;
- assert.deepEqual(Review.mechanicsReasons(binary),[`${name}: seat moment error exceeds 1e-7 N mm.`]);
+ assert.deepEqual(Review.mechanicsReasons(binary),[...restraintReasons,`${name}: seat moment error exceeds 1e-7 N mm.`]);
 });
 
 test('weighted comparison requires matching sampling methods but distinct source files are allowed',()=>{
@@ -149,3 +150,14 @@ test('individual mechanics rows follow their domain gates independently of pair 
  assert.equal(Review.mechanicsComparable(r),false);assert.deepEqual(Review.mechanicsCaseReasons(r,'project'),[]);
  r.cases.project.solve.cg_status=1;assert(Review.mechanicsCaseReasons(r,'project').some(x=>x.includes('successful convergence')));
 });
+
+ test('restraint retention cannot be replaced by rigid rank or a legacy ready label',()=>{
+ const read=()=>JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p1-sf16-r1.json')));
+ assert(Review.mechanicsComparable(read()));
+ for(const mutate of [a=>a.retained_fixed_dofs--,a=>delete a.original_fixed_dofs,a=>a.retained_fixed_dofs++,a=>a.missing_fixed_dofs=1,a=>a.retained_fixed_dofs=1.5]){
+  const r=read();mutate(r.cases.project.audit);
+  assert.equal(Review.mechanicsComparable(r),false);
+  assert(Review.mechanicsCaseReasons(r,'project').some(x=>/fixed DOF|restraint retention/.test(x)));
+ }
+ const r=read();r.cases.project.audit.missing_fixed_dofs=0;assert(Review.mechanicsComparable(r));
+ });

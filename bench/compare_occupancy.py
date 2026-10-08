@@ -1,7 +1,7 @@
 """Audited CPU comparison of thresholded slice grids, not printed-material truth.
 
 Uses the original solver-gate nodal loads without redistributing missing loads.
-Cases that lose loaded nodes, split into face-disconnected pieces, or retain
+Cases that lose loaded or restrained DOFs, split into face-disconnected pieces, or retain
 rigid motions are reported as blocked. No ersatz material joins missing cells.
 """
 from __future__ import annotations
@@ -36,6 +36,7 @@ def audit_domain(mask, grid, fixed, load):
     sizes = sorted(np.bincount(labels.ravel())[1:].tolist(), reverse=True)
     _, node_components = ndimage.label(mask, structure=np.ones((3, 3, 3), bool))
     missing = (~dofs) & (load != 0)
+    missing_fixed = (~dofs) & fixed
     on_fixed = dofs & fixed & (load != 0)
     nodes = np.flatnonzero(active.ravel())
     rank = 0
@@ -47,6 +48,8 @@ def audit_domain(mask, grid, fixed, load):
         reasons.append(f'{ncomp} face-connected components; one connected body required')
     if missing.any():
         reasons.append('original loaded DOFs are absent; loads were not redistributed')
+    if missing_fixed.any():
+        reasons.append('original fixed DOFs are absent; restraints were not relocated')
     if on_fixed.any():
         reasons.append('loaded DOFs are constrained; loads were not silently zeroed')
     if rank != 6:
@@ -56,6 +59,7 @@ def audit_domain(mask, grid, fixed, load):
                 face_component_cell_counts=sizes, node_connected_components=int(node_components),
                 restrained_rigid_modes=rank, original_fixed_dofs=int(fixed.sum()),
                 retained_fixed_dofs=int((fixed & dofs).sum()),
+                missing_fixed_dofs=int(missing_fixed.sum()),
                 missing_loaded_dofs=int(missing.sum()), loaded_fixed_dofs=int(on_fixed.sum()),
                 missing_load_l1_N=float(np.abs(load[missing]).sum()),
                 original_resultant_grid_N=load.reshape(-1, 3).sum(axis=0).tolist(),

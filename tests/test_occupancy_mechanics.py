@@ -21,6 +21,20 @@ def test_connected_clamped_block_preserves_load():
     a = pilot.audit_domain(np.ones(g.shape, bool), g, fixed, load)
     assert a['status'] == 'ready' and a['restrained_rigid_modes'] == 6
     assert a['retained_resultant_grid_N'] == [0., -1., 0.]
+    assert a['missing_fixed_dofs'] == 0
+
+
+def test_missing_restraint_blocks_even_with_six_rigid_modes_constrained():
+    g, fixed, load = case()
+    mask = np.ones(g.shape, bool)
+    mask[0, 0, 0] = False  # Only the corner node loses all incident cells.
+    a = pilot.audit_domain(mask, g, fixed, load)
+    assert a['face_components'] == 1 and a['restrained_rigid_modes'] == 6
+    assert a['missing_loaded_dofs'] == 0
+    assert a['original_fixed_dofs'] == 27
+    assert a['retained_fixed_dofs'] == 24 and a['missing_fixed_dofs'] == 3
+    assert a['status'] == 'blocked'
+    assert a['reasons'] == ['original fixed DOFs are absent; restraints were not relocated']
 
 
 def test_missing_load_is_not_silently_deleted():

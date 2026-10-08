@@ -172,6 +172,7 @@ function renderMechanics(r){
   for(const value of [label,`${a.status} / ${s?.status||'not solved'}${valid?'':'; checks not established'}`,valid?num(s.compliance_N_mm):'Not established',valid?num(s.max_displacement_mm):'Not established'])add('td',value,row);
   const detail=add('article','',el('mechanics-audits'));add('h3',label,detail);
   add('p',`${a.cells} cells; ${a.face_components} face-connected components; ${a.missing_loaded_dofs} missing loaded DOFs.`,detail);
+  add('p',`Original fixed DOFs: ${a.original_fixed_dofs??'not recorded'}; retained: ${a.retained_fixed_dofs??'not recorded'}. Fragment-removal counts below do not include restraints already lost when rasterising or thresholding.`,detail);
   for(const reason of a.reasons)add('p',String(reason),detail);
   if(weighted){const c=source.cases[name];add('p',`Raw domain: ${c.raw_audit.status}; ${c.raw_audit.face_components} face components. ${c.raw_audit.reasons.join('; ')} Cells outside full-body envelope: ${c.cells_outside_full_body}. Minimum positive stiffness fraction: ${c.positive_stiffness_fraction_min.toExponential(3)}.`,detail);}
   const f=r.fragment_removal?.[name];if(f)add('p',`Removed ${f.removed_cells} cells (${num(f.removed_volume_mm3)} mm³ of grid-cell volume); ${f.removed_fixed_dofs} fixed DOFs and ${num(f.removed_original_load_l1_N)} N summed absolute original nodal force lost exclusively with removed nodes.`,detail);
