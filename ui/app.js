@@ -384,7 +384,10 @@ byId('undo-remove').onclick=()=>{
  byId('undo-remove').disabled=!removedHelpers.length;
  byId('remove-status').textContent=`Restored ${name.value.trim()||'unnamed helper'}. ${removedHelpers.length} earlier removal(s) can still be undone.`;
 };
-byId('add-helper').onclick=()=>addHelper();
+byId('add-helper').onclick=()=>{
+ const box=addHelper();setActiveHelper(box);
+ const name=box.querySelector('[data-key="name"]');name.focus({preventScroll:true});name.scrollIntoView({block:'center'});
+};
 byId('shell-only').onchange=()=>{cancelSurfacePlacement();byId('helper-panel').hidden=byId('shell-only').checked;updateRegions();};
 byId('draft-file').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;const request=tableRequest,openRequest=++draftRequest;

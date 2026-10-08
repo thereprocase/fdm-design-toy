@@ -728,3 +728,6 @@ Helper box centre coordinates and dimensions have separate labelled design-frame
 They remain separate on narrow screens, so a centre coordinate never shares a row
 with a size field. The spatial browser check covers desktop/mobile ordering and
 unchanged draft data across layout changes.
+
+**Add helper** selects the new region and brings its name field into view with
+keyboard focus, including on narrow screens. Existing helper fields are retained.

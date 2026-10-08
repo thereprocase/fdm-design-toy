@@ -25,7 +25,19 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.equal(await page.locator('.helper-region [data-key="name"]').getAttribute('aria-invalid'),'true');
 
   const fill=async(box,name)=>{for(const [key,value] of Object.entries({name,location:'Rear seat to mounting plate',purpose:'Transfer the seat load',keep_clear:'Rod bore and washer seats'}))await box.locator(`[data-key="${key}"]`).fill(value);};
-  await fill(page.locator('.helper-region').first(),'Seat rib');await page.locator('#add-helper').click();await fill(page.locator('.helper-region').last(),'Mount backing');
+  await fill(page.locator('.helper-region').first(),'Seat rib');
+  const beforeAdd=await page.evaluate(()=>JSON.parse(draftFormState()).helpers[0]);
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('#add-helper').focus();await page.keyboard.press('Enter');
+  const added=page.locator('.helper-region').last(),addedName=added.locator('[data-key="name"]');
+  assert(await addedName.evaluate(e=>e===document.activeElement));
+  assert(await added.locator('.helper-editor').evaluate(e=>e.open));
+  assert.equal(await page.locator('#preview-helper').inputValue(),await added.getAttribute('data-id'));
+  assert(await addedName.evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}));
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(draftFormState()).helpers[0]),beforeAdd);
+  await page.keyboard.type('Mount backing');assert.equal(await addedName.inputValue(),'Mount backing');
+  await page.setViewportSize({width:1200,height:900});
+  await fill(added,'Mount backing');
   const download=async()=>{const pending=page.waitForEvent('download');await page.locator('#export').click();const file=await pending;assert.equal(file.suggestedFilename(),'spool-rack-g2-ef-facet-00-massing-plan.json');return JSON.parse(await fs.readFile(await file.path(),'utf8'));};
   assert.equal(await page.locator('[data-export-error]').count(),0);
   const sourceDownload=async expected=>{
