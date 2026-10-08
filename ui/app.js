@@ -248,7 +248,7 @@ function addHelper(region={}) {
     if(!mesh||!selected){byId('placement-status').textContent='Load a matching mesh and choose a pose first.';byId('part-view').scrollIntoView({block:'center'});return;}
     setActiveHelper(box);byId('return-helper').hidden=false;byId('cancel-placement').hidden=false;
     byId('placement-status').textContent='Click a surface to place the region centre. Orbit first if needed. Press Escape or Cancel placement to stop.';byId('part-view').style.cursor='crosshair';byId('part-view').scrollIntoView({block:'center'});
-    viewer.onPick=point=>{if(!point){byId('placement-status').textContent='No surface at that point. Click the part.';return;}lastMove=null;undo.disabled=true;for(let a=0;a<3;a++)box.querySelector(`[data-geometry="center_mm"][data-axis="${a}"]`).value=point[a].toFixed(3);cancelSurfacePlacement();byId('placement-status').textContent='Region centre placed on the surface; edit its size or move the centre inward as needed.';updateRegions();};
+    viewer.onPick=point=>{if(!point){byId('placement-status').textContent='No surface at that point. Click the part.';return;}lastMove=centres().map(f=>f.value);undo.disabled=false;for(let a=0;a<3;a++)box.querySelector(`[data-geometry="center_mm"][data-axis="${a}"]`).value=point[a].toFixed(3);cancelSurfacePlacement();byId('placement-status').textContent='Region centre placed on the surface; edit its size or move the centre inward as needed. Undo last centre move restores the previous coordinates.';updateRegions();};
   };
   const z=text('p','',spatial);z.className='hint';z.dataset.printZ='';
   toggle.onchange=()=>{if(!toggle.checked)cancelSurfacePlacement();spatial.hidden=!toggle.checked;updateRegions();};

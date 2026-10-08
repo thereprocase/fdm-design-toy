@@ -46,6 +46,18 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   assert.equal(await page.evaluate(()=>window.pickCalls),0);assert(await page.evaluate(()=>!!viewer.onPick));
   await page.mouse.click(...hit);await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('Region centre placed'));
   assert.equal(await page.evaluate(()=>viewer.regions.length),1);
+  await region.getByRole('button',{name:'Undo last centre move'}).click();
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeOverlay.state);
+  assert(await region.getByRole('button',{name:'Undo last centre move'}).isDisabled());
+  await region.locator('[data-geometry="center_mm"][data-axis="0"]').fill('');
+  const blankBeforePick=await page.evaluate(()=>draftFormState());
+  await region.getByRole('button',{name:'Place centre on part'}).click();await page.mouse.click(...hit);
+  await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('Region centre placed'));
+  await region.getByRole('button',{name:'Undo last centre move'}).click();
+  assert.equal(await page.evaluate(()=>draftFormState()),blankBeforePick);
+  assert.equal(await region.locator('[data-geometry="center_mm"][data-axis="0"]').inputValue(),'');
+  await region.getByRole('button',{name:'Place centre on part'}).click();await page.mouse.click(...hit);
+  await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('Region centre placed'));
   await page.locator('#return-helper').click();
   assert(await region.locator('[data-geometry="center_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));
   assert(await page.evaluate(()=>{const v=document.querySelector('#part-view').getBoundingClientRect(),p=document.querySelector('.preview').getBoundingClientRect(),e=document.querySelector('.editor').getBoundingClientRect();return v.top>=0&&v.bottom<=innerHeight&&p.right<=e.left;}));

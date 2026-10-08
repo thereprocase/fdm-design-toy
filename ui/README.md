@@ -585,7 +585,7 @@ edit, including for shell-only plans.
 Box helpers have **Move X/Y/Z** controls with an explicit step in millimetres
 (0.1, 0.4, 1 or 5). They move the centre in the design frame and preserve box size
 and references. **Undo last centre move** restores the previous coordinates;
-typing a centre or picking another surface clears that undo to avoid restoring
+typing a centre clears that undo to avoid restoring
 an obsolete position. Incomplete centres must be filled first. Moves update the
 preview and draft only; export and geometry checks are still required.
 
@@ -653,3 +653,8 @@ not leave a pending surface click.
 positive print axis, with print Z upward on screen. These presets help inspect
 helper depth. Like Top view and Angled view, they reset zoom and change only the
 camera; the selected print pose and helper coordinates remain unchanged.
+
+Successful surface placement also supports **Undo last centre move**. The previous
+coordinate text is restored exactly, including blank fields; an unsuccessful pick
+does not overwrite this one-step history. Another successful pick or axis move
+replaces the history with that move's starting centre. Undo does not rerun checks.
