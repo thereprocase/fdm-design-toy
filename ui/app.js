@@ -694,7 +694,9 @@ function workSnapshot(){
 function validateWorkSnapshot(raw){
  const fail=message=>{throw Error(message);};
  if(raw?.schema!=='fdmgen.work-snapshot.v0.1')fail('Unsupported work snapshot format.');
- if(!analysis||raw.orientation_table_sha256!==fingerprint)fail('Open the exact orientation table used by this snapshot first.');
+ const expected=raw.orientation_table_sha256;
+ if(typeof expected!=='string'||!/^[a-f0-9]{64}$/.test(expected))fail('Invalid snapshot orientation table fingerprint.');
+ if(!analysis||expected!==fingerprint)fail(`Open the exact orientation table used by this snapshot first. Required table SHA256: ${expected}. If saved with Download exact source table, look for orientation-table-${expected.slice(0,12)}.json. The full fingerprint must match; renaming a different table will not fix this.`);
  const candidate=analysis.candidates.find(c=>c.id===raw.pose);if(!candidate)fail('Snapshot pose is absent from this table.');
  const numeric=value=>{if(typeof value!=='string')return false;const field=document.createElement('input');field.type='number';field.value=value;return field.value===value&&(value===''||Number.isFinite(Number(value)));};
  if(!numeric(raw.walls)||!numeric(raw.skin)||typeof raw.rationale!=='string'||typeof raw.shell_only!=='boolean')fail('Invalid snapshot shell inputs or notes.');

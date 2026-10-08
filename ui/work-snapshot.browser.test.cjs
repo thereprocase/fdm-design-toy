@@ -31,6 +31,17 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  for(const bad of [{...raw,proposal:{generator:'malformed',label:{toString:null}}},{...raw,pose_notes:{'absent':'note'}},{...raw,pose_notes:{[raw.pose]:42}},{...raw,pose_notes:{[raw.pose]:'mismatched'}},{...raw,orientation_table_sha256:'0'.repeat(64)},{...raw,pose:'absent'},{...raw,helpers:[raw.helpers[0],raw.helpers[0]]},{...raw,helpers:[{...raw.helpers[0],fields:{...raw.helpers[0].fields,'size_mm:0':null}}]}]){
   await upload(bad);assert.match(await p.locator('#work-status').innerText(),/Could not reopen work/);assert.equal(await p.evaluate(()=>draftFormState()),edited);assert.deepEqual(await p.evaluate(()=>proposalOrigin),proposal);
  }
+ // Recovery names the required bytes without replacing unsaved work or prompting.
+ const required='abcdef0123456789'.repeat(4);
+ await upload({...raw,orientation_table_sha256:required});
+ const mismatch=await p.locator('#work-status').innerText();
+ assert(mismatch.includes(required));assert(mismatch.includes('orientation-table-abcdef012345.json'));assert.match(mismatch,/renaming a different table will not fix/);
+ assert.equal(await p.evaluate(()=>draftFormState()),edited);assert.equal(dialogs,count);
+ assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await upload({...raw,orientation_table_sha256:'broken'});
+ assert.match(await p.locator('#work-status').innerText(),/Invalid snapshot orientation table fingerprint/);
+ assert.doesNotMatch(await p.locator('#work-status').innerText(),/orientation-table-.*json/);
+ assert.equal(await p.evaluate(()=>draftFormState()),edited);assert.equal(dialogs,count);
  const malformedDraft=JSON.parse(require('node:fs').readFileSync(path.join(__dirname,'fixtures/seed-draft.json'),'utf8'));malformedDraft.proposal={generator:'malformed',label:{toString:null}};
  await p.locator('#draft-file').setInputFiles({name:'bad-draft.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(malformedDraft))});
  await p.waitForFunction(()=>document.getElementById('draft-status').textContent.startsWith('Could not reopen draft'));

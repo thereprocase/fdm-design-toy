@@ -38,7 +38,7 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 
 .geometry-group + .geometry-group{margin-top:16px}.geometry-group h4{margin:0 0 10px;font-size:.9rem}
 
-#draft-status{overflow-wrap:anywhere}
+#draft-status,#work-status{overflow-wrap:anywhere}
 
 .pose-table td:first-child{position:sticky;left:0;z-index:1;background:#fffef9;box-shadow:2px 0 0 #d3d9d0}
 .pose-table tr.selected td:first-child{background:#e9f2e6}
