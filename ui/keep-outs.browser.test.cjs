@@ -38,6 +38,14 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#keepout-status').textContent.startsWith('Table and mesh'));
  await page.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);
  await page.waitForFunction(()=>!!viewer.vertices);
+ // Same paths must trigger fresh imports without test-side picker resets.
+ await page.evaluate(()=>{window.geometryChanges=0;for(const id of ['mesh-file','keepout-file'])document.getElementById(id).addEventListener('change',()=>window.geometryChanges++);});
+ await page.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);
+ await page.waitForFunction(()=>document.getElementById('mesh-file').value==='');
+ await page.locator('#keepout-file').setInputFiles(geometryPath);
+ await page.waitForFunction(()=>document.getElementById('keepout-file').value==='');
+ assert.equal(await page.evaluate(()=>window.geometryChanges),2);
+ assert.equal(await page.evaluate(()=>draftFormState()),draftState);
  const before=await page.locator('#part-view').screenshot();
  await page.locator('[data-keepout-preview="crown_moulding"]').check();
  await page.waitForFunction(()=>viewer.keepouts.length===1&&!viewer.pending);
@@ -66,6 +74,17 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.equal(await page.evaluate(()=>viewer.keepouts.length),2);
  assert(await page.locator('[data-keepout-preview="spool_slide"]').isChecked());
  assert.equal(await page.evaluate(()=>draftFormState()),draftState);
+ for(let retry=0;retry<2;retry++){
+  const beforeRetry=await page.evaluate(()=>window.geometryChanges);
+  await page.locator('#keepout-file').setInputFiles({name:'wrong-table.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(geometry))});
+  await page.waitForFunction(()=>document.getElementById('keepout-file').value==='');
+  await page.locator('#mesh-file').setInputFiles({name:'wrong.stl',mimeType:'application/octet-stream',buffer:Buffer.from('not the pinned mesh')});
+  await page.waitForFunction(()=>document.getElementById('mesh-file').value==='');
+  assert.equal(await page.evaluate(()=>window.geometryChanges),beforeRetry+2);
+  assert.match(await page.locator('#mesh-status').innerText(),/previously matched mesh is retained/);
+  assert.equal(await page.evaluate(()=>viewer.keepouts.length),2);
+  assert.equal(await page.evaluate(()=>draftFormState()),draftState);
+ }
  await page.locator('#keepout-provenance summary').click();
  assert.match(await page.locator('#keepout-source').textContent(),/envelope between samples is not drawn/);
  await page.setViewportSize({width:390,height:844});

@@ -139,6 +139,7 @@ byId('keepout-file').onchange=async event=>{
   KeepoutRender.validate(data,analysis,fingerprint);keepoutGeometry=data;renderKeepoutOptions();
   byId('keepout-status').textContent='Table and mesh fingerprints matched. Choose the constraints to draw; this does not change the draft.';
  }catch(e){if(request===keepoutRequest)byId('keepout-status').textContent=e.message+(keepoutGeometry?' Previously matched geometry and visibility are retained.':'');}
+ finally{if(request===keepoutRequest)event.target.value='';}
 };
 function updatePreview(){
  byId('save-preview').disabled=!analysis||!selected||!mesh||meshHash!==analysis.mesh?.sha256;
@@ -198,7 +199,7 @@ byId('mesh-file').onchange=async event=>{
   if(!retained){mesh=null;meshHash=null;meshBounds=null;viewer.clear();}
   byId('mesh-options').open=true;
   byId('mesh-status').textContent=e.message+(retained?' The previously matched mesh is retained; the rejected file is not displayed.':'');
- }
+ }finally{if(request===meshRequest)event.target.value='';}
 };
 const metricNames = {F_L_max:'Layer failure index · conservative corner',F_L_max_vendor_corner:'Layer failure index · vendor-ratio corner',F_L_max_at_mm:'Peak sample location (design frame)',F_L_p99:'99th percentile layer failure index',ovh_fail_mm2:'Overhang area',bridge_candidate_mm2:'Potential bridge area',v_unsupported_mm2:'Voxel unsupported area',brg_worst_span_mm:'Longest bridge span',contact_mm2:'Bed contact',com_margin_mm:'Centre-of-mass margin',base_min_width_mm:'Minimum base width',height_mm:'Height'};
 function text(tag, value, parent) {const node=document.createElement(tag);node.textContent=value;parent.append(node);return node;}
