@@ -92,3 +92,17 @@ test('evidence handoff uses backend names and never interpolates unsafe identifi
  assert.match(unsafe.command,/--table TABLE.json --pose POSE_ID/);assert.equal(unsafe.placeholders,true);
  assert.equal(Plan.evidenceHandoff(null,null).placeholders,true);
 });
+
+test('helper identifiers follow the exporter slug contract without changing valid ids',()=>{
+ for(const id of ['seed-01','h_2','01234567-89ab-cdef-0123-456789abcdef','a'.repeat(80)]){
+  const draft=Plan.create(analysis,hash,candidate,{...input,helper_regions:[{...input.helper_regions[0],id}]});
+  assert.equal(draft.massing.helper_regions[0].id,id);
+  assert.equal(Plan.restore(draft,analysis,hash).input.helper_regions[0].id,id);
+ }
+ for(const id of ['Uppercase','two words','../helper','-leading','a'.repeat(81),'é','',null,42]){
+  const draft=Plan.create(analysis,hash,candidate,input);draft.massing.helper_regions[0].id=id;
+  assert.throws(()=>Plan.restore(draft,analysis,hash),/Helper 1 identifier must be/);
+ }
+ const duplicate={...input,helper_regions:[input.helper_regions[0],input.helper_regions[0]]};
+ assert.throws(()=>Plan.create(analysis,hash,candidate,duplicate),/unique/);
+});

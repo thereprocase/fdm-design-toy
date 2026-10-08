@@ -35,7 +35,8 @@ const Plan = (() => {
     if(!Array.isArray(values)||!values.length)throw Error('Add a helper region or choose shell only.');
     const ids=new Set();
     return values.map((r,i)=>{
-      const id=typeof r.id==='string'&&r.id?r.id:`helper-${i+1}`;
+      const id=r.id===undefined?`helper-${i+1}`:r.id;
+      if(typeof id!=='string'||!/^[a-z0-9][a-z0-9_-]{0,79}$/.test(id))throw Error(`Helper ${i+1} identifier must be 1–80 lowercase letters, digits, underscores or hyphens, starting with a letter or digit.`);
       if(ids.has(id))throw Error('Helper identifiers must be unique.');ids.add(id);
       return {id,name:requireText(r.name,`Helper ${i+1} name`),location:requireText(r.location,`Helper ${i+1} location`),purpose:requireText(r.purpose,`Helper ${i+1} load purpose`),keep_clear:keepClear(r.keep_clear,interfaces,keepOuts),geometry:geometry(r.geometry),geometry_status:r.geometry?'sketch':'not_created'};
     });

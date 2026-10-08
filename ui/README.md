@@ -687,3 +687,9 @@ Preview orbit and placement gestures use the primary pointer's primary button.
 Right/middle clicks and secondary contacts do not change the camera or helper
 centre. A gesture belongs to its initiating pointer and ends on release,
 cancellation or loss of pointer capture.
+
+Provided helper identifiers must match the exporter contract: 1–80 lowercase
+ASCII letters, digits, underscores or hyphens, beginning with a letter or digit,
+and unique within the draft. Invalid imported identifiers are reported before
+replacing the current plan; they are not silently renamed. Display names remain
+free text. Generated helper identifiers already meet this rule.

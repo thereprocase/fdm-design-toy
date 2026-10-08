@@ -47,6 +47,13 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.match(await page.locator('#evidence-command').innerText(),/spool-rack-g2-ef-facet-00-massing.json project.gcode shell-only.gcode/);
   assert.match(await page.locator('#evidence-command').innerText(),/--pose facet-00 --out out\/evidence/);
   assert(await page.locator('#handoff-placeholders').isHidden());
+  const invalidHelperId=structuredClone(original);invalidHelperId.massing.helper_regions[0].id='Invalid Helper';
+  const beforeInvalidId=await page.evaluate(()=>draftFormState());
+  await page.locator('#draft-file').setInputFiles({name:'bad-helper-id.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(invalidHelperId))});
+  await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.includes('Helper 1 identifier must be'));
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeInvalidId);
+  assert.deepEqual(await download(),original);
+
   assert.match(await page.locator('#handoff-snapshot').innerText(),/describe the last downloaded draft/);
   await page.locator('#walls').fill('5');
   assert.match(await page.locator('#handoff-snapshot').innerText(),/Current edits are not included/);
