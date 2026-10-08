@@ -737,9 +737,35 @@ an acceptable optimiser floor. Full remote validation: 322 passed, 6 CUDA skips.
 
 The proposal linked above would retain the largest face-connected component,
 preserve raw and retained mask provenance, and refuse the case if any loaded or
-fixed active DOF would be omitted. The prospective R1 audit removes 120 cells
-and 960 DOFs, with no loaded or fixed DOFs lost; it is not a filtered solve and
-cannot be extrapolated to other grids. Removing cells still changes geometry.
+fixed active DOF would be omitted. The R1 audit removes 120 cells
+and 960 DOFs, with no loaded or fixed DOFs lost. This cannot be extrapolated to
+other grids. Removing cells still changes geometry.
+
+An exploratory CPU sensitivity then solved that explicitly retained domain with
+the same artificial bands, TI inputs (.85/.20, Poisson .38/.36), corrected first
+strength graph, six global rigid candidates, energy interpolation, symmetric
+block Gauss–Seidel and coarse pseudoinverse. Every case checked exact load and
+restraint retention before solving. No nullspace projection or load transfer was
+used. The raw-operator hashes match the earlier unfiltered controls.
+
+| E_min | CG iterations | Recomputed relative residual | Residual ≤ 1e-6 |
+|---|---:|---:|---|
+| 1e-3 | 42 | 7.3711e-7 | Yes |
+| 1e-4 | 37 | 6.7464e-7 | Yes |
+| 1e-6 | 38 | 9.8739e-6 | **No** |
+
+All three returned solver status 0. Thus removing the fragments suppresses the
+earlier high-contrast divergence but does not meet the high-contrast accuracy
+requirement. The 1e-3 case also exceeds 40 iterations. These R1 CPU observations
+are not R2 timing, mixed-precision parity, a zero-ersatz comparison, or an adopted
+domain policy. The benchmark defaults and every PLAN gate requirement remain
+unchanged. The archived exploratory receipt SHA-256 values, in table order, are:
+
+```text
+19a93e5daeaea058005c542a6b6e2e0452c073be5fd870f64206657039fde4d7
+7890fe487586d200e8f450c754b5ecdbf4981bfef2d34d8fa3033fe5e4f73da3
+3e3421586f2836d701c102003a918642f4468cbd6740b05544cb97ab23a799c5
+```
 
 Acceptance must use the recomputed residual against the unprojected operator of
 the explicitly accepted domain. The four-mechanism projection diagnostic returned
