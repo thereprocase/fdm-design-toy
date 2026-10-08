@@ -14,3 +14,13 @@ test('hash agreement alone cannot substitute wrong pose, slice or verdict',async
  }
  const f=fixture();f.manifest.receipts[3].verdict='PASS';await assert.rejects(Bundle.load(inputs(f),f.context),/verdict differs/);
 });
+
+test('bundle pairing reports the specific mismatched input',async()=>{
+ for(const [mutate,message] of [
+  [f=>f.manifest.inputs.report_sha256='0'.repeat(64),/different export report.*fdmgen evidence/],
+  [f=>f.manifest.inputs.table_sha256='0'.repeat(64),/different orientation table.*exact table bytes/],
+  [f=>f.manifest.pose='another-pose',/different pose/]
+ ]){
+  const f=fixture();mutate(f);await assert.rejects(Bundle.load(inputs(f),f.context),message);
+ }
+});

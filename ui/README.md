@@ -801,3 +801,8 @@ Helpers with identical display names receive a temporary “helper N” suffix i
 the selector, editor legends, preview and warning actions. N is their current
 list position, not their stable identifier. Saved names and identifiers remain
 unchanged; the suffix disappears when names become distinct.
+
+Bundle pairing errors identify whether the export report, orientation table or
+pose differs. A report mismatch directs users to its matching bundle or to rerun
+`fdmgen evidence` with the current report and matching inputs. Identical 3MF bytes
+do not override a bundle manifest's report fingerprint.

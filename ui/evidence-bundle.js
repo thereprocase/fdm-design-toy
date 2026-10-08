@@ -33,7 +33,9 @@
   const manifests=[...entries.values()].filter(e=>e.value.schema==='fdmgen/evidence-bundle@0.1');
   if(manifests.length!==1)throw Error('Select one evidence-bundle manifest and its five receipt files.');
   const manifest=manifests[0].value;
-  if(manifest.inputs?.report_sha256!==reportHash||manifest.inputs?.table_sha256!==report.plan.table_sha256||manifest.pose!==report.plan.candidate_id)throw Error('Bundle belongs to a different export, table or pose.');
+  if(manifest.inputs?.report_sha256!==reportHash)throw Error('Bundle belongs to a different export report. Select the bundle generated from this report, or run fdmgen evidence with the current report and its matching inputs.');
+  if(manifest.inputs?.table_sha256!==report.plan.table_sha256)throw Error('Bundle belongs to a different orientation table. Use the exact table bytes pinned by this export report.');
+  if(manifest.pose!==report.plan.candidate_id)throw Error('Bundle belongs to a different pose. Select the bundle generated for this export report and pose.');
   if(!Array.isArray(manifest.receipts)||manifest.receipts.length!==5)throw Error('Bundle needs all five receipt entries.');
   const receipts=new Map(),paths=new Set();
   for(const e of manifest.receipts){
