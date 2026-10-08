@@ -75,7 +75,7 @@ function renderBridge(candidate) {
     text('p',valid?`${c.verdict} · ${c.value.toLocaleString(undefined,{maximumFractionDigits:3})} mm longest unsupported strand run; recorded limit ${c.limit_mm.toLocaleString()} mm · T${c.provisional?' · provisional':''}`:'Not checked',section);
     if(valid&&c.verdict==='FAIL'){
       const note=text('p','This tool provides no verified helper-edit remedy for this bridge failure. The recorded FAIL uses the strand model. Changing helper boxes does not establish a fix; revised geometry needs fresh slicing and checks.',section);note.className='warning';note.dataset.bridgeRemedy='';
-      for(const [label,url]of [['Bracket bridge-model investigation (#9)', 'https://github.com/thereprocase/fdm-design-toy/issues/9'], ['Bridge coupon work (#12)', 'https://github.com/thereprocase/fdm-design-toy/issues/12']]){note.append(document.createTextNode(' '));const link=text('a',label,note);link.href=url;link.target='_blank';link.rel='noopener';}
+      for(const [label,url]of [['Bracket bridge-model investigation (#9)', 'https://github.com/thereprocase/fdm-design-toy/issues/9'], ['Bridge coupon work (#12)', 'https://github.com/thereprocase/fdm-design-toy/issues/12'], ['Owner decisions: bracket infill and coupon printing (#17)', 'https://github.com/thereprocase/fdm-design-toy/issues/17#issuecomment-6049963530']]){note.append(document.createTextNode(' '));const link=text('a',label,note);link.href=url;link.target='_blank';link.rel='noopener';}
     }
     if(valid)text('p',c.fidelity||'Method and slice scope not supplied.',section);
     if(valid){

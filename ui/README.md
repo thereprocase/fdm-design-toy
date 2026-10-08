@@ -731,3 +731,7 @@ unchanged draft data across layout changes.
 
 **Add helper** selects the new region and brings its name field into view with
 keyboard focus, including on narrow screens. Existing helper fields are retained.
+
+Bridge failure guidance links directly to the [owner decision record](https://github.com/thereprocase/fdm-design-toy/issues/17#issuecomment-6049963530),
+including bracket infill policy and coupon printing. That navigation does not
+change the recorded strand verdict or establish a helper-edit remedy.

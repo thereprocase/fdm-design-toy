@@ -88,7 +88,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.getByRole('button',{name:'facet-00',exact:true}).click();
  assert.equal(await page.locator('#pose-bridges [data-bridge-remedy]').count(),1);
  assert.match(await page.locator('#pose-bridges [data-bridge-remedy]').innerText(),/no verified helper-edit remedy/);
- assert.deepEqual(await page.locator('#pose-bridges [data-bridge-remedy] a').evaluateAll(a=>a.map(x=>x.href)),['https://github.com/thereprocase/fdm-design-toy/issues/9','https://github.com/thereprocase/fdm-design-toy/issues/12']);
+ assert.deepEqual(await page.locator('#pose-bridges [data-bridge-remedy] a').evaluateAll(a=>a.map(x=>x.href)),['https://github.com/thereprocase/fdm-design-toy/issues/9','https://github.com/thereprocase/fdm-design-toy/issues/12','https://github.com/thereprocase/fdm-design-toy/issues/17#issuecomment-6049963530']);
  assert.match(await page.locator('#pose-bridges').innerText(),/PASS · 3.15 mm/);assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122.1 mm/);
  assert.match(await page.locator('#failed-checks').innerText(),/Internal bridge span · BRG-001 · T · provisional/);
  assert.doesNotMatch(await page.locator('#failed-checks').innerText(),/External bridge span/);
