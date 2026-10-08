@@ -1041,3 +1041,9 @@ The planning form keeps modifier probes under **Reference modifier evidence — 
 verified for this draft**, collapsed by default. Open it to inspect measured
 settings, side effects and profile hashes. This keeps helper entry close to the
 wall and skin controls without treating the reference probes as draft validation.
+
+Use **Jump to helper** beside the planning controls to navigate a long helper
+list without scrolling back to the preview. It shares selection with **Helper to
+edit** above the viewer, opens the chosen editor and focuses its name. Navigation
+does not change the saved plan; renaming, removing and restoring helpers updates
+both lists. Shell-only mode disables both pickers.

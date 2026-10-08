@@ -1,0 +1,36 @@
+const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+ const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
+ await p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
+ await p.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));
+ await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));
+ await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===6);
+ const selectors=['#preview-helper','#planning-helper'];
+ const options=()=>p.locator('#planning-helper option').evaluateAll(es=>es.map(e=>({value:e.value,text:e.textContent})));
+ const list=await options();assert.equal(list.length,7);
+ assert.deepEqual(await p.locator('#preview-helper option').evaluateAll(es=>es.map(e=>({value:e.value,text:e.textContent}))),list);
+ const before=await p.locator('#helper-regions input, #helper-regions textarea').evaluateAll(es=>es.map(e=>[e.value,e.checked]));
+ const editState=await p.locator('#draft-edit-state').innerText();
+ await p.locator('#planning-helper').selectOption(list[5].value);
+ for(const selector of selectors)assert.equal(await p.locator(selector).inputValue(),list[5].value);
+ assert.equal(await p.evaluate(()=>document.activeElement.closest('.helper-region').dataset.id),list[5].value);
+ assert(await p.locator('.helper-region').nth(4).locator('.helper-editor').evaluate(e=>e.open));
+ assert.deepEqual(await p.locator('#helper-regions input, #helper-regions textarea').evaluateAll(es=>es.map(e=>[e.value,e.checked])),before);
+ assert.equal(await p.locator('#draft-edit-state').innerText(),editState);
+ await p.locator('#collapse-other-helpers').click();
+ await p.locator('#planning-helper').selectOption(list[2].value);
+ assert(await p.locator('.helper-region').nth(1).locator('.helper-editor').evaluate(e=>e.open));
+ await p.locator('.helper-region').nth(1).locator('[data-key="name"]').fill('Rear support revised');
+ for(const selector of selectors)assert.match(await p.locator(selector+' option:checked').innerText(),/Rear support revised/);
+ await p.locator('#preview-helper').selectOption(list[1].value);
+ assert.equal(await p.locator('#planning-helper').inputValue(),list[1].value);
+ await p.locator('.helper-region').first().getByRole('button',{name:'Remove region',exact:true}).click();
+ for(const selector of selectors){assert.equal(await p.locator(selector+' option').count(),6);assert.equal(await p.locator(selector).inputValue(),'');}
+ await p.locator('#undo-remove').click();
+ for(const selector of selectors){assert.equal(await p.locator(selector+' option').count(),7);assert.equal(await p.locator(selector).inputValue(),list[1].value);}
+ await p.locator('#shell-only').check();
+ for(const selector of selectors)assert(await p.locator(selector).isDisabled());
+ await p.locator('#shell-only').uncheck();assert(await p.locator('#planning-helper').isEnabled());
+ assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ assert.deepEqual(errors,[]);console.log('PASS real six-helper mirrored navigation, focus, collapsed target, rename, shell-only, unchanged draft and mobile');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

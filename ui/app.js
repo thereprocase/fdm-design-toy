@@ -749,14 +749,15 @@ function refreshHelperSelector(){
  boxes.forEach((box,i)=>{const option=document.createElement('option'),name=helperLabel(box);box.querySelector('legend').textContent=name;option.value=box.dataset.id;option.textContent=name+(box.querySelector('[data-spatial]').checked?'':' — no box yet');select.append(option);box.classList.toggle('active-helper',box===activeHelper&&!shellOnly);});
  byId('return-helper').hidden=shellOnly||!activeHelper;
  select.disabled=shellOnly||!boxes.length;select.value=!shellOnly&&activeHelper?activeHelper.dataset.id:'';
+ const planningSelect=byId('planning-helper');planningSelect.replaceChildren(...[...select.options].map(option=>option.cloneNode(true)));planningSelect.disabled=select.disabled;planningSelect.value=select.value;
  byId('collapse-other-helpers').disabled=shellOnly||!activeHelper;
  byId('expand-helpers').disabled=shellOnly||!boxes.length;
  byId('active-helper-status').textContent=shellOnly?'Shell-only draft: helper boxes are excluded.':activeHelper?`Editing ${helperLabel(activeHelper)}. ${activeHelper.querySelector('[data-spatial]').checked?'Its box has the solid blue outline; other boxes are dashed orange.':'Enable its spatial box to preview the region.'}`:'Focus a helper field to highlight its box.';
 }
 byId('collapse-other-helpers').onclick=()=>{for(const box of byId('helper-regions').children)box.querySelector('.helper-editor').open=box===activeHelper;};
 byId('expand-helpers').onclick=()=>{for(const editor of document.querySelectorAll('.helper-editor'))editor.open=true;};
-byId('preview-helper').onchange=()=>{
- const box=[...byId('helper-regions').children].find(b=>b.dataset.id===byId('preview-helper').value);
+for(const selector of ['preview-helper','planning-helper'])byId(selector).onchange=()=>{
+ const box=[...byId('helper-regions').children].find(b=>b.dataset.id===byId(selector).value);
  setActiveHelper(box||null);
  if(box){box.scrollIntoView({block:'center'});box.querySelector('[data-key="name"]').focus({preventScroll:true});}
 };
