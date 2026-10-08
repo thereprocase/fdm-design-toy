@@ -578,6 +578,10 @@ remains separate, and manifest numeric deltas are not promoted as validated resu
 
 ## Navigate the matched review
 
+When helper names collide, review headings and edit actions include the stable
+helper identifier. Stored names are unchanged, and revision actions still target
+the matching identifier.
+
 **Revise this draft** returns any matched export to the orientation workspace,
 including shell-only plans with no helper edit buttons. Load the exact original
 table to restore the saved plan; the general action focuses wall/skin controls,

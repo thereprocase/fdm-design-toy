@@ -69,5 +69,24 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#slice-helpers').innerText(),/3,167.195/);
  assert.match(await page.locator('#slice-helpers').innerText(),/T PASS/);
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ // Synthetic display-name collision; pin the report to the exact modified draft bytes.
+ const duplicateDraft=JSON.parse(fs.readFileSync(draftPath));
+ duplicateDraft.massing.helper_regions.forEach(h=>h.name='Shared helper');
+ const duplicateBytes=Buffer.from(JSON.stringify(duplicateDraft)),duplicateReport=JSON.parse(fs.readFileSync(receiptPath));
+ duplicateReport.plan.draft_sha256=require('node:crypto').createHash('sha256').update(duplicateBytes).digest('hex');
+ await page.locator('#review-draft').setInputFiles({name:'same-names.json',mimeType:'application/json',buffer:duplicateBytes});
+ await page.locator('#review-receipt').setInputFiles({name:'same-names-report.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(duplicateReport))});
+ await page.waitForFunction(()=>document.querySelector('#review-status').textContent.startsWith('Receipt fingerprint matched'));
+ const labels=duplicateDraft.massing.helper_regions.map(h=>`Shared helper [${h.id}]`);
+ assert.deepEqual(await page.locator('#review-helpers h3').allTextContents(),labels);
+ const checkText=await page.locator('#review-checks').innerText();
+ for(const h of duplicateDraft.massing.helper_regions)assert(!checkText.includes(`[${h.id}] [${h.id}]`));
+ assert.deepEqual(await page.evaluate(()=>saved.massing.helper_regions.map(h=>h.name)),['Shared helper','Shared helper']);
+ await page.locator('#review-helpers').getByRole('button',{name:`Edit ${labels[1]}`,exact:true}).click();
+ await page.waitForURL('**/index.html#review-edit');
+ const transfer=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('fdmgen-review-edit')));
+ assert.equal(transfer.helper_id,duplicateDraft.massing.helper_regions[1].id);
+ assert.deepEqual(transfer.draft.massing,duplicateDraft.massing);
+ assert.deepEqual(errors,[]);
  console.log('PASS real exporter receipt/draft pairing, named tiny helper failure, context mismatch, wrong receipt retention, new draft invalidation, mobile');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

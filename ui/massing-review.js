@@ -13,6 +13,10 @@ el('review-receipt').onchange=async e=>{
  const file=e.target.files[0];if(!file||!saved)return;const request=++receiptGeneration,current=generation;
  try{const raw=await file.arrayBuffer(),reportHash=await EvidenceBundle.digest(raw),r=MassingReview.pair(saved,digest,JSON.parse(new TextDecoder().decode(raw)));if(current!==generation||request!==receiptGeneration)return;render(r,reportHash);matchedReportHash=reportHash;el('review-status').textContent='Receipt fingerprint matched this saved draft.';}catch(err){if(current===generation&&request===receiptGeneration)el('review-status').textContent=err.message+' Previous matched results, if any, remain below.';}
 };
+function helperName(id){
+ const helpers=saved.massing.helper_regions,h=helpers.find(h=>h.id===id);
+ return helpers.filter(other=>other.name.trim()===h.name.trim()).length>1?`${h.name} [${h.id}]`:h.name;
+}
 function render(r,reportHash){
  clearSlice();matchedReport=r;el('review-bundle').disabled=false;el('review-slice').disabled=false;
  el('review-workspace').hidden=false;el('review-title').textContent=`${r.plan.problem} · ${r.plan.candidate_id}`;
@@ -25,7 +29,7 @@ function render(r,reportHash){
  el('review-count').textContent=r.checks.length?`${failed} failed checks; ${unchecked} not checked. Passing checks apply only to the stated method and evidence level.`:'No helper checks reported; this is not a checked result.';
  el('check-filter').value='attention';renderChecks();
  el('review-helpers').replaceChildren();
- for(const h of r.helpers){const planned=saved.massing.helper_regions.find(p=>p.id===h.id),row=add('article','',el('review-helpers'));add('h3',planned.name,row);editButton(h.id,planned.name,row);add('p',`Helper ID: ${h.id}`,row);add('p',planned.purpose||'',row);add('pre',JSON.stringify({design_box:planned.geometry,exported_settings:h.settings,print_bbox_mm:h.print_bbox_mm},null,2),row);}
+ for(const h of r.helpers){const planned=saved.massing.helper_regions.find(p=>p.id===h.id),row=add('article','',el('review-helpers'));add('h3',helperName(h.id),row);editButton(h.id,helperName(h.id),row);add('p',`Helper ID: ${h.id}`,row);add('p',planned.purpose||'',row);add('pre',JSON.stringify({design_box:planned.geometry,exported_settings:h.settings,print_bbox_mm:h.print_bbox_mm},null,2),row);}
  if(!r.helpers.length)add('p','Shell-only draft; no helpers.',el('review-helpers'));
  el('review-setting-evidence').textContent=r.settings_evidence?JSON.stringify(r.settings_evidence,null,2):'Per-value setting evidence was not recorded in this receipt.';
  el('review-settings').textContent=JSON.stringify(r.object_settings,null,2);el('review-skin').textContent=r.skin_note||'';el('review-provenance').textContent=JSON.stringify(r,null,2);
@@ -59,7 +63,7 @@ function renderSlice(r){
  el('slice-thresholds').textContent=`Producer thresholds: ${number(r.min_fill_fraction*100)}% of box volume and ${number(r.min_added_mm3)} mm³. These are slicer screening thresholds, not strength limits.`;
  el('slice-scope').textContent=(baseline&&!mismatch.length?(r.establishes||''):'Helper contribution is not established by this comparison.')+' Does not establish: '+(r.does_not_establish||'shell bonding or strength.');
  el('slice-helpers').replaceChildren();
- for(const h of r.helpers){const name=saved.massing.helper_regions.find(p=>p.id===h.id).name,row=add('article','',el('slice-helpers'));add('h3',`${name} · T ${h.verdict}${!baseline?' (absolute-fill screen)':mismatch.length?' (context mismatch)':''}`,row);editButton(h.id,name,row);
+ for(const h of r.helpers){const name=helperName(h.id),row=add('article','',el('slice-helpers'));add('h3',`${name} · T ${h.verdict}${!baseline?' (absolute-fill screen)':mismatch.length?' (context mismatch)':''}`,row);editButton(h.id,name,row);
   const values=add('dl','',row);
   for(const [label,value] of [['Project solid infill in box',number(h.solid_infill_in_box_mm3)+' mm³'],['Shell-only solid infill in box',baseline?number(h.baseline_solid_infill_mm3)+' mm³':'Not checked'],[mismatch.length?'Uncontrolled solid-infill difference':'Added solid infill',baseline?number(h.added_solid_mm3)+' mm³':'Not attributable without baseline'],['Added fill / box volume',baseline?number(h.added_fill_fraction*100)+'%':'Not attributable without baseline']]){add('dt',label,values);add('dd',value,values);}
   if(baseline&&!mismatch.length)add('p',h.message.replace(h.id,name),row);
@@ -70,6 +74,7 @@ function renderSlice(r){
 }
 
 function editButton(helperId,name,parent){
+ name=helperName(helperId);
  const button=add('button',`Edit ${name}`,parent);button.type='button';button.className='secondary';
  button.onclick=()=>transferDraft(helperId,name);
 }
