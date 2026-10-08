@@ -644,3 +644,7 @@ The preview's Design axes indicator rotates with the pose and camera, matching
 helper centre/nudge coordinates. A circled dot indicates an axis toward the viewer;
 a circled cross points away. The bed remains the print Z=0 plane. In top view,
 print Z points toward the viewer rather than upward on screen.
+
+The design-axis indicator is a noninteractive overlay: clicking or dragging it
+does not place helper centres or rotate the part. Cancelled pointer gestures do
+not leave a pending surface click.

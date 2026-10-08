@@ -17,9 +17,20 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
   await region.locator('[data-interface-id="rear_seat"]').check();await region.locator('[data-spatial]').check();
   await page.locator('#zoom-in').click();assert(await page.evaluate(()=>viewer.zoom>1));await page.locator('#zoom-out').click();
   await page.locator('#view-top').click();await region.getByRole('button',{name:'Place centre on part'}).click();
+  const overlay=await page.locator('#part-view').boundingBox(),beforeOverlay=await page.evaluate(()=>({state:draftFormState(),yaw:viewer.yaw,pitch:viewer.pitch}));
+  await page.evaluate(()=>{window.pickCalls=0;const pick=viewer.onPick;viewer.onPick=p=>{window.pickCalls++;pick(p);};});
+  await page.mouse.click(overlay.x+67,overlay.y+75);
+  await page.mouse.move(overlay.x+67,overlay.y+75);await page.mouse.down();await page.mouse.move(overlay.x+180,overlay.y+150,{steps:3});await page.mouse.up();
+  assert.equal(await page.evaluate(()=>window.pickCalls),0);
+  assert.deepEqual(await page.evaluate(()=>({state:draftFormState(),yaw:viewer.yaw,pitch:viewer.pitch})),beforeOverlay);
   const hit=await page.evaluate(()=>{
     const v=viewer.vertices;let best=null,area=-1;for(let i=0;i<v.length;i+=9){const p=[0,3,6].map(j=>viewer.project(v[i+j],v[i+j+1],v[i+j+2]));const a=Math.abs((p[1][0]-p[0][0])*(p[2][1]-p[0][1])-(p[2][0]-p[0][0])*(p[1][1]-p[0][1]));if(a>area){area=a;best=[p.reduce((s,q)=>s+q[0],0)/3,p.reduce((s,q)=>s+q[1],0)/3];}}const r=viewer.canvas.getBoundingClientRect();return [best[0]+r.left,best[1]+r.top];
-  });await page.mouse.click(...hit);await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('Region centre placed'));
+  });
+  await page.locator('#part-view').dispatchEvent('pointerdown',{clientX:hit[0],clientY:hit[1],pointerId:1});
+  await page.locator('#part-view').dispatchEvent('pointercancel',{pointerId:1});
+  await page.locator('#part-view').dispatchEvent('pointerup',{clientX:hit[0],clientY:hit[1],pointerId:1});
+  assert.equal(await page.evaluate(()=>window.pickCalls),0);assert(await page.evaluate(()=>!!viewer.onPick));
+  await page.mouse.click(...hit);await page.waitForFunction(()=>document.querySelector('#placement-status').textContent.startsWith('Region centre placed'));
   assert.equal(await page.evaluate(()=>viewer.regions.length),1);
   await page.locator('#return-helper').click();
   assert(await region.locator('[data-geometry="center_mm"][data-axis="0"]').evaluate(e=>e===document.activeElement));

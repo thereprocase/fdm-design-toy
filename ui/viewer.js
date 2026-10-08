@@ -44,19 +44,24 @@ function designAxesInView(R,yaw,pitch){
     return [cy*x-sy*y,sp*yy-cp*z,cp*yy+sp*z];
   });
 }
+const AXIS_PANEL={x:8,y:8,width:122,height:116};
 class PartViewer {
   constructor(canvas) {
     this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;
     let start=null,down=null;
-    canvas.addEventListener('pointerdown',e=>{start=down=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId);});
+    const onOverlay=e=>{
+      const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+      return this.vertices&&x>=AXIS_PANEL.x&&x<=AXIS_PANEL.x+AXIS_PANEL.width&&y>=AXIS_PANEL.y&&y<=AXIS_PANEL.y+AXIS_PANEL.height;
+    };
+    canvas.addEventListener('pointerdown',e=>{if(onOverlay(e)){start=down=null;return;}start=down=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId);});
     canvas.addEventListener('pointerup',e=>{
-      if(this.onPick&&down&&Math.hypot(e.clientX-down[0],e.clientY-down[1])<4&&this.project&&this.vertices){
+      if(this.onPick&&down&&!onOverlay(e)&&Math.hypot(e.clientX-down[0],e.clientY-down[1])<4&&this.project&&this.vertices){
         const rect=canvas.getBoundingClientRect(),point=pickSurface(this.vertices,this.project,e.clientX-rect.left,e.clientY-rect.top);
         const design=point?[0,1,2].map(a=>this.R.reduce((sum,row,j)=>sum+row[a]*(point[j]-this.t[j]),0)):null;
         this.onPick(design);
       }
       start=down=null;
-    });canvas.addEventListener('pointercancel',()=>start=null);
+    });canvas.addEventListener('pointercancel',()=>{start=down=null;});
     canvas.addEventListener('pointermove',e=>{if(!start)return;this.yaw+=(e.clientX-start[0])*.01;this.pitch=Math.max(-1.5,Math.min(1.5,this.pitch+(e.clientY-start[1])*.01));start=[e.clientX,e.clientY];this.schedule();});
     canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
     new ResizeObserver(()=>this.schedule()).observe(canvas);
@@ -94,7 +99,7 @@ class PartViewer {
       ctx.stroke();ctx.setLineDash([]);ctx.font='bold 12px system-ui';ctx.fillStyle=region.active?'#174d89':'#84360f';ctx.fillText((region.active?'Editing: ':'')+(region.name||'Planning region'),points[7][0]+5,points[7][1]-5);
     }
     // Directions follow both the design-to-print rotation and camera, without translation.
-    ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(8,8,122,116);
+    ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(AXIS_PANEL.x,AXIS_PANEL.y,AXIS_PANEL.width,AXIS_PANEL.height);
     ctx.fillStyle='#344d40';ctx.font='12px system-ui';ctx.fillText('Design axes',18,26);
     const origin=[67,75],length=28,colors=['#a52e2e','#267142','#235ca4'];
     designAxesInView(this.R,this.yaw,this.pitch).forEach(([x,y,depth],i)=>{
