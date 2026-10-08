@@ -387,6 +387,31 @@ function addHelper(region={}) {
       field.type='number';field.step='0.1';field.dataset.geometry=key;field.dataset.axis=axis;field.value=region.geometry?.[key]?.[axis]??(key==='center_mm'?0:10);label.append(field);
     }
   }
+  const sizeFields=()=>[...box.querySelectorAll('[data-geometry="size_mm"]')];
+  const sizeValues=()=>sizeFields().map(f=>f.value),sizeUndo=[],sizeRedo=[];
+  let sizeBefore=sizeValues(),sizeEditing=false;
+  const sizeActions=text('div','',spatial);sizeActions.className='nudge-controls';
+  const undoSize=text('button','Undo dimension edit',sizeActions),redoSize=text('button','Redo dimension edit',sizeActions);
+  for(const button of [undoSize,redoSize]){button.type='button';button.className='secondary';button.disabled=true;}
+  const sizeStatus=text('p','Dimension undo keeps up to 20 edits per helper. Typing in one field is one edit; centre moves have separate history.',sizeActions);sizeStatus.setAttribute('role','status');
+  const restoreSize=(from,to,button,reverse)=>{
+    if(!from.length)return;const hadFocus=document.activeElement===button;
+    cancelSurfacePlacement();to.push(sizeValues());const values=from.pop();
+    sizeFields().forEach((f,i)=>f.value=values[i]);sizeBefore=sizeValues();sizeEditing=false;
+    undoSize.disabled=!sizeUndo.length;redoSize.disabled=!sizeRedo.length;updateRegions();
+    if(hadFocus&&button.disabled)reverse.focus({preventScroll:true});
+    sizeStatus.textContent='Box dimensions restored. Centre and other helper settings are unchanged. Geometry checks have not been rerun.';
+  };
+  undoSize.onclick=()=>restoreSize(sizeUndo,sizeRedo,undoSize,redoSize);
+  redoSize.onclick=()=>restoreSize(sizeRedo,sizeUndo,redoSize,undoSize);
+  box.addEventListener('focusin',event=>{if(event.target.matches('[data-geometry="size_mm"]')){sizeBefore=sizeValues();sizeEditing=false;}});
+  box.addEventListener('input',event=>{
+    if(!event.target.matches('[data-geometry="size_mm"]'))return;
+    if(!sizeEditing){sizeUndo.push(sizeBefore);if(sizeUndo.length>20)sizeUndo.shift();sizeEditing=true;}
+    sizeRedo.length=0;undoSize.disabled=false;redoSize.disabled=true;
+    sizeStatus.textContent='Dimensions edited. Undo dimension edit restores the values before this edit. Geometry checks have not been rerun.';
+  });
+  box.addEventListener('change',event=>{if(event.target.matches('[data-geometry="size_mm"]')){sizeBefore=sizeValues();sizeEditing=false;}});
   const nudge=text('div','',spatial);nudge.className='nudge-controls';
   const stepLabel=text('label','Move centre by',nudge),step=document.createElement('select');step.dataset.nudgeStep='';
   for(const value of [.1,.4,1,5]){const option=text('option',value+' mm',step);option.value=value;}step.value='1';stepLabel.append(step);

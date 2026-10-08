@@ -102,6 +102,9 @@ part when you choose a different print pose.
   can be undone and redone during this editing session. When the focused Undo or
   Redo button runs out of moves, focus switches to the reverse action. A move
   refused because a centre coordinate is incomplete focuses that field.
+- **Undo dimension edit** and **Redo dimension edit** recover box sizes, including
+  arrow-key changes and incomplete fields. Typing in one field is one edit; up to
+  20 edits are kept per helper. Centre moves use their own history.
 - **Duplicate region** copies its fields into an independently editable helper.
   **Undo remove** restores a removed helper while that removal history remains
   in this session.

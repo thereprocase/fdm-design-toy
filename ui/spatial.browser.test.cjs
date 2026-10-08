@@ -157,6 +157,25 @@ const path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('
    await control.setChecked(wasChecked);
    assert.equal(await page.evaluate(()=>draftFormState()),beforeCancel);
   }
+  // Number-input arrow steps have no native undo: dimension history restores
+  // the whole box without changing its centre, notes or constraints.
+  const dimension=region.locator('[data-geometry="size_mm"][data-axis="0"]');
+  const undoSize=region.getByRole('button',{name:'Undo dimension edit',exact:true});
+  const redoSize=region.getByRole('button',{name:'Redo dimension edit',exact:true});
+  const beforeSize=await page.evaluate(()=>draftFormState());
+  await dimension.focus();await page.keyboard.press('ArrowUp');
+  const afterSize=await page.evaluate(()=>draftFormState());assert.notEqual(afterSize,beforeSize);
+  await undoSize.press('Enter');assert.equal(await page.evaluate(()=>draftFormState()),beforeSize);
+  await redoSize.press('Enter');assert.equal(await page.evaluate(()=>draftFormState()),afterSize);
+  await undoSize.click();
+  // A replacement typed in several keystrokes is one edit, including blanks.
+  await dimension.focus();await page.keyboard.press('Control+a');await page.keyboard.type('25');
+  assert(await redoSize.isDisabled());await undoSize.click();
+  assert.equal(await page.evaluate(()=>draftFormState()),beforeSize);
+  await dimension.fill('');await dimension.press('Tab');
+  const blankSize=await page.evaluate(()=>draftFormState());
+  await dimension.fill('12');await undoSize.click();assert.equal(await page.evaluate(()=>draftFormState()),blankSize);
+  await undoSize.click();assert.equal(await page.evaluate(()=>draftFormState()),beforeSize);
   await region.locator('[data-nudge-step]').selectOption('0.4');
   const sizes=await region.locator('[data-geometry="size_mm"]').evaluateAll(fields=>fields.map(f=>f.value));
   await region.getByRole('button',{name:'Place centre on part'}).click();assert(await page.evaluate(()=>!!viewer.onPick));
