@@ -643,3 +643,18 @@ includes the lazy coarse factorization, so audited solve timings cannot be
 compared directly with earlier unaudited solve timings. Default solves do not
 run probes. Known-answer controls cover positive/negative energy, nonsymmetry,
 subspace leakage and mismatched transfer/smoother settings.
+
+The audited replay `receipts/bracket-r1-preconditioner-audit.json` (harness
+`7f48405`) uses the same banded theta=0.25/pinv case as the preceding receipt.
+Its source and physical-input hashes were checked, and the entire 150-iteration
+residual history reproduces the unaudited run exactly (final residual 11.6076,
+exit 2). The measured maximum symmetry gap is 1.0597e-4 on the full system and
+1.0662e-4 on free DOFs; constrained-DOF output leakage is exactly zero for these
+probes. Every recorded restriction equals the transpose of prolongation, and
+pre/post functions, sweep counts and inverse-block hashes match. Thus neither
+mismatched recorded settings nor retained constrained rows explains the observed
+asymmetry. The audit does not identify the complete cause or establish SPD.
+Audit time was 20.83 s on the shared CPU worker; it includes coarse factorization
+and 80 inverse applications. Full remote suite: 268 passed, 6 CUDA-only skips.
+Small controls confirm that enabling the audit preserves CG histories. No
+production solver default or convergence gate changed.
