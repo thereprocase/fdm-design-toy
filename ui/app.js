@@ -2,12 +2,26 @@
 const byId = id => document.getElementById(id);
 let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draftRequest = 0;
 const decisions = new Map();
-let proposalOrigin=null,sourceTableBytes=null,referencePose=null;
+let proposalOrigin=null,sourceTableBytes=null,referencePose=null,orientationEvidenceBundle=null,orientationRoad=null;
 const removedHelpers=[];
 let draftCheckpoint=null,draftCheckpointKind='new';
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
 byId('review-poses').onclick=()=>document.querySelector('.candidates').scrollIntoView({block:'start'});
 const viewer = new PartViewer(byId('part-view'));
+function renderPoseRoads(){
+ orientationRoad=null;viewer.setRoadWitness(null);byId('pose-road-buttons').replaceChildren();byId('pose-road-hide').hidden=true;byId('pose-road-selected').textContent='';byId('pose-road-source').textContent='';byId('pose-road-provenance').hidden=true;
+ const item=orientationEvidenceBundle?.receipts.find(x=>x.entry.pose===selected?.id&&x.entry.check==='bridge-check');
+ if(!item){byId('pose-road-status').textContent='Open an orientation evidence bundle and select a pose to locate its recorded bridges.';return;}
+ try{
+  const roads=BridgeLocations.locations(item.receipt,{orientation:selected,source:{mesh:analysis.mesh,orientation_table_sha256:orientationEvidenceBundle.manifest.table.root_sha256}});
+  byId('pose-road-status').textContent=selected.id+' · '+item.entry.slice_kind+' · '+(roads.length?'Choose a recorded maximum. Matching STL required to draw it.':'This receipt has no location geometry; numeric bridge checks remain available.');
+  byId('pose-road-source').textContent=JSON.stringify({receipt_sha256:item.entry.sha256,receipt:item.receipt},null,2);byId('pose-road-provenance').hidden=false;
+  for(const road of roads){const button=text('button',road.role+' '+road.model+' · '+road.value_mm+' mm',byId('pose-road-buttons'));button.type='button';button.className='secondary';button.setAttribute('aria-pressed','false');
+   button.onclick=()=>{cancelSurfacePlacement();orientationRoad=road;for(const choice of byId('pose-road-buttons').children)choice.setAttribute('aria-pressed',String(choice===button));viewer.setRoadWitness(road.source.design_mm);byId('pose-road-hide').hidden=false;byId('pose-road-selected').textContent=selected.id+' · '+item.entry.slice_kind+' · '+road.role+' '+road.model+' · '+road.value_mm+' mm. Dashed: full road; solid: bounded unsupported run; dot: ceiling witness. Drawn through the body for location only. Slicer roles do not prove open-air/core geometry or a helper remedy. Recorded slice only; not a check of current helper edits. This display does not change the draft.';};
+  }
+ }catch(error){byId('pose-road-status').textContent=error.message+' Numeric bridge checks remain available.';}
+}
+byId('pose-road-hide').onclick=()=>{const old=byId('pose-road-buttons').querySelector('[aria-pressed="true"]');old?.setAttribute('aria-pressed','false');orientationRoad=null;viewer.setRoadWitness(null);old?.focus({preventScroll:true});byId('pose-road-hide').hidden=true;byId('pose-road-selected').textContent='Bridge road hidden; source receipt retained.';};
 byId('all-helper-labels').onchange=()=>{viewer.showAllLabels=byId('all-helper-labels').checked;viewer.schedule();};
 let mesh=null,meshHash=null,meshRequest=0,meshBounds=null,activeHelper=null;
 byId('return-helper').onclick=()=>{
@@ -15,6 +29,7 @@ byId('return-helper').onclick=()=>{
  setActiveHelper(activeHelper);
  const target=activeHelper.querySelector(activeHelper.querySelector('[data-spatial]').checked?'[data-geometry="center_mm"]':'[data-key="name"]');
  target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
+ document.querySelector('.preview').scrollTop=0;
 };
 let keepoutGeometry=null,keepoutRequest=0;
 function updateKeepoutVisibility(){
@@ -51,7 +66,7 @@ byId('keepout-file').onchange=async event=>{
 };
 function updatePreview(){
  if(!analysis || !selected || !mesh || meshHash!==analysis.mesh?.sha256){cancelSurfacePlacement();viewer.clear();return;}
- try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();}
+ try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();viewer.setRoadWitness(orientationRoad?.source.design_mm||null);}
  catch(e){cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent=e.message;}
 }
 byId('focus-helper').onclick=()=>{if(activeHelper)viewer.focusRegion(activeHelper.dataset.id);};
@@ -169,7 +184,7 @@ function renderPlanningPose(){
  byId('planning-pose-checks').textContent=`Design-frame build direction: ${selected.build_dir_design.join(', ')}. Table fit/stability: ${fit}; ${failures} recorded failed check${failures===1?'':'s'}. These results do not verify your helper edits.`;
 }
 function choose(candidate) {
-  cancelSurfacePlacement();remember();selected=candidate;renderPlanningPose();byId('pose-name').textContent=candidate.id;
+  cancelSurfacePlacement();remember();selected=candidate;renderPoseRoads();renderPlanningPose();byId('pose-name').textContent=candidate.id;
   byId('direction').textContent=`Build direction (design frame): ${(candidate.build_dir_design || []).join(', ')}`;
   const design=candidate.columns?.F_L_max,vendor=candidate.columns?.F_L_max_vendor_corner;
   byId('strength-range').textContent=Number.isFinite(design?.value)&&Number.isFinite(vendor?.value)&&design.verdict!=='NOT_CHECKED'&&vendor.verdict!=='NOT_CHECKED'?`Material-corner range: ${metricNumber(Math.min(design.value,vendor.value))}–${metricNumber(Math.max(design.value,vendor.value))}. Conservative design corner: ${metricNumber(design.value)}. ${design.fidelity||'FE prescreen; provisional.'}`:'Strength comparison is not checked for both material corners.';
@@ -295,9 +310,11 @@ byId('table-file').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;const accepted=await loadOrientationTable(file,++tableRequest);if(accepted===false)event.target.value='';
 };
 function clearOrientationBundle(){
+ orientationEvidenceBundle=null;renderPoseRoads();
  byId('orientation-bundle-summary').hidden=true;byId('orientation-bundle-poses').replaceChildren();byId('orientation-bundle-manifest').textContent='';byId('orientation-bundle-status').textContent='No orientation bundle verified for this table.';
 }
 function renderOrientationBundle(bundle){
+ orientationEvidenceBundle=bundle;renderPoseRoads();
  const m=bundle.manifest,failures=m.receipts.filter(r=>r.verdict==='FAIL').length;
  byId('orientation-bundle-summary').hidden=false;
  byId('orientation-bundle-count').textContent=`${m.slices.length} pose slices; ${m.receipts.length} receipt fingerprints checked; ${failures} FAIL receipts. File verification does not qualify a pose.`;

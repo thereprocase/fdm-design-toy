@@ -985,3 +985,10 @@ on its bridge card opens those exact receipt bytes in Saved geometry without
 selecting the file again. The manifest-verified receipt hash stays attached.
 Invalid optional coordinates withhold the overlay while numeric results remain
 readable; older bundles still use the separate location-receipt picker.
+
+The orientation workspace also offers **Bridge locations for this pose** when
+a verified orientation evidence bundle contains optional road geometry. Selection
+uses that pose's receipt and root-table provenance, draws with the current pose,
+and stays out of the planning draft. Changing pose or table clears the overlay.
+A table alone does not carry verified source receipts, so it supplies no road
+overlay. Existing bundles without locations keep their numeric results.
