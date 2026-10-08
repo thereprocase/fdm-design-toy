@@ -85,3 +85,18 @@ def test_real_fixture_reproduces(tmp_path, monkeypatch):
     assert main(["keepout-render", str(repo / "tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json"),
                  "--problem", str(repo / "problems/spool-rack-g2-ef/problem.yaml"), "--out", str(out)]) == 0
     assert json.loads(out.read_text(encoding="utf-8")) == json.loads(REAL.read_text(encoding="utf-8"))
+
+
+def test_a_refused_run_removes_an_older_output_file(tmp_path, monkeypatch):
+    """bridge-check, shell-check and keepout-render clear --out first, so exit 1 never leaves a stale receipt."""
+    _case(tmp_path, frames={"design": "print"})
+    (tmp_path / "r.json").write_text('{"stale": true}', encoding="utf-8")
+    assert _run(tmp_path, monkeypatch) == 1 and not (tmp_path / "r.json").exists()
+    from fdmgen.cli import main
+    for cmd in (["bridge-check"], ["shell-check"]):
+        stale = tmp_path / f"{cmd[0]}.json"
+        stale.write_text('{"stale": true}', encoding="utf-8")
+        (tmp_path / "s.gcode").write_text("; empty\n", encoding="utf-8")
+        argv = cmd + [str(tmp_path / "s.gcode"), "--table", str(tmp_path / "t.json"), "--pose", "missing-pose",
+                      "--out", str(stale)]
+        assert main(argv) == 1 and not stale.exists(), cmd

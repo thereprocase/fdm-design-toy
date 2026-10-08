@@ -441,6 +441,7 @@ def _cmd_bridge_check(a) -> int:
     from .gcode import extruder_offset, read_gcode, reader
     from .gcode import occupancy as occ
     from .massing.export import _slicer_context
+    a.out.unlink(missing_ok=True)          # a failed run must not leave an older receipt looking current
     if (a.table is None) != (a.pose is None):
         print("ERROR   give --table and --pose together (or neither)")
         return 1
@@ -549,6 +550,7 @@ def _cmd_keepout_render(a) -> int:
 
     def sha(b):
         return hashlib.sha256(b).hexdigest()
+    a.out.unlink(missing_ok=True)          # a failed run must not leave an older receipt looking current
     traw, praw = a.table.read_bytes(), a.problem.read_bytes()
     table, prob = json.loads(traw), yaml.safe_load(praw)
     if (prob.get("frames") or {}).get("design") != "installed":
@@ -604,6 +606,7 @@ def _cmd_shell_check(a) -> int:
     from .catalog.checks.shell import check_shell, grid_origin
     from .gcode import extruder_offset, read_gcode
     from .gcode.occupancy import deposit
+    a.out.unlink(missing_ok=True)          # a failed run must not leave an older receipt looking current
     posed = _posed_body(a.table, a.pose)
     if isinstance(posed, str):
         print(f"ERROR   {posed}")
