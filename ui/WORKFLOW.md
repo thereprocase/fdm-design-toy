@@ -32,6 +32,7 @@ if you want no helper regions in this draft. Helpers request 100% infill; sparse
 infill receives no structural credit. Otherwise, give each helper a name,
 location, load-carrying purpose and interface constraints. Select the applicable
 interface and keep-out references, and enter the required clearance when known.
+**Add helper** selects the new region and focuses its name, ready for typing.
 
 Enable **Place a box-shaped planning region** to specify a helper's centre and
 size. These coordinates are in the **design frame**; they stay attached to the
@@ -51,9 +52,19 @@ part when you choose a different print pose.
 
 Use **Helper to edit** beside the preview to select and highlight a region.
 **Show only selected helper** folds the other editors without removing their data;
-**Expand all helpers** opens them again.
+**Expand all helpers** opens them again. **Return to helper controls** reopens the
+selected editor and focuses its centre, or its name if no box is enabled.
+An **Edit** button beside a planning warning takes you to the affected helper;
+undersized-edge warnings focus the dimension that needs attention.
 
 ## Inspect the geometry
+
+To inspect a small region, select it with **Helper to edit** and press **Focus
+helper**. Orbit and zoom now centre on that box. **Show whole part** restores the
+overview without changing the viewing direction; the preset view buttons also
+restore whole-part framing. Changing the selected helper or disabling its box
+ends focused framing. Only the selected helper is labelled by default; **Show all
+helper labels** reveals the other names when needed.
 
 The design-axis indicator follows the pose and camera, matching the helper
 coordinate controls. A circled dot points toward you; a circled cross points away.
@@ -65,6 +76,10 @@ Orange dashed boxes and the highlighted helper are unclipped planning regions.
 Their displayed volume is not credited material. The ground rectangle marks
 print Z=0; it is not a bed-fit test. Size, gap and bounding-box warnings are planning
 screens. Exporter checks, sliced evidence and physical testing remain separate.
+
+If a replacement STL is rejected, the previously matched mesh and camera remain
+available. The viewing-help panel opens with the error and identifies the retained
+mesh. Loading a new orientation table clears that preview; load its matching STL.
 
 ## Save the exact inputs
 
@@ -78,6 +93,12 @@ Download an updated draft after editing. The edit indicator tracks changes since
 opening or downloading a draft; it is not autosave. Replacing a table/draft or
 leaving the page with edits prompts you first. Reopen a saved draft only after
 loading its original table. Downloading the table alone does not save draft edits.
+
+If the draft belongs to another table, the error supplies its full required
+fingerprint and the suggested `orientation-table-<fingerprint-prefix>.json`
+filename. Locate the table saved alongside that draft. The complete bytes must
+match: renaming or reformatting another table cannot repair the pairing. A rejected
+import leaves current edits intact; save them before accepting a different table.
 
 ## Export, slice and collect evidence
 
@@ -120,6 +141,14 @@ Open [helper export review](massing-review.html). Load the saved draft and expor
 report first. Then select the manifest **and all five receipt JSON files together**
 from the evidence output folder. Fingerprints must pair before results are shown.
 Read failed and unchecked results, their scope, coverage and method context.
+If a paired comparison is withheld, read the first reason in the bundle summary
+and the complete producer-reported list below it. Resolve the stated input or
+context mismatch before trying to interpret a numerical change.
+
+A strand-model bridge FAIL has no verified helper-edit remedy in this workspace.
+Follow the adjacent investigation, coupon and owner-decision links for the bracket
+infill/printing questions. A smaller ceiling-model span does not override that
+FAIL; adding helpers does not establish a fix.
 
 Use **Revise this draft**, or a helper's revision action, to return to planning.
 Load the original table when prompted. Revise the intent, export a new draft and
