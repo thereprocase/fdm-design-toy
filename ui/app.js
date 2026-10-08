@@ -379,15 +379,17 @@ function resetHandoff(){
  byId('handoff-readiness').textContent='Export this draft to populate its filenames and geometry-input summary.';
  renderEvidenceHandoff(null);
 }
+const reviewContextPanel=byId('review-edit-context');
 function clearReviewContext(){
+ byId('planning-pose').before(reviewContextPanel);
  byId('review-edit-context').hidden=true;byId('review-edit-context-summary').textContent='';byId('review-edit-context-source').textContent='';
 }
-byId('dismiss-review-context').onclick=()=>{clearReviewContext();byId('walls').focus({preventScroll:true});};
+byId('dismiss-review-context').onclick=()=>{const field=reviewContextPanel.closest('.helper-region')?.querySelector('[data-key="name"]')||byId('walls');clearReviewContext();field.focus({preventScroll:true});field.scrollIntoView({block:'center'});};
 function showReviewContext(context,helper){
  const check=context?.check;
  if(!helper||!check||check.metrics?.helper_id!==helper.dataset.id||!['FAIL','PASS','NOT_CHECKED'].includes(check.verdict)||typeof check.rule!=='string'||typeof check.level!=='string'||typeof check.message!=='string'||! /^[a-f0-9]{64}$/.test(context.report_sha256))return;
  byId('review-edit-context-summary').textContent=`${helper.querySelector('[data-key="name"]').value} [${helper.dataset.id}] · ${check.rule} · ${check.level} · ${check.verdict}: ${check.message}`;
- byId('review-edit-context-source').textContent=JSON.stringify(context,null,2);byId('review-edit-context').hidden=false;
+ byId('review-edit-context-source').textContent=JSON.stringify(context,null,2);helper.querySelector('[data-key="name"]').closest('label').after(reviewContextPanel);reviewContextPanel.hidden=false;
 }
 function resetPlan(){
  clearReviewContext();
@@ -569,10 +571,11 @@ function resumeReviewDraft(){
  try{
   restoreDraft(pendingReview.draft);
   const target=[...document.querySelectorAll('.helper-region')].find(box=>box.dataset.id===pendingReview.helper_id);
-  if(target){target.scrollIntoView({block:'center'});target.querySelector('[data-key="name"]').focus({preventScroll:true});}
-  else{byId('walls').scrollIntoView({block:'center'});byId('walls').focus({preventScroll:true});}
   showReviewContext(pendingReview.review_context,target);
   clearReviewTransfer();
+  const field=target?target.querySelector('[data-key="name"]'):byId('walls');
+  if(target)setActiveHelper(target);
+  field.focus({preventScroll:true});field.scrollIntoView({block:'center'});
  }catch(error){byId('review-transfer-status').textContent='Draft retained for review: '+error.message;}
 }
 if(location.hash==='#review-edit'){

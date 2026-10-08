@@ -914,3 +914,8 @@ The pose slice filter includes usable SHELL-001 or BRG-001 toolpath results,
 even when no support-count column is supplied. Missing support counts remain
 **Not checked**; finding shell or bridge evidence never implies zero supports.
 Unchecked or malformed shell/bridge columns do not satisfy the filter.
+
+The previous-check note appears immediately after the targeted helper name.
+Review handoff scrolls the focused name field into view rather than centring the
+whole helper editor, which can be taller than the screen. Dismissing the note
+returns focus to that helper; opening another draft/table clears the note.

@@ -17,7 +17,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert(await page.locator('#review-transfer').isHidden());
  const target=page.locator('.helper-region').filter({has:page.locator('[data-key="name"]')}).nth(draft.massing.helper_regions.indexOf(tiny));
  assert.equal(await target.locator('[data-key="name"]').inputValue(),tiny.name);
- assert(await target.locator('[data-key="name"]').evaluate(e=>e===document.activeElement));
+ assert(await target.locator('[data-key="name"]').evaluate(e=>{const r=e.getBoundingClientRect();return e===document.activeElement&&r.top>=0&&r.bottom<=innerHeight;}));
  const download=page.waitForEvent('download');await page.locator('#export').click();const exported=JSON.parse(await fs.readFile(await(await download).path(),'utf8'));
  assert.deepEqual(exported.massing,draft.massing);assert.equal(exported.source.orientation_table_sha256,draft.source.orientation_table_sha256);
  assert.equal(await page.evaluate(()=>sessionStorage.getItem('fdmgen-review-edit')),null);
@@ -40,7 +40,9 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.deepEqual(context.check,clearance);
  assert.equal(context.report_sha256,require('node:crypto').createHash('sha256').update(await fs.readFile(path.join(__dirname,'../tests/fixtures/massing/sample-export-report.json'))).digest('hex'));
  const backingFields=page.locator(`.helper-region[data-id="${backing.id}"]`);
- assert(await backingFields.locator('[data-key="name"]').evaluate(e=>e===document.activeElement));
+ assert(await backingFields.locator('[data-key="name"]').evaluate(e=>{const r=e.getBoundingClientRect();return e===document.activeElement&&r.top>=0&&r.bottom<=innerHeight;}));
+ assert.equal(await page.locator('#review-edit-context').evaluate(e=>e.closest('.helper-region').dataset.id),backing.id);
+ assert(await page.locator('#review-edit-context').evaluate(e=>e.getBoundingClientRect().top<innerHeight));
  const snapshot=page.waitForEvent('download');await page.locator('#export').click();
  const unchanged=JSON.parse(await fs.readFile(await(await snapshot).path(),'utf8'));
  assert.deepEqual(unchanged.massing,draft.massing);assert.equal(unchanged.review_context,undefined);
