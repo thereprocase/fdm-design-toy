@@ -263,6 +263,13 @@ in capped density; that law is uncalibrated. Predicted displacements are not
 validated physical movement. The complete source receipt remains available below
 the displayed results.
 
+The seed slices were re-rasterised at a deposition sampling step of h/12
+(about 0.067 mm), rather than the original h/3. This refines deposition within
+the 0.8 mm solver cells; it does not make a 0.067 mm FE grid. Each input's
+sampling block records the resampling and its original source; separate h/3
+controls exist. Check these blocks before comparing receipts with different
+sampling steps.
+
 For a contrasting audit, select
 `bench/receipts/occupancy-connected-sensitivity-r1.json` in the same input. The
 older thresholded model retained only 1,978 of 2,071 original restrained components.
