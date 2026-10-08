@@ -5,6 +5,11 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await p.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));
  await p.locator('#draft-file').setInputFiles(path.join(__dirname,'fixtures/seed-draft.json'));
  await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===6);
+ const history=p.locator('[data-proposal-history]');assert.equal(await history.evaluate(e=>e.open),false);
+ const snapshotBefore=await p.evaluate(()=>workSnapshot());
+ assert((await p.locator('#proposal-evidence').boundingBox()).height<140);
+ await history.locator(':scope > summary').click();assert.match(await history.innerText(),/Originally proposed helpers/);
+ await history.locator(':scope > summary').click();assert.deepEqual(await p.evaluate(()=>workSnapshot()),snapshotBefore);
  const first=p.locator('.helper-region').first(),summary=first.locator('.helper-editor > summary');
  const originalSummary=await summary.innerText();
  assert.match(originalSummary,/mm; centre \(.*\) design mm\. Planning geometry only/);

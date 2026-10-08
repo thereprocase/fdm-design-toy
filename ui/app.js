@@ -900,10 +900,11 @@ function renderProposal(proposal=proposalOrigin,panel=byId('proposal-evidence'))
  panel.replaceChildren();panel.hidden=!proposal;
  if(!proposal)return;
  const p=proposal;
- text('h3','Original machine proposal',panel);
+ if(p.status==='no_viable_helpers')text('p','No viable helpers were proposed. The empty helper list does not establish that shell-only is sufficient. Review the rejected clusters and revise the plan deliberately.',panel).className='warning';
+ const history=text('details','',panel);history.dataset.proposalHistory='';
+ text('summary','Original machine proposal — historical, not current verification',history);panel=history;
  text('p','Historical proposal provenance. Editing helpers, shell settings or the pose does not rerun the seed or its checks. Export and verify the current plan again.',panel).className='warning';
  text('p',p.label||'A proposal for review; not an optimum or a strength result.',panel);
- if(p.status==='no_viable_helpers')text('p','No viable helpers were proposed. The empty helper list does not establish that shell-only is sufficient. Review the rejected clusters and revise the plan deliberately.',panel).className='warning';
  text('p',`Generator: ${p.generator}. Original pose: ${p.pose?.id||'not recorded'}. Stress frame: ${p.stress?.frame||'not recorded'}.`,panel);
  if(p.stress?.sha256)text('p',`Recorded stress SHA256: ${p.stress.sha256}. The browser has not verified the stress file.`,panel);
  if(Array.isArray(p.accepted)&&p.accepted.length){

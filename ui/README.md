@@ -1105,3 +1105,9 @@ Imports also check that historical proposal metadata can be displayed before
 asking to discard edits. A rendering error in that metadata leaves the current
 form and proposal intact, for both work snapshots and normal planning drafts.
 This is an import-integrity check, not verification of the proposal’s claims.
+
+Historical seed provenance is collapsed under **Original machine proposal —
+historical, not current verification**, so the shell and helper controls are
+reachable without scrolling through the original cluster list. Expand it to
+inspect every recorded field; disclosure does not change the draft or snapshot.
+A **No viable helpers** warning remains visible outside the collapsed history.

@@ -14,7 +14,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   sensitivity:[{restraint_margin_mm:4.8,accepted_clusters:[3]}],future:{preserve:true}};
  async function open(value){await page.locator('#draft-file').setInputFiles({name:'proposal.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));}
  await open(draft);const panel=page.locator('#proposal-evidence');
- assert(await panel.isVisible());await panel.getByText('1 rejected clusters at generation',{exact:true}).click();assert.match(await panel.innerText(),/Historical proposal provenance/);assert.match(await panel.innerText(),/restraint_adjacent/);assert.equal(await panel.locator('img').count(),0);
+ assert(await panel.isVisible());assert.equal(await panel.locator('[data-proposal-history]').evaluate(e=>e.open),false);await panel.locator('[data-proposal-history] > summary').click();await panel.getByText('1 rejected clusters at generation',{exact:true}).click();assert.match(await panel.innerText(),/Historical proposal provenance/);assert.match(await panel.innerText(),/restraint_adjacent/);assert.equal(await panel.locator('img').count(),0);
  await page.locator('[data-geometry="center_mm"][data-axis="1"]').fill('-22');
  await page.locator('#walls').fill('5');
  const pending=page.waitForEvent('download');await page.locator('#export').click();const download=await pending;
@@ -24,7 +24,8 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await open(saved);assert(await panel.isVisible());
  const empty=structuredClone(draft);empty.proposal.status='no_viable_helpers';empty.proposal.accepted=[];empty.massing.shell_only=true;empty.massing.helper_regions=[];
  await open(empty);await page.waitForFunction(()=>document.querySelector('#proposal-evidence').textContent.includes('No viable helpers'));
- assert.match(await panel.innerText(),/does not establish that shell-only is sufficient/);
+ assert.equal(await panel.locator('[data-proposal-history]').evaluate(e=>e.open),false);assert.match(await panel.innerText(),/does not establish that shell-only is sufficient/);
+ await panel.locator('[data-proposal-history] > summary').click();
  await page.setViewportSize({width:390,height:844});await panel.getByText('Complete original proposal provenance',{exact:true}).click();
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await open(original);assert(await panel.isHidden());
