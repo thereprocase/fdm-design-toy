@@ -948,3 +948,9 @@ The helper-review bundle upload status separates fingerprint verification from
 receipt outcomes (FAIL, NOT_CHECKED and PASS counts). These count receipts, not
 individual measurements or physical qualifications. Revision uses the exact table
 pinned by the draft, including an enriched table when that is where it was made.
+
+Bundle bridge review starts with a compact project/shell-only table of recorded
+verdicts and independent strand/ceiling maxima. Missing ceiling measurements stay
+Not recorded; zero evaluated roads stay explicit. Producer-withheld comparisons
+are labelled before the individual values. No helper-effect delta is inferred;
+full methods, limits, failure context and receipts remain below.

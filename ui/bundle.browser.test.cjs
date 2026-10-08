@@ -12,6 +12,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/122.1 mm/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/Ceiling model maxima: external not recorded; internal not recorded/);
+ const overview=page.locator('#bridge-overview');
+ const ceilingRow=overview.getByRole('row').filter({has:page.getByRole('rowheader',{name:'Internal ceiling max',exact:true})});
+ assert.deepEqual(await ceilingRow.locator('td').allTextContents(),['Not recorded','Not recorded']);
+ assert.match(await overview.innerText(),/may come from different roads/);
  // Synthetic withholding metadata exercises display, not measured producer evidence.
  f.manifest.paired={'shell-check':{withheld:['Slicer profile differs <b>literal</b>','Raster methods differ']},'bridge-check':{withheld:['Bridge limits differ']}};
  await page.locator('#review-bundle').setInputFiles(files());
@@ -20,6 +24,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.deepEqual(await page.locator('#bundle-withheld li').allTextContents(),['Slicer profile differs <b>literal</b>','Raster methods differ','Bridge limits differ']);
  assert.equal(await page.locator('#bundle-withheld b').count(),0);
  assert.match(await page.locator('#shell-comparison-status').innerText(),/Producer withheld/);
+ assert.match(await overview.innerText(),/producer withheld this comparison/);
  assert.doesNotMatch(await page.locator('#shell-comparison-status').innerText(),/percentage points/);
  f.manifest.paired={};await page.locator('#review-bundle').setInputFiles(files());
  await page.waitForFunction(()=>document.querySelector('#bundle-withheld').hidden);
@@ -32,6 +37,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#bundle-bridges').innerText(),/Project bridges · T FAIL/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/does not override the recorded strand verdict/);
  assert.match(await page.locator('#bundle-bridges').innerText(),/maxima need not occur on the same road/);
+ assert.deepEqual(await ceilingRow.locator('td').allTextContents(),['15.7 mm','Not recorded']);
+ // Synthetic empty coverage: a zero maximum does not mean a successful bridge.
+ const noRoads=structuredClone(ceiling);noRoads.result.verdict='NOT_CHECKED';
+ for(const key of ['bridge_roads','external_roads','internal_roads','max_span_external_mm','max_span_internal_mm','max_ceiling_span_external_mm','max_ceiling_span_internal_mm'])noRoads.result.metrics[key]=0;
+ f.files[3].buffer=Buffer.from(JSON.stringify(noRoads));f.manifest.receipts[3].sha256=fixture.sha(f.files[3].buffer);f.manifest.receipts[3].verdict='NOT_CHECKED';
+ await page.locator('#review-bundle').setInputFiles(files());
+ await page.waitForFunction(()=>document.querySelector('#bridge-overview').textContent.includes('No roads evaluated'));
+ assert.equal(await overview.getByRole('cell',{name:'No roads evaluated',exact:true}).count(),2);
+ assert.deepEqual(await ceilingRow.locator('td').allTextContents(),['No roads evaluated','Not recorded']);
  f.files[0].buffer=Buffer.from('{}');await page.locator('#review-bundle').setInputFiles(files());
  await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.includes('fingerprint differs'));
  assert(await page.locator('#bundle-results').isVisible());assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);

@@ -192,6 +192,29 @@ function clearBundle(){
  ++bundleGeneration;el('review-bundle').value='';showReviewSection('bundle-results',!(true));
  el('bundle-status').textContent='No evidence bundle loaded. Select its manifest and all five receipt files together.';
 }
+function renderBridgeOverview(bundle){
+ const host=add('div','',el('bundle-bridges'));host.id='bridge-overview';
+ add('h3','Bridge measurements side by side · T',host);
+ const withheld=Object.hasOwn(bundle.manifest.paired?.['bridge-check']||{},'withheld');
+ add('p',withheld?'The producer withheld this comparison; see its reasons above. Values below are individual receipt measurements, not an attributed helper effect.':'Recorded project and shell-only measurements. Read the slice settings and methods before attributing a difference to helpers. No physical performance is established.',host).className=withheld?'warning':'hint';
+ const table=add('table','',add('div','',host));table.parentElement.className='table-wrap';
+ const head=add('tr','',add('thead','',table));
+ for(const label of ['Measure','Project','Shell-only'])add('th',label,head).scope='col';
+ const body=add('tbody','',table),receipts=[bundle.bridges.project,bundle.bridges.baseline];
+ const verdict=add('tr','',body);add('th','Recorded verdict',verdict).scope='row';
+ for(const r of receipts)add('td',r.result.verdict+(r.result.provisional?' · provisional':''),verdict);
+ for(const [label,key,roads,limit] of [
+  ['External strand max','max_span_external_mm','external_roads','max_span_external_mm'],
+  ['Internal strand max','max_span_internal_mm','internal_roads','max_span_internal_mm'],
+  ['External ceiling max','max_ceiling_span_external_mm','external_roads'],
+  ['Internal ceiling max','max_ceiling_span_internal_mm','internal_roads']]){
+  const row=add('tr','',body);add('th',label,row).scope='row';
+  for(const r of receipts){const m=r.result.metrics,cell=add('td',m[roads]===0?'No roads evaluated':Number.isFinite(m[key])?m[key].toLocaleString(undefined,{maximumFractionDigits:3})+' mm':'Not recorded',row);
+   if(limit)add('div','Limit '+r.method[limit].toLocaleString()+' mm',cell).className='hint';
+  }
+ }
+ add('p','Each entry is a separate maximum; strand and ceiling maxima may come from different roads. Ceiling values are supplementary and do not override the strand verdict. Full methods and receipts follow.',host).className='hint';
+}
 el('review-bundle').onchange=async e=>{
  const files=[...e.target.files];if(!files.length||!matchedReport)return;
  const request=++bundleGeneration,report=matchedReport,draft=saved;
@@ -219,7 +242,7 @@ el('review-bundle').onchange=async e=>{
    if(check==='shell-check')el('shell-comparison-status').textContent=`Producer withheld this bundled comparison: ${reasons[0]} See the full reason list in the bundle section.`;
   }
   if(!withheld.hidden)add('p','These are the producer-reported reasons from the manifest. Receipt validation remains separate; no withheld numeric delta is promoted here.',withheld).className='hint';
-  el('bundle-bridges').replaceChildren();
+  el('bundle-bridges').replaceChildren();renderBridgeOverview(bundle);
   for(const [kind,r]of Object.entries(bundle.bridges)){
    const row=add('article','',el('bundle-bridges')),m=r.result.metrics,num=v=>v.toLocaleString(undefined,{maximumFractionDigits:3});
    add('h3',`${kind==='project'?'Project':'Shell-only baseline'} bridges · T ${r.result.verdict}${r.result.provisional?' · provisional':''}`,row);
