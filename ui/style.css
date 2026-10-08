@@ -44,3 +44,6 @@ main{max-width:1640px}.workbench{display:grid;grid-template-columns:minmax(0,1.1
 .pose-table tr.selected td:first-child{background:#e9f2e6}
 .pose-table th:first-child{left:0;z-index:3;box-shadow:2px 0 0 #d3d9d0}
 .pose-table th{z-index:2}
+
+#keepout-options{margin:12px 0;overflow-wrap:anywhere}
+#keepout-source{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8rem;max-height:320px;overflow:auto}

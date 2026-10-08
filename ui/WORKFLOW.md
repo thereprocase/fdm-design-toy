@@ -53,7 +53,7 @@ if you want no helper regions in this draft. Helpers request 100% infill; sparse
 infill receives no structural credit. Otherwise, give each helper a name,
 location, load-carrying purpose and interface constraints. Select the applicable
 interface and keep-out references, and enter the required clearance when known.
-Part keep-outs are not drawn in the preview. Expand each constraint to read its
+Part keep-outs can be drawn with the optional table-pinned geometry import (see below). Expand each constraint to read its
 rule, declared frame and model; inspect the exporter’s KEEP-OUT results after
 export. A visible helper box does not establish clearance.
 **Add helper** selects the new region and focuses its name, ready for typing.
@@ -187,3 +187,17 @@ original inputs; they do not verify the revised plan.
 
 For schema details, evidence limits and test-worker instructions, see the
 [technical UI guide](README.md).
+
+### Preview keep-outs while placing helpers
+
+On the geometry worker, run `fdmgen keepout-render TABLE.json --problem problem.yaml --out keepouts.json`
+with the exact orientation table and matching part checkout. In the preview,
+open **Optional: preview part keep-outs**, select this JSON, and enable the
+constraints you want to see. Load the matching STL and select a pose first.
+Magenta dashed lines show constraints through the body; orange/blue boxes remain
+helper intent. These toggles do not add references to helpers or change the draft.
+
+The moulding box is bounded for display, and spool sweeps show sampled discs,
+not the envelope between samples. Expand the provenance for original unbounded
+axes, clipping, frame and sampling. Use exporter KEEP-OUT results for clearance;
+a drawing is not a check. Changing tables clears this optional geometry.

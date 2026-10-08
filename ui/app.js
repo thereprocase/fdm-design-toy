@@ -16,6 +16,29 @@ byId('return-helper').onclick=()=>{
  const target=activeHelper.querySelector(activeHelper.querySelector('[data-spatial]').checked?'[data-geometry="center_mm"]':'[data-key="name"]');
  target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
 };
+let keepoutGeometry=null,keepoutRequest=0;
+function clearKeepouts(){
+ keepoutRequest++;keepoutGeometry=null;viewer.setKeepouts([]);byId('keepout-file').value='';byId('keepout-items').replaceChildren();byId('keepout-source').textContent='';byId('keepout-provenance').hidden=true;byId('keepout-status').textContent='No keep-out geometry loaded.';
+}
+function renderKeepoutOptions(){
+ const list=byId('keepout-items');list.replaceChildren();viewer.setKeepouts([]);
+ for(const item of keepoutGeometry.items){
+  const label=text('label','',list),input=document.createElement('input');input.type='checkbox';input.dataset.keepoutPreview=item.id;input.disabled=!item.rendered;label.append(input,document.createTextNode(' '+item.id));
+  text('p',item.rendered?item.rule:'Not drawn: '+item.reason,list).className='hint';
+  input.onchange=()=>viewer.setKeepouts(keepoutGeometry.items.filter(x=>list.querySelector(`[data-keepout-preview="${CSS.escape(x.id)}"]`).checked).map(x=>({...x,lines:KeepoutRender.segments(x)})));
+ }
+ byId('keepout-source').textContent=JSON.stringify(keepoutGeometry,null,2);byId('keepout-provenance').hidden=false;
+}
+byId('keepout-file').onchange=async event=>{
+ const file=event.target.files[0];if(!file)return;const request=++keepoutRequest,tableHash=fingerprint;
+ try{
+  if(file.size>5*1024*1024)throw Error('Keep-out geometry supports JSON files up to 5 MB.');
+  const data=JSON.parse(await file.text());if(request!==keepoutRequest)return;
+  if(tableHash!==fingerprint)throw Error('The table changed; reopen the geometry.');
+  KeepoutRender.validate(data,analysis,fingerprint);keepoutGeometry=data;renderKeepoutOptions();
+  byId('keepout-status').textContent='Table and mesh fingerprints matched. Choose the constraints to draw; this does not change the draft.';
+ }catch(e){if(request===keepoutRequest)byId('keepout-status').textContent=e.message+(keepoutGeometry?' Previously matched geometry and visibility are retained.':'');}
+};
 function updatePreview(){
  if(!analysis || !selected || !mesh || meshHash!==analysis.mesh?.sha256){cancelSurfacePlacement();viewer.clear();return;}
  try{viewer.set(mesh,selected.R_design_to_print,selected.t_mm);byId('mesh-status').textContent='Mesh fingerprint matched. Displaying the supplied design-to-print transform.';updateRegions();}
@@ -238,7 +261,7 @@ byId('table-file').onchange=async event=>{
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';event.target.value='';return;}
-    fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    clearKeepouts();fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('table-download-status').textContent='';analysis=data;viewer.setBed(data.bed);selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;
@@ -265,7 +288,7 @@ function addHelper(region={}) {
   }
   const keepOutRefs=text('div','',box);keepOutRefs.className='interface-refs';
   text('p',analysis?.keep_outs?.length?'Keep-outs to track for this helper (global constraints still apply):':'This table has no keep-out declarations. Use a newer table to record keep-out references.',keepOutRefs);
-  if(analysis?.keep_outs?.length)text('p','Keep-outs are not drawn in the preview. Selecting a reference records intent; use the exporter’s KEEP-OUT results to inspect the modelled geometry check.',keepOutRefs).className='hint';
+  if(analysis?.keep_outs?.length)text('p','Keep-outs are drawn only when you load matching geometry and enable them under Optional: preview part keep-outs. Selecting a reference records intent; use the exporter’s KEEP-OUT results to inspect the modelled geometry check.',keepOutRefs).className='hint';
   for(const item of analysis?.keep_outs||[]){const label=text('label','',keepOutRefs),check=document.createElement('input');check.type='checkbox';check.dataset.keepOutId=item.id;check.checked=region.keep_clear?.keep_out_ids?.includes(item.id)||false;label.append(check,document.createTextNode(' '+item.id));const info=text('details','',keepOutRefs);text('summary',item.id+' constraint',info);text('p',item.rule||'No rule description supplied.',info);if(item.derivation)text('p',item.derivation,info);text('p',`Declared frame: ${item.frame||'unspecified'}. Model: ${item.type||'unspecified'}. Selection records intent; geometry checks run in the exporter.`,info);}
   const clearanceLabel=text('label','Required clearance, mm (leave blank until known)',box),clearance=document.createElement('input');clearance.type='number';clearance.min='0';clearance.step='0.1';clearance.dataset.clearance='';clearance.value=region.keep_clear?.clearance_mm??'';clearanceLabel.append(clearance);
   const toggleLabel=text('label','',box),toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.spatial='';toggle.checked=!!region.geometry;toggleLabel.append(toggle,document.createTextNode(' Place a box-shaped planning region'));

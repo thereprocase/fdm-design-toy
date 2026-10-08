@@ -63,7 +63,7 @@ function scalePanel(width,height){return {x:width-Math.min(100,width*.25)-24,y:h
 const AXIS_PANEL={x:8,y:8,width:122,height:116};
 class PartViewer {
   constructor(canvas) {
-    this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;this.focusId=null;this.bed=null;
+    this.canvas=canvas;this.vertices=null;this.yaw=-.65;this.pitch=.65;this.zoom=1;this.regions=[];this.onPick=null;this.showAllLabels=false;this.focusId=null;this.bed=null;this.keepouts=[];
     let start=null,down=null,dragged=false,pointer=null;
     const onOverlay=e=>{
       const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
@@ -85,6 +85,7 @@ class PartViewer {
     canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();this.yaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;this.pitch+=e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0;this.schedule();});
     new ResizeObserver(()=>this.schedule()).observe(canvas);
   }
+  setKeepouts(items){this.keepouts=items;this.schedule();}
   setBed(bed){this.bed=bedFootprint(bed);this.bedMargin=bedInset(bed);this.schedule();}
   set(vertices,R,t){this.focusId=null;this.R=R;this.t=t;this.vertices=transformMesh(vertices,R,t);this.schedule();}
   setRegions(regions){this.regions=regions;if(this.focusId&&!regions.some(r=>r.id===this.focusId&&r.active))this.frameAll();this.schedule();}
@@ -125,6 +126,15 @@ class PartViewer {
       const light=.5+.5*Math.abs((.25*n[0]-.45*n[1]+.86*n[2])/norm);faces.push({p,depth:p.reduce((s,p)=>s+p[2],0),light});}
     faces.sort((a,b)=>a.depth-b.depth);
     for(const {p,light} of faces){ctx.beginPath();p.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=`hsl(151 24% ${28+light*30}%)`;ctx.fill();}
+    // Render-only constraints remain separate from body triangles and helper picking.
+    for(const item of this.keepouts){
+      ctx.strokeStyle=item.type==='box'?'rgba(155,35,117,.8)':'rgba(155,35,117,.12)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();
+      for(const line of item.lines){
+        const v=transformMesh(line.flat(),this.R,this.t),a=project(...v.slice(0,3)),b=project(...v.slice(3,6));
+        ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);
+      }
+      ctx.stroke();ctx.setLineDash([]);
+    }
     for(const region of [...this.regions].sort((a,b)=>Number(!!a.active)-Number(!!b.active))){
       const corners=transformMesh(boxCorners(region.geometry),this.R,this.t),points=[];
       for(let i=0;i<24;i+=3)points.push(project(corners[i],corners[i+1],corners[i+2]));
