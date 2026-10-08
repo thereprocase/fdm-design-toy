@@ -5,7 +5,8 @@ const decisions = new Map();
 let renderedPoseNotes=null;
 let proposalOrigin=null,sourceTableBytes=null,referencePose=null,orientationEvidenceBundle=null,orientationRoad=null;
 const removedHelpers=[];
-let draftCheckpoint=null,draftCheckpointKind='new',workNotesCheckpoint=null;
+let draftCheckpoint=null,draftCheckpointKind='new';
+const savedPoseNotes=new Map();
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
 byId('review-poses').onclick=()=>document.querySelector('.candidates').scrollIntoView({block:'start'});
 const viewer = new PartViewer(byId('part-view'));
@@ -538,20 +539,31 @@ function updateDraftState(){
   button.disabled=byId('shell-only').checked||![...byId('helper-regions').children].some(box=>box.dataset.id===button.dataset.helperId);
  }
 
- const changed=hasDraftEdits();
- const label=byId('draft-edit-state');label.className=changed?'warning':'hint';
+ const changed=draftCheckpoint!==null&&draftFormState()!==draftCheckpoint,unsavedNotes=unsavedPoseNoteIds();
+ const label=byId('draft-edit-state');label.className=changed||unsavedNotes.length?'warning':'hint';
  label.textContent=draftCheckpointKind==='new'
   ?(changed?'Draft edited. Download it to keep these changes.':'No draft downloaded in this session.')
   :changed?`Changes since ${draftCheckpointKind==='snapshot'?'the work snapshot':draftCheckpointKind==='opened'?'reopening':'the last download'}. Export an updated draft before running checks.`
   :`No edits since ${draftCheckpointKind==='snapshot'?'the work snapshot (not an export-ready draft)':draftCheckpointKind==='opened'?'reopening this draft':'the last draft download'}.`;
+ if(unsavedNotes.length)label.textContent+=` Notes for ${unsavedNotes.join(', ')} have unsaved changes. Download a work snapshot to keep all pose notes.`;
  const handoff=byId('handoff-snapshot');handoff.className=changed?'warning':'hint';
  handoff.textContent=draftCheckpointKind==='downloaded'
   ?changed?'The commands below describe the last downloaded draft. Current edits are not included; export an updated draft before running them.':'The commands below describe the last downloaded draft. Use the actual saved filenames on your worker.'
   :'No export from this draft is recorded in this session. Export it to populate the commands below, or substitute your saved file paths in the templates.';
 
 }
-function checkpointDraft(kind){draftCheckpointKind=kind;draftCheckpoint=draftFormState();workNotesCheckpoint=kind==='snapshot'?JSON.stringify(poseNotes()):null;updateDraftState();}
-function hasDraftEdits(){return draftCheckpoint!==null&&(draftFormState()!==draftCheckpoint||draftCheckpointKind==='snapshot'&&JSON.stringify(poseNotes())!==workNotesCheckpoint);}
+function unsavedPoseNoteIds(){
+ const notes=poseNotes();
+ return [...new Set([...Object.keys(notes),...savedPoseNotes.keys()])].filter(id=>(notes[id]||'')!==(savedPoseNotes.get(id)||''));
+}
+function checkpointDraft(kind){
+ draftCheckpointKind=kind;draftCheckpoint=draftFormState();
+ if(kind==='new'||kind==='snapshot')savedPoseNotes.clear();
+ if(kind==='snapshot')for(const [id,note] of Object.entries(poseNotes()))savedPoseNotes.set(id,note);
+ else if(kind!=='new'&&selected)savedPoseNotes.set(selected.id,byId('rationale').value);
+ updateDraftState();
+}
+function hasDraftEdits(){return draftCheckpoint!==null&&(draftFormState()!==draftCheckpoint||unsavedPoseNoteIds().length>0);}
 function allowDraftReplacement(action){return !hasDraftEdits()||confirm(`Discard current draft edits and ${action}? Cancel to download your draft or save unfinished work first.`);}
 window.addEventListener('beforeunload',event=>{if(hasDraftEdits()){event.preventDefault();event.returnValue='';}});
 document.addEventListener('input',event=>{

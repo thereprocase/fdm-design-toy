@@ -1,6 +1,6 @@
 const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict');
 (async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
- const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());
+ const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));let accept=true;p.on('dialog',d=>accept?d.accept():d.dismiss());
  await p.goto(pathToFileURL(path.join(__dirname,'index.html')).href);
  const table=path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json');await p.locator('#table-file').setInputFiles(table);
  assert.match(await p.locator('#pose-notes-title').innerText(),/\(0\)/);
@@ -22,6 +22,19 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await p.locator('#work-file').setInputFiles({name:'work.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(raw))});
  await p.waitForFunction(()=>document.getElementById('work-file').value==='');
  assert.match(await p.locator('#pose-notes-title').innerText(),/\(2\)/);assert.match(await p.locator('#pose-notes-list').innerText(),/Restored current note/);
+ // Exporting the selected draft must not mark another pose's edited note saved.
+ await p.getByRole('button',{name:'Edit note for facet-01',exact:true}).click();await p.locator('#rationale').fill('Unsaved alternate after snapshot');
+ await p.getByRole('button',{name:'Edit note for facet-00',exact:true}).click();await p.locator('#shell-only').check();
+ const draftDownload=p.waitForEvent('download');await p.locator('#export').click();await draftDownload;
+ assert(await p.evaluate(()=>hasDraftEdits()));assert.match(await p.locator('#draft-edit-state').innerText(),/Notes for facet-01 have unsaved changes/);
+ assert.doesNotMatch(await p.locator('#handoff-snapshot').innerText(),/Current edits are not included/);
+ accept=false;await p.locator('#table-file').setInputFiles([]);await p.locator('#table-file').setInputFiles(table);await p.waitForFunction(()=>document.getElementById('status').textContent.includes('replacement cancelled'));accept=true;
+ assert.equal(await p.evaluate(()=>poseNotes()['facet-01']),'Unsaved alternate after snapshot');
+ await p.locator('#work-snapshot').evaluate(e=>e.open=true);const workDownload=p.waitForEvent('download');await p.locator('#save-work').click();await workDownload;
+ assert.equal(await p.evaluate(()=>hasDraftEdits()),false);assert.doesNotMatch(await p.locator('#draft-edit-state').innerText(),/unsaved changes/);
+ await p.getByRole('button',{name:'Edit note for facet-01',exact:true}).click();await p.locator('#rationale').fill('');
+ await p.getByRole('button',{name:'Edit note for facet-00',exact:true}).click();assert(await p.evaluate(()=>hasDraftEdits()));
+ assert.match(await p.locator('#draft-edit-state').innerText(),/Notes for facet-01 have unsaved changes/);
  assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS pose-note discovery, reference comparison, plain text, no mutation on disclosure, explicit selection/focus, deletion, snapshot refresh and mobile');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

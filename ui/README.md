@@ -1093,3 +1093,10 @@ reference comparison also shows each pose’s note, labelled as planning intent,
 separate from measured evidence. Editing notes does not alter ranks or verdicts.
 Work snapshots preserve all these notes; backend planning drafts include only
 the selected pose’s rationale.
+
+Saving or reopening a normal planning draft checkpoints only its selected
+pose’s note. Unsaved notes on other poses keep the departure/replacement warning
+and are named in the draft status, even after a successful draft export. This
+does not mark the exported CLI inputs stale when only other poses’ notes differ.
+Download a work snapshot to preserve every pose’s notes. Deleting a previously
+saved note also counts as an unsaved change until saved again.
