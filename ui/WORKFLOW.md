@@ -83,10 +83,13 @@ rule, declared frame and model; inspect the exporter’s KEEP-OUT results after
 export. A visible helper box does not establish clearance.
 **Add helper** selects the new region and focuses its name, ready for typing.
 
-Enable **Place a box-shaped planning region** to specify a helper's centre and
-size. These coordinates are in the **design frame**; they stay attached to the
+Directly below the helper name, enable **Place a box-shaped planning region**
+to specify its centre and size. These coordinates are in the **design frame**; they stay attached to the
 part when you choose a different print pose.
 
+- **View this helper** brings its framed preview into view without entering
+  placement mode or changing coordinates. It requires a matched mesh and valid
+  box. Use **Return to helper controls** to resume editing, especially on a phone.
 - **Place centre on part** picks a surface point. Adjust the centre and size to
   extend the helper into the body as intended. Picking a surface does not prove
   bonding or clearance.
@@ -104,7 +107,9 @@ Use **Helper to edit** beside the preview to select and highlight a region.
 **Expand all helpers** opens them again. **Return to helper controls** reopens the
 selected editor and focuses its centre, or its name if no box is enabled.
 An **Edit** button beside a planning warning takes you to the affected helper;
-undersized-edge warnings focus the dimension that needs attention.
+undersized-edge warnings focus the dimension that needs attention. Invalid-box
+warnings focus the actual blank or invalid coordinate or dimension, opening a
+collapsed editor when necessary.
 
 ## Inspect the geometry
 
@@ -141,6 +146,13 @@ press **Download exact source table** to keep the original table bytes beside it
 The draft pins those exact bytes, including formatting; resaving the table as
 new JSON can change its fingerprint.
 
+A saved draft can still contain helpers described only in words. The handoff lists
+those missing boxes and offers **Edit box for …** actions that focus each helper's
+placement toggle. The action does not enable geometry or fill in coordinates.
+Define the boxes and export again before running the geometry exporter. These
+links describe the last exported draft; removing a helper or choosing shell-only
+mode disables its old action.
+
 Download an updated draft after editing. The edit indicator tracks changes since
 opening or downloading a draft; it is not autosave. Replacing a table/draft or
 leaving the page with edits prompts you first. Reopen a saved draft only after
@@ -157,7 +169,10 @@ import leaves current edits intact; save them before accepting a different table
 The handoff panel fills the commands with suggested download names where possible.
 Adjust them to the actual paths on your worker, especially if the browser renamed
 a repeated download. Run long work in a named detached job on the compute worker.
-Use the second workstation for slicing.
+Use the second workstation for slicing. **Select massing command** and **Select
+evidence command** select the complete visible command and focus it for your
+system Copy action (Ctrl+C or ⌘C). They do not copy automatically or run a job;
+replace the remaining placeholder paths before execution.
 
 1. Run the displayed `fdmgen massing` command with the saved draft, exact table and
    an Orca-written template `.3mf` (or the supported slice-evidence archive).
