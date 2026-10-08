@@ -11,7 +11,9 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   await page.waitForFunction(()=>document.querySelector('#status').textContent.startsWith('Could not load table'));
   assert(await page.locator('#workspace').isHidden());
   await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.orientation-table.json'));
+  assert.equal(await page.locator('#planning-pose').innerText(),'No pose selected for this draft.');
   await page.getByRole('button',{name:'facet-00',exact:true}).click();
+  assert.match(await page.locator('#planning-pose').innerText(),/Planning pose: facet-00/);
   await page.locator('#export').click();
   assert.equal(await page.evaluate(()=>document.activeElement.id),'rationale');
   assert.equal(await page.locator('#rationale').getAttribute('aria-invalid'),'true');
@@ -119,6 +121,8 @@ const crypto=require('node:crypto'),path=require('node:path'),{pathToFileURL}=re
   assert.match(await page.locator('#evidence-command').innerText(),/PART-POSE-massing.json/);
   assert.match(await page.locator('#handoff-readiness').innerText(),/Export this draft/);
   assert.match(await page.locator('#handoff-snapshot').innerText(),/No export from this draft/);
+  assert.match(await page.locator('#planning-pose').innerText(),/Planning pose: facet-00/);
+  assert.match(await page.locator('#planning-pose-checks').innerText(),/Design-frame build direction/);
 
   const malformed=Buffer.concat([Buffer.from('{"problem":"'),Buffer.from([0xff]),Buffer.from('"}')]);
   await page.locator('#table-file').setInputFiles({name:'malformed.json',mimeType:'application/json',buffer:malformed});

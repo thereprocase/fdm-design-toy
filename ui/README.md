@@ -672,3 +672,8 @@ your existing saved files.
 While surface placement is armed, an orbit gesture stays a drag once it travels
 at least four screen pixels from its press point, even if it returns there before
 release. It leaves placement armed for a subsequent deliberate click.
+
+The helper-planning entry repeats the selected pose and its design-frame build
+direction, recorded fit/stability status and failed-check count. It identifies the
+pose that will be saved, independently of any pinned comparison reference. The
+recorded checks still describe the source analysis, not subsequent helper edits.

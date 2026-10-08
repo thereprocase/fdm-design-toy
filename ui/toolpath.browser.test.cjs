@@ -29,12 +29,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.getByRole('button',{name:'zero',exact:true}).click();
  assert.equal(await page.locator('#reference-name').innerText(),'Reference: large');
  assert.equal(await page.locator('#comparison-name').innerText(),'Selected: zero');
+ assert.match(await page.locator('#planning-pose').innerText(),/Planning pose: zero/);
+ assert.doesNotMatch(await page.locator('#planning-pose').innerText(),/large/);
  const shellRow=page.locator('#comparison-rows tr').filter({has:page.getByRole('rowheader',{name:'Thin shell fraction · T',exact:true})});
  assert.match(await shellRow.locator('td').nth(0).innerText(),/FAIL · 2% thin/);assert.match(await shellRow.locator('td').nth(1).innerText(),/PASS · 0% thin/);
  await shellRow.locator('summary').first().click();assert.match(await shellRow.locator('td').first().innerText(),/Synthetic shell-only screen/);assert.equal(await shellRow.locator('b').count(),0);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.setViewportSize({width:1300,height:1000});
  await page.getByRole('button',{name:'unknown',exact:true}).click();assert.match(await shellRow.locator('td').nth(1).innerText(),/Not checked/);
+ assert.match(await page.locator('#planning-pose').innerText(),/Planning pose: unknown/);assert.match(await page.locator('#planning-pose-checks').innerText(),/fit\/stability: needs review/);
  await page.locator('#feasible-only').check();assert.match(await page.locator('#reference-status').innerText(),/Reference: large.*Selected for planning: unknown/);
  await page.locator('#feasible-only').uncheck();
  await page.locator('#clear-reference').click();assert(await page.locator('#reference-comparison').isHidden());

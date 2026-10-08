@@ -95,8 +95,15 @@ function renderFailedChecks(candidate) {
   }
 }
 function remember() {if(selected) decisions.set(selected.id,byId('rationale').value);}
+function renderPlanningPose(){
+ byId('planning-pose').textContent=selected?`Planning pose: ${selected.id}. This is the pose saved in the draft.`:'No pose selected for this draft.';
+ if(!selected){byId('planning-pose-checks').textContent='';return;}
+ const fit=selected.feasible===true?'fits / stable':selected.feasible===false?'needs review':'not recorded';
+ const failures=failedColumns(selected).length;
+ byId('planning-pose-checks').textContent=`Design-frame build direction: ${selected.build_dir_design.join(', ')}. Table fit/stability: ${fit}; ${failures} recorded failed check${failures===1?'':'s'}. These results do not verify your helper edits.`;
+}
 function choose(candidate) {
-  cancelSurfacePlacement();remember();selected=candidate;byId('pose-name').textContent=candidate.id;
+  cancelSurfacePlacement();remember();selected=candidate;renderPlanningPose();byId('pose-name').textContent=candidate.id;
   byId('direction').textContent=`Build direction (design frame): ${(candidate.build_dir_design || []).join(', ')}`;
   const design=candidate.columns?.F_L_max,vendor=candidate.columns?.F_L_max_vendor_corner;
   byId('strength-range').textContent=Number.isFinite(design?.value)&&Number.isFinite(vendor?.value)?`Material-corner range: ${Math.min(design.value,vendor.value).toFixed(3)}–${Math.max(design.value,vendor.value).toFixed(3)}. Conservative design corner: ${design.value.toFixed(3)}. ${design.fidelity||'FE prescreen; provisional.'}`:'Strength comparison is not checked for both material corners.';
@@ -286,6 +293,7 @@ function resetHandoff(){
  renderEvidenceHandoff(null);
 }
 function resetPlan(){
+  renderPlanningPose();
   cancelSurfacePlacement();clearDraftError();
   resetHandoff();
   clearRemovalHistory();
