@@ -66,14 +66,20 @@ search loop, keep-out solids), packaged into one reproducible pipeline.
 
 | Machine (by role) | Use |
 |---|---|
-| **Laptop GPU workstation** (RTX 3500 Ada laptop, 11.5 GB; FP64 207 GFLOP/s measured) | inner optimisation loops R1–R3; truth solves fit (4–8 M leaves) |
+| **Laptop GPU workstation** (RTX 3500 Ada laptop, 11.5 GB; FP64 207 GFLOP/s measured historically) | interactive editing and lightweight coordination; heavy jobs run remotely by owner instruction |
 | **Second workstation** (RTX 3080 Ti 12 GB, confirmed; the spool-rack GPU results came from this card) | second GPU worker: truth stage, parallel orientations. Its FP64 rate is ~2.5× the laptop's by spec (estimate, to measure) |
-| **Compute box** (40 Broadwell threads, 300 GB, no GPU) | off the critical path through P2: slicing/parsing batches, RAM-heavy cases > 20 M cells, CPU multigrid only if a measured need appears. Long jobs in named tmux sessions, heads-up to its owner for multi-hour full-load runs |
+| **Compute box** (40 Broadwell threads, 300 GB, no GPU) | test suites and browser checks, parsing/voxel batches, RAM-heavy cases and CPU AMG reference/sensitivity pilots; long jobs in named tmux sessions, heads-up to its owner for multi-hour full-load runs |
+
+**Current operating rule (owner):** keep heavy work off the laptop, including full test suites,
+slicing, voxelisation, solver runs and browser automation. Use the second workstation for GPU
+work and slicing, and the compute box for CPU jobs. Start long jobs in named detached tmux
+sessions with logs and exit-code files. Historical laptop measurements below describe earlier
+experiments, not permission to schedule new workloads there.
 
 **Measured (matvec benchmark, [`research/checks/bench/RESULTS.md`](research/checks/bench/RESULTS.md)):** RTX 3080 Ti ≈ 4,500 M cells/s FP32 and
 ≈ 416 M FP64; laptop GPU ≈ 1,400 / 238; compute box (40 threads, Numba) ≈ 61 / 63. The 3080 Ti in FP32 is ≈ 74× the compute
 box, so **the second workstation's 3080 Ti is the solver workhorse, in mixed precision** (FP32 smoothers/V-cycles inside an
-FP64 outer CG), and the compute box is not a solver machine.
+FP64 outer CG), while the compute box runs CPU reference and sensitivity solves. Those CPU pilots do not establish the target GPU solver gate; see [benchmark scope and receipts](bench/README.md).
 
 **Why GPUs at all:** they are not required. The expensive step is 2–6 elasticity solves per optimiser iteration on a
 few million cells, × hundreds of iterations × dozens of orientations. The validated solver from the spool-rack work is
@@ -129,7 +135,7 @@ covariance 1e-10); orientation **noise floor** measured (repeat runs) and a mono
 interfaces (≤ 1e-3 mm³ symmetric difference); printable (50° M check, zero support in forbidden regions, settings
 check); helpers exported as Orca modifier meshes at 100 % and verified on the actual slice; an **honesty table** vs the existing hand designs on the same truth pipeline, same pinned loads, same card,
 stated modulus basis, including the measured design-vs-truth gap.
-Estimated compute (bracket, two load cases, laptop GPU, *estimate*): R0–R2 ≈ 0.5–1.5 h; with R3 + R4 on one leader ≈ 3–8 h.
+Historical compute estimate (bracket, two load cases, laptop-class GPU; not a current execution assignment): R0–R2 ≈ 0.5–1.5 h; with R3 + R4 on one leader ≈ 3–8 h.
 Publish: MVP page.
 
 ### P3 — body envelope + helpers, inter-layer constraint, second part (~5–8 weeks)
