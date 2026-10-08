@@ -180,5 +180,18 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.equal(await page.locator('#pose-sort').inputValue(),'height_mm');
  assert.equal(await page.evaluate(()=>draftFormState()),beforeSelectedEmpty);
  assert(await page.getByRole('button',{name:'unknown',exact:true}).evaluate(e=>e===document.activeElement));
+ table.candidates[0].columns.F_L_max={value:0,unit:'1',verdict:'PASS'};
+ table.candidates[2].columns.F_L_max={value:.00004,unit:'1',verdict:'PASS'};
+ table.candidates[2].columns.F_L_max_vendor_corner={value:.00002,unit:'1',verdict:'PASS'};
+ await page.locator('#table-file').setInputFiles({name:'small-values.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
+ await page.waitForFunction(()=>analysis.candidates[2].columns.F_L_max.value===.00004);
+ const rowFor=id=>page.locator('#rows tr').filter({has:page.getByRole('button',{name:id,exact:true})});
+ assert.equal(await rowFor('large').locator('td').nth(1).innerText(),'0');
+ assert.equal(await rowFor('unknown').locator('td').nth(1).innerText(),'4.00e-5');
+ await page.getByRole('button',{name:'unknown',exact:true}).click();
+ assert.match(await page.locator('#metrics').innerText(),/4\.00e-5/);
+ assert.match(await page.locator('#strength-range').innerText(),/2\.00e-5–4\.00e-5/);
+ assert.equal(await page.evaluate(()=>selected.columns.F_L_max.value),.00004);
+ assert.equal(await page.evaluate(()=>formatted({value:[0,-.00004,1.25],unit:'mm',verdict:'PASS'})),'0, -4.00e-5, 1.25 mm');
  console.log('PASS measured pose support, fidelity/settings, missing slice remains unchecked, slice filter, mobile, console');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

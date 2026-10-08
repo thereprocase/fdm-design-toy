@@ -41,9 +41,10 @@ byId('mesh-file').onchange=async event=>{
 };
 const metricNames = {F_L_max:'Layer failure index · conservative corner',F_L_max_vendor_corner:'Layer failure index · vendor-ratio corner',F_L_max_at_mm:'Peak sample location (design frame)',F_L_p99:'99th percentile layer failure index',ovh_fail_mm2:'Overhang area',bridge_candidate_mm2:'Potential bridge area',v_unsupported_mm2:'Voxel unsupported area',brg_worst_span_mm:'Longest bridge span',contact_mm2:'Bed contact',com_margin_mm:'Centre-of-mass margin',base_min_width_mm:'Minimum base width',height_mm:'Height'};
 function text(tag, value, parent) {const node=document.createElement(tag);node.textContent=value;parent.append(node);return node;}
+function metricNumber(value){return value===0?'0':Math.abs(value)<.001?value.toExponential(2):value.toLocaleString(undefined,{maximumFractionDigits:3});}
 function formatted(column) {
   if (!column || column.value === null || column.value === undefined || column.verdict === 'NOT_CHECKED') return 'Not checked';
-  const value = Array.isArray(column.value) ? column.value.map(x=>typeof x==='number'?x.toLocaleString(undefined,{maximumFractionDigits:3}):String(x)).join(', ') : typeof column.value === 'number' ? column.value.toLocaleString(undefined,{maximumFractionDigits:3}) : String(column.value);
+  const value = Array.isArray(column.value) ? column.value.map(x=>typeof x==='number'?metricNumber(x):String(x)).join(', ') : typeof column.value === 'number' ? metricNumber(column.value) : String(column.value);
   return `${column.verdict === 'FAIL' ? 'FAIL · ' : ''}${value}${column.unit && column.unit!=='1' ? ' '+column.unit : ''}${column.provisional ? ' · provisional' : ''}`;
 }
 function shellColumn(candidate) {
@@ -124,7 +125,7 @@ function choose(candidate) {
   cancelSurfacePlacement();remember();selected=candidate;renderPlanningPose();byId('pose-name').textContent=candidate.id;
   byId('direction').textContent=`Build direction (design frame): ${(candidate.build_dir_design || []).join(', ')}`;
   const design=candidate.columns?.F_L_max,vendor=candidate.columns?.F_L_max_vendor_corner;
-  byId('strength-range').textContent=Number.isFinite(design?.value)&&Number.isFinite(vendor?.value)?`Material-corner range: ${Math.min(design.value,vendor.value).toFixed(3)}–${Math.max(design.value,vendor.value).toFixed(3)}. Conservative design corner: ${design.value.toFixed(3)}. ${design.fidelity||'FE prescreen; provisional.'}`:'Strength comparison is not checked for both material corners.';
+  byId('strength-range').textContent=Number.isFinite(design?.value)&&Number.isFinite(vendor?.value)?`Material-corner range: ${metricNumber(Math.min(design.value,vendor.value))}–${metricNumber(Math.max(design.value,vendor.value))}. Conservative design corner: ${metricNumber(design.value)}. ${design.fidelity||'FE prescreen; provisional.'}`:'Strength comparison is not checked for both material corners.';
   renderFailedChecks(candidate);
   byId('reasons').replaceChildren();
   const reasons=Array.isArray(candidate.reasons)?candidate.reasons:[];

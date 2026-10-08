@@ -784,3 +784,7 @@ exclusion zones are not drawn, and BED-001 remains the recorded result.
 An empty pose filter offers **Show all poses**. It clears visibility filters while
 keeping sort order, selected pose and draft fields. Keyboard focus returns to the
 selected row, or the first row without selecting it when no pose was chosen.
+
+Pose measurements below 0.001 in magnitude use scientific notation instead of
+rounding a nonzero value to zero. Exact zero remains zero. This changes display
+formatting only; source values, sort order and exported evidence remain intact.
