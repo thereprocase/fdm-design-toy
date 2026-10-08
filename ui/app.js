@@ -2,7 +2,7 @@
 const byId = id => document.getElementById(id);
 let analysis = null, selected = null, fingerprint = null, tableRequest = 0, draftRequest = 0;
 const decisions = new Map();
-let proposalOrigin=null,sourceTableBytes=null;
+let proposalOrigin=null,sourceTableBytes=null,referencePose=null;
 const removedHelpers=[];
 let draftCheckpoint=null,draftCheckpointKind='new';
 byId('plan-pose').onclick=()=>{document.querySelector('.massing').scrollIntoView({block:'start'});byId('walls').focus({preventScroll:true});};
@@ -39,6 +39,27 @@ function shellSummary(candidate) {
   const c=shellColumn(candidate);
   return c?`${c.verdict} · ${(100*c.value).toLocaleString(undefined,{maximumFractionDigits:3})}% thin · T${c.provisional?' · provisional':''}`:'Not checked';
 }
+function renderComparison(){
+ byId('pin-reference').disabled=!selected;byId('clear-reference').disabled=!referencePose;
+ const panel=byId('reference-comparison');panel.hidden=!referencePose||!selected;
+ byId('comparison-rows').replaceChildren();
+ byId('reference-status').textContent=!referencePose?'Select a pose to keep as a comparison reference.':
+   referencePose.id===selected?.id?`Reference: ${referencePose.id}. Select another pose to compare; this does not change the reference.`:
+   `Reference: ${referencePose.id}. Selected for planning: ${selected?.id||'none'}.`;
+ if(panel.hidden)return;
+ byId('reference-name').textContent=`Reference: ${referencePose.id}`;byId('comparison-name').textContent=`Selected: ${selected.id}`;
+ for(const [key,label] of [['F_L_max','Layer failure · design corner'],['F_L_max_vendor_corner','Layer failure · vendor corner'],['ovh_fail_mm2','Overhang area'],['contact_mm2','Bed contact'],['height_mm','Print height'],['t_support_segments','Support segments · T'],['t_shell_thin_fraction','Thin shell fraction · T'],['t_bridge_span_external_mm','External bridge strand maximum · T'],['t_bridge_span_internal_mm','Internal bridge strand maximum · T']]){
+   const row=text('tr','',byId('comparison-rows'));text('th',label,row).scope='row';
+   for(const candidate of [referencePose,selected]){
+     const column=candidate.columns?.[key],cell=text('td','',row);
+     text('span',key==='t_shell_thin_fraction'?shellSummary(candidate):formatted(column),cell);
+     if(column){const details=text('details','',cell);text('summary','Context',details);
+       text('p',[column.rule,column.level,column.fidelity||'Method and settings not supplied.'].filter(Boolean).join(' · '),details);}
+   }
+ }
+}
+byId('pin-reference').onclick=()=>{if(!selected)return;referencePose=selected;renderComparison();byId('reference-comparison').open=true;};
+byId('clear-reference').onclick=()=>{referencePose=null;renderComparison();byId('pin-reference').focus({preventScroll:true});};
 function hasSlice(candidate) {
   const c=candidate.columns?.t_support_segments;
   return Number.isFinite(c?.value)&&c.value>=0&&c.verdict!=='NOT_CHECKED';
@@ -109,7 +130,7 @@ function choose(candidate) {
     text('dd',formatted(column)+(column?.level?` · ${column.level}`:''),byId('metrics'));
   }
   byId('rationale').value=decisions.get(candidate.id)||'';
-  byId('export').disabled=false;byId('plan-pose').disabled=false;renderRows();updatePreview();updateRegions();
+  byId('export').disabled=false;byId('plan-pose').disabled=false;renderComparison();renderRows();updatePreview();updateRegions();
 }
 function renderRows() {
   byId('rows').replaceChildren();
@@ -169,7 +190,7 @@ byId('table-file').onchange=async event=>{
     const nextFingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
     if(request!==tableRequest)return;
     if(!allowDraftReplacement('load another orientation table')){byId('status').textContent='Table replacement cancelled. The current table and draft are unchanged.';event.target.value='';return;}
-    fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('table-download-status').textContent='';analysis=data;selected=null;meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
+    fingerprint=nextFingerprint;sourceTableBytes=bytes;byId('download-table').disabled=false;byId('table-download-status').textContent='';analysis=data;selected=null;referencePose=null;renderComparison();meshRequest++;mesh=null;meshHash=null;cancelSurfacePlacement();viewer.clear();byId('mesh-status').textContent='Load '+(data.mesh?.path?.split('/').pop()||'the matching STL')+' to preview the part.';decisions.clear();byId('workspace').hidden=false;
     byId('part-name').textContent=typeof data.problem==='string'?data.problem:(data.problem?.id||'Part orientation study');
     byId('evidence').textContent=[data.establishes,...(Array.isArray(data.does_not_establish)?data.does_not_establish.map(x=>'Not established: '+x):[data.does_not_establish])].filter(Boolean).map(x=>typeof x==='string'?x:JSON.stringify(x)).join(' · ');
     byId('status').textContent=`Loaded ${data.candidates.length} candidate poses. Select one to inspect it.`;

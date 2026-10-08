@@ -632,3 +632,10 @@ unusual identifiers remain explicit placeholders to replace with exact paths.
 Pose buttons retain keyboard focus after selection. Use Tab or Shift+Tab to move
 between them, and Enter or Space to select; selection updates the detail panel
 without moving focus away from the comparison table.
+
+Use **Use selected pose as reference** to keep one pose beside subsequent choices
+in **Side-by-side measurements**. This compares recorded strength, geometry,
+support, shell and bridge values without calculating a winner. Expand each
+cell's Context to inspect its method and settings; unchecked values stay unchecked.
+The reference survives filtering, but clears when a new table is accepted. It is
+view state only: the selected pose remains the one saved in the planning draft.

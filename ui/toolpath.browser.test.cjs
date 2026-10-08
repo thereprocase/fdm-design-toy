@@ -23,6 +23,23 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
   t_shell_thin_fraction:{value:[.02,0,.1,.02][i],unit:'fraction',rule:'SHELL-001',level:'T',verdict:i===2?'NOT_CHECKED':i===0?'FAIL':'PASS',provisional:true,fidelity:'Synthetic shell-only screen; seed 0, cell 0.1 mm. <b>inert</b>'}}}));
  await page.locator('#table-file').setInputFiles({name:'sort-fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(table))});
  await page.getByRole('button',{name:'large',exact:true}).click();await page.locator('#rationale').fill('Keep this choice while comparing.');
+ const formBeforePin=await page.evaluate(()=>draftFormState());
+ await page.locator('#pin-reference').click();assert.equal(await page.evaluate(()=>draftFormState()),formBeforePin);
+ assert.match(await page.locator('#reference-status').innerText(),/Select another pose/);
+ await page.getByRole('button',{name:'zero',exact:true}).click();
+ assert.equal(await page.locator('#reference-name').innerText(),'Reference: large');
+ assert.equal(await page.locator('#comparison-name').innerText(),'Selected: zero');
+ const shellRow=page.locator('#comparison-rows tr').filter({has:page.getByRole('rowheader',{name:'Thin shell fraction · T',exact:true})});
+ assert.match(await shellRow.locator('td').nth(0).innerText(),/FAIL · 2% thin/);assert.match(await shellRow.locator('td').nth(1).innerText(),/PASS · 0% thin/);
+ await shellRow.locator('summary').first().click();assert.match(await shellRow.locator('td').first().innerText(),/Synthetic shell-only screen/);assert.equal(await shellRow.locator('b').count(),0);
+ await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.setViewportSize({width:1300,height:1000});
+ await page.getByRole('button',{name:'unknown',exact:true}).click();assert.match(await shellRow.locator('td').nth(1).innerText(),/Not checked/);
+ await page.locator('#feasible-only').check();assert.match(await page.locator('#reference-status').innerText(),/Reference: large.*Selected for planning: unknown/);
+ await page.locator('#feasible-only').uncheck();
+ await page.locator('#clear-reference').click();assert(await page.locator('#reference-comparison').isHidden());
+ await page.getByRole('button',{name:'large',exact:true}).click();await page.locator('#pin-reference').click();
+
  assert.match(await page.locator('#pose-bridges').innerText(),/PASS · 3.2 mm longest unsupported strand run; recorded limit 10 mm/);
  assert.match(await page.locator('#pose-bridges').innerText(),/FAIL · 122 mm/);assert.equal(await page.locator('#pose-bridges b').count(),0);
  assert.match(await page.locator('#pose-bridges').innerText(),/Bridge-road coverage is not established/);
@@ -56,6 +73,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  // Actual enriched receipts: preserve producer precision and show provenance as text.
  await page.locator('#table-file').setInputFiles(path.join(__dirname,'../tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.shell.orientation-table.json'));
  await page.getByRole('button',{name:'facet-00',exact:true}).click();
+ assert(await page.locator('#reference-comparison').isHidden());assert(await page.locator('#clear-reference').isDisabled());
  assert.match(await page.locator('#pose-shell-summary').innerText(),/PASS · 0.22% thin · T · provisional/);
  assert.match(await page.locator('#pose-shell-fidelity').innerText(),/shell-only slice 494c9ec43d5d/);
  assert.match(await page.locator('#pose-shell-coverage').innerText(),/20,000 of 20,000.*0 unmeasured; 0 mm³ clipped/);
