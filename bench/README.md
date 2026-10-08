@@ -476,6 +476,14 @@ strength, grid convergence, realistic contact, anisotropy or physical performanc
 
 ### CPU TI and stiffness-contrast sensitivity
 
+**Raw-domain limitation:** the audited R1 mask contains edge-attached voxel
+pieces with rigid hinge mechanisms. Its recorded iteration counts remain
+numerical observations, not evidence that the raw operator is SPD or that the
+solver gate is met. Positive random inverse probes and complete aggregate
+coverage do not resolve these mechanisms. The
+[domain and convergence proposal](https://github.com/thereprocase/fdm-design-toy/issues/4#issuecomment-6055840426)
+is pending owner approval; it has not changed the benchmark domain or PLAN.
+
 `amg_sensitivity.py` extends the CPU aggregation investigation with an explicit
 synthetic TI family and nonuniform stiffness. It does not change the production
 solver or fit a material card. Run on the compute worker with the existing
@@ -724,3 +732,19 @@ with 3,154 first aggregates and zero uncovered free DOFs. Its complete residual
 history and graph hashes reproduce the exploratory control. This remains above
 the 40-iteration gate and establishes neither higher-contrast convergence nor
 an acceptable optimiser floor. Full remote validation: 322 passed, 6 CUDA skips.
+
+### Pending gate-domain decision
+
+The proposal linked above would retain the largest face-connected component,
+preserve raw and retained mask provenance, and refuse the case if any loaded or
+fixed active DOF would be omitted. The prospective R1 audit removes 120 cells
+and 960 DOFs, with no loaded or fixed DOFs lost; it is not a filtered solve and
+cannot be extrapolated to other grids. Removing cells still changes geometry.
+
+Acceptance must use the recomputed residual against the unprojected operator of
+the explicitly accepted domain. The four-mechanism projection diagnostic returned
+CG status 0 after 49 iterations, but its original-operator residual was 1.15e-5:
+that fails the 1e-6 requirement. A recursive stopping estimate is insufficient.
+The proposal preserves the existing iteration, timing, material, precision and
+zero-ersatz requirements. Projection remains diagnostic, and no filtering or
+additional restraints have been made the default.
