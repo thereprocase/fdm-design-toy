@@ -226,6 +226,29 @@ python bench/density_weighted.py --root /path/to/part-checkout \
   --power 1 --solve --out weighted-h08.json
 ```
 
+Changing only the exponent to 3 gives the following density-law control, with
+the same input/source hashes, domain audits, loads and restraints:
+
+| Cubic-law case | CG iterations | True relative residual | Compliance N·mm | Maximum displacement mm |
+|---|---:|---:|---:|---:|
+| Shell-only | 38 | 8.96e-10 | 544.637 | 8.970 |
+| Seeded project | 39 | 8.20e-10 | 532.196 | 8.782 |
+
+The full-solid context reproduces the linear-law control exactly in iterations,
+residual, compliance and displacement. Minimum positive E/E0 is about 1.73e-9,
+the cube of the original minimum capped density; no floor was introduced.
+The helper delta is −2.284%, versus −1.798% for power 1. Its sign is consistent
+in these two assumed laws, while absolute compliance changes substantially.
+These are not physical uncertainty bounds or a calibrated material prediction.
+
+Repeat the preceding command with `--power 3 --out weighted-h08-p3.json`.
+Receipt: `receipts/occupancy-density-p3-h08.json`, SHA-256
+`5845dc85026e01343b513fef77f8534ce8dc7aa25ffae78606d21ff1f2b38467`.
+One-thread setup/solve times were 53.23/41.25 s for shell-only and 53.42/42.70 s
+for the project. The review accepts either exact receipt against the same seed
+draft, export and sliced-helper evidence; it displays the exponent and retains
+each complete receipt separately.
+
 ### Explicit seat-load transfer and connected-domain sensitivity
 
 `seat_load_transfer.py` constructs nonnegative nodal forces parallel to each
