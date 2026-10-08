@@ -943,3 +943,8 @@ Pose comparison shows recorded slice kinds beside shell and bridge values. Mixin
 a helper-project slice with a shell-only slice triggers an explicit uncontrolled-
 comparison note; the recorded values remain visible. Missing kinds stay unrecorded.
 Equal kinds alone do not establish matching geometry or slicer settings.
+
+The helper-review bundle upload status separates fingerprint verification from
+receipt outcomes (FAIL, NOT_CHECKED and PASS counts). These count receipts, not
+individual measurements or physical qualifications. Revision uses the exact table
+pinned by the draft, including an enriched table when that is where it was made.

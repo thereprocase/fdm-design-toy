@@ -181,7 +181,10 @@ infill/printing questions. A smaller ceiling-model span does not override that
 FAIL; adding helpers does not establish a fix.
 
 Use **Revise this draft**, or a helper's revision action, to return to planning.
-Load the original table when prompted. Revise the intent, export a new draft and
+Load the exact table pinned by this draft when prompted; its SHA-256 is listed in
+**Current input fingerprints**. A draft made from an enriched table requires that
+enriched table, not the root table used to generate orientation evidence.
+Revise the intent, export a new draft and
 repeat the export/slice/evidence loop. Old receipts remain evidence for their
 original inputs; they do not verify the revised plan.
 

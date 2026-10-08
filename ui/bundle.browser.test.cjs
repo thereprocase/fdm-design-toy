@@ -42,6 +42,8 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('All five'));
  const real=JSON.parse(await page.locator('#bundle-provenance').textContent());
  const verifiedManifest=await page.locator('#bundle-provenance').textContent();
+ assert.match(await page.locator('#bundle-status').innerText(),/Receipt outcomes: 2 FAIL, 0 NOT_CHECKED, 3 PASS/);
+ assert.match(await page.locator('#bundle-status').innerText(),/Verification does not mean the checks passed/);
  await page.locator('#review-bundle').setInputFiles(path.join(dir,'evidence-bundle.json'));
  await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('Missing bundle receipts:'));
  const missingMessage=await page.locator('#bundle-status').innerText();

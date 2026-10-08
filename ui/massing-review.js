@@ -202,7 +202,9 @@ el('review-bundle').onchange=async e=>{
   renderSlice(bundle.slice);renderShell(bundle.project);matchedShellBaseline=bundle.baseline;renderShellComparison();
   el('slice-status').textContent='Bundle slice receipt matches the exported project and saved plan.';
   el('shell-baseline-status').textContent='Bundle baseline shell check matches the shell-only G-code and pose.';
-  showReviewSection('bundle-results',!(false));el('bundle-status').textContent='All five receipt fingerprints verified; bundle matched this export.';
+  showReviewSection('bundle-results',!(false));
+  const outcomes=['FAIL','NOT_CHECKED','PASS'].map(verdict=>`${bundle.manifest.receipts.filter(r=>r.verdict===verdict).length} ${verdict}`).join(', ');
+  el('bundle-status').textContent=`All five receipt fingerprints verified; bundle matched this export. Receipt outcomes: ${outcomes}. Verification does not mean the checks passed or the print is qualified. See Bundle / bridges and the individual check sections.`;
   el('bundle-summary').textContent='Loaded helper evidence, project shell check and baseline shell check together. Both bridge receipts are shown below.';
 
   const withheld=el('bundle-withheld');withheld.replaceChildren();withheld.hidden=true;
