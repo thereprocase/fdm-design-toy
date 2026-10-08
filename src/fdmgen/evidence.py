@@ -117,3 +117,65 @@ def _paired(by: dict) -> dict:
         mp, mb = p["result"]["metrics"], b["result"]["metrics"]
         out[check] = {k: {"project": mp[k], "shell-only": mb[k], "delta": round(mp[k] - mb[k], 6)} for k in metric_keys}
     return out
+
+
+ORIENT_SCHEMA = "fdmgen/orient-evidence@0.1"
+
+
+def build_orient_bundle(table: Path, slices: list[tuple[str, str, Path]], out_dir: Path, *, shell_cell_mm: float = 0.1,
+                        shell_samples: int = 20000, bridge_cell_mm: float = 0.1) -> dict:
+    """T-level evidence for an orientation table: shell-check and pose-bound bridge-check per (pose, slice kind,
+    G-code), then one enriched table with the shell and bridge columns, and a manifest pinning it all.
+
+    The receipts are the commands' own; the enrichment applies the same pairing rules as orient-shell and
+    orient-bridge (root table, mesh, pose R/t, pose checked at 3+ heights, one receipt per pose and check).
+    Raises RuntimeError on a command error or a refused receipt; the manifest is then absent.
+    """
+    from .orient.table import add_bridge_columns, add_shell_columns
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = out_dir / "orient-evidence.json"
+    manifest_path.unlink(missing_ok=True)
+    seen = set()
+    for pose, kind, _ in slices:
+        if (pose, kind) in seen:
+            raise RuntimeError(f"two slices for pose {pose} ({kind}); give one per pose")
+        seen.add((pose, kind))
+    receipts, shell, bridge = [], [], []
+    for pose, kind, g in slices:
+        for check, extra, sink in (("shell-check", ["--cell", str(shell_cell_mm), "--samples", str(shell_samples)], shell),
+                                   ("bridge-check", ["--cell", str(bridge_cell_mm)], bridge)):
+            name = f"{pose}-{kind}.{check}.json"
+            dest = out_dir / name
+            code = _run([check, str(g), "--table", str(table), "--pose", pose, *extra, "--out", str(dest)])
+            if code == 1 or not dest.is_file():
+                raise RuntimeError(f"{check} on pose {pose} ({kind}) failed (exit {code}); no manifest written")
+            raw = dest.read_bytes()
+            rec = json.loads(raw)
+            sink.append((rec, hashlib.sha256(raw).hexdigest(), kind))
+            receipts.append({"check": check, "pose": pose, "slice_kind": kind, "path": name, "sha256": _sha(dest),
+                             "schema": rec.get("schema"), "verdict": rec["result"]["verdict"]})
+    traw = Path(table).read_bytes()
+    try:
+        enriched = add_shell_columns(json.loads(traw), hashlib.sha256(traw).hexdigest(), shell)
+        mid = json.dumps(enriched, indent=1).encode("utf-8")
+        enriched = add_bridge_columns(enriched, hashlib.sha256(mid).hexdigest(), bridge)
+    except ValueError as e:
+        raise RuntimeError(f"a receipt was refused for the table: {e}") from e
+    etab = out_dir / "orientation-table.enriched.json"
+    etab.write_text(json.dumps(enriched, indent=1), encoding="utf-8")
+    manifest = {
+        "schema": ORIENT_SCHEMA,
+        "table": {"name": Path(table).name, "sha256": hashlib.sha256(traw).hexdigest()},
+        "slices": [{"pose": p, "slice_kind": k, "gcode_sha256": _sha(g)} for p, k, g in slices],
+        "receipts": receipts,
+        "enriched_table": {"path": etab.name, "sha256": _sha(etab),
+                           "columns_added": enriched["enriched"]["columns_added"]},
+        "establishes": "Which T-level shell and bridge checks each listed pose's slice passes, pinned by hash, and "
+                       "one orientation table carrying them as columns.",
+        "does_not_establish": "Anything for poses without a slice, at P level, or a ranking of the poses.",
+    }
+    tmp = manifest_path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    tmp.replace(manifest_path)
+    return manifest

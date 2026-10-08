@@ -567,6 +567,20 @@ def _cmd_keepout_render(a) -> int:
     return 0
 
 
+def _cmd_orient_evidence(a) -> int:
+    from .evidence import build_orient_bundle
+    try:
+        m = build_orient_bundle(a.table, [(p, k, Path(g)) for p, k, g in a.slice], a.out, shell_cell_mm=a.shell_cell,
+                                shell_samples=a.samples)
+    except RuntimeError as e:
+        print(f"ERROR   {e}")
+        return 1
+    print(f"wrote {a.out / 'orient-evidence.json'} and {m['enriched_table']['path']}")
+    for r in m["receipts"]:
+        print(f"  {r['pose']:10s} {r['slice_kind']:10s} {r['check']:13s} {r['verdict']:12s} {r['sha256'][:12]}")
+    return 2 if any(r["verdict"] == "FAIL" for r in m["receipts"]) else 0
+
+
 def _cmd_shell_check(a) -> int:
     import numpy as np
 
@@ -727,6 +741,14 @@ def main(argv: list[str] | None = None) -> int:
     kr.add_argument("--margin", type=float, default=10.0, help="clip margin around the body for open bounds (mm)")
     kr.add_argument("--out", type=Path, required=True)
     kr.set_defaults(fn=_cmd_keepout_render)
+    oe = sub.add_parser("orient-evidence", help="shell + bridge receipts per pose slice and one enriched orientation table")
+    oe.add_argument("table", type=Path, help="the pinned orientation table the slices were made from")
+    oe.add_argument("--slice", nargs=3, action="append", required=True, metavar=("POSE", "KIND", "GCODE"),
+                    help="a pose id, its slice kind (shell-only or project) and the slice's G-code; repeat per pose")
+    oe.add_argument("--shell-cell", type=float, default=0.1)
+    oe.add_argument("--samples", type=int, default=20000)
+    oe.add_argument("--out", type=Path, required=True, help="output directory")
+    oe.set_defaults(fn=_cmd_orient_evidence)
     sc = sub.add_parser("shell-check", help="SHELL-001 at T level: printed shell thickness by slope from a slice")
     sc.add_argument("gcode", type=Path, help="slice of the posed body (plate coordinates = the table's pose)")
     sc.add_argument("--table", type=Path, required=True)
