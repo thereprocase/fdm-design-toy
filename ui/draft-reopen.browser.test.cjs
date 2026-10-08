@@ -13,7 +13,7 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await reopen();assert.equal(dialogs,1);assert.deepEqual(await p.evaluate(()=>workSnapshot()),edited);
  accept=true;await reopen();assert.equal(dialogs,2);assert.deepEqual(await p.evaluate(()=>workSnapshot()),original);
  // No artificial empty-file selection: a table reset must allow this exact path again.
- await p.locator('#table-file').setInputFiles({name:'replacement-table.json',mimeType:'application/json',buffer:require('node:fs').readFileSync(table)});await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===1);
+ await p.locator('#table-file').setInputFiles(table);await p.waitForFunction(()=>document.querySelectorAll('.helper-region').length===1);
  await reopen();assert.equal(await p.locator('.helper-region').count(),6);assert.deepEqual(await p.evaluate(()=>workSnapshot()),original);
  const bad={name:'invalid-draft.json',mimeType:'application/json',buffer:Buffer.from('{')};
  for(let i=0;i<2;i++){

@@ -457,7 +457,9 @@ async function loadOrientationTable(file,request,bundle=null){
 }
 
 byId('table-file').onchange=async event=>{
- const file=event.target.files[0];if(!file)return;const accepted=await loadOrientationTable(file,++tableRequest);if(accepted===false)event.target.value='';
+ const file=event.target.files[0];if(!file)return;const request=++tableRequest;
+ try{await loadOrientationTable(file,request);}
+ finally{if(request===tableRequest)event.target.value='';}
 };
 function clearOrientationBundle(){
  orientationEvidenceBundle=null;renderPoseRoads();if(selected)renderFailedChecks(selected);
@@ -493,6 +495,7 @@ byId('orientation-bundle-files').onchange=async event=>{
   const accepted=await loadOrientationTable({arrayBuffer:async()=>bundle.tableBytes},request,bundle);
   if(request===tableRequest&&!accepted){event.target.value='';byId('orientation-bundle-status').textContent=byId('status').textContent+' The previous bundle summary, if any, is retained.';}
  }catch(error){if(request!==tableRequest)return;byId('orientation-bundle-status').textContent='Could not open orientation bundle: '+error.message+' The current table, draft and previous bundle summary remain unchanged.';}
+ finally{if(request===tableRequest)event.target.value='';}
 };
 byId('pose-sort').onchange=byId('feasible-only').onchange=byId('sliced-only').onchange=()=>{if(analysis)renderRows();};
 function addHelper(region={}) {

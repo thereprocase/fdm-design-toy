@@ -18,6 +18,13 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.match(await page.locator('#orientation-bundle-scope').innerText(),/not opened by this browser/);
  await page.getByRole('button',{name:'Review facet-01',exact:true}).click();
  assert.equal(await page.locator('#pose-name').innerText(),'facet-01');assert.match(await page.locator('#pose-bridges').innerText(),/52.2 mm/);
+ // Reopen the identical paths without manually emptying the picker.
+ accept=true;
+ await page.locator('#orientation-bundle-files').setInputFiles(files);
+ await page.waitForFunction(()=>document.querySelector('#pose-name').textContent==='Choose a candidate');
+ assert.equal(await page.locator('#orientation-bundle-files').inputValue(),'');
+ assert.equal(dialogs.length,1);dialogs.length=0;accept=false;
+ await page.getByRole('button',{name:'Review facet-01',exact:true}).click();
  await page.locator('#handoff > summary').click();
  const download=page.waitForEvent('download');await page.locator('#download-table').click();
  assert.deepEqual(await fs.readFile(await(await download).path()),await fs.readFile(path.join(dir,'orientation-table.enriched.json')));
