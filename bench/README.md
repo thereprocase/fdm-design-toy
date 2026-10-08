@@ -195,6 +195,37 @@ appears. Both cases are **blocked**, with no load transfer, filtering or solve.
 The shell-only/project domains contain 142,588/144,047 cells respectively.
 Finer cells alone do not establish an admissible original-load comparison.
 
+The separate **all-positive-density** model retains every original load and
+restraint without filtering or transfer. With the uncalibrated law
+`E/E0 = min(raw_density, 1)`, E0 = 1000 MPa, nu = 0.3 and no stiffness floor:
+
+| Case | CG iterations | True relative residual | Compliance N·mm | Maximum displacement mm |
+|---|---:|---:|---:|---:|
+| Full-solid context | 40 | 7.64e-10 | 107.541 | 1.707 |
+| Shell-only | 36 | 7.44e-10 | 376.880 | 6.219 |
+| Seeded project | 35 | 9.63e-10 | 370.104 | 6.117 |
+
+The project compliance is 1.798% lower for this model. All three domains have
+one face-connected component, and no fragments were removed. Positive material
+outside the centre-sampled envelope was retained. The minimum positive E/E0 is
+0.00120018; this is the measured density field, not an imposed floor. These are
+linear-model displacements, not validated physical movement. This does not
+establish the threshold-0.5 answer, mesh convergence, a calibrated density law,
+anisotropic strength, or the mixed-precision GPU solver gate.
+
+Receipt: `receipts/occupancy-density-p1-h08.json` (SHA-256
+`f3616a9c09a143def40d4def10473ada7e220bf98208d4b950571c47da05afb4`).
+Existing solver sources at `f70e6ca` were verified by hash for the run. On one
+CPU thread, setup times were 77.95/53.60/53.29 s and solve times 63.19/39.10/38.23 s
+for context/baseline/project. These are CPU reference timings, not optimiser timings.
+
+```bash
+python bench/density_weighted.py --root /path/to/part-checkout \
+  --reference bench/receipts/bracket-grid-h08.json \
+  --baseline seed-shell-only-h08-sf12.npz --project seed-project-h08-sf12.npz \
+  --power 1 --solve --out weighted-h08.json
+```
+
 ### Explicit seat-load transfer and connected-domain sensitivity
 
 `seat_load_transfer.py` constructs nonnegative nodal forces parallel to each

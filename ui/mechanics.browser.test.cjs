@@ -66,6 +66,15 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#review-mechanics').setInputFiles({name:'synthetic-contradiction.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(contradictory))});
  await page.waitForFunction(()=>document.querySelector('#mechanics-status').textContent.includes('must preserve the raw audit'));
  assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),unfiltered);
+ const h08=path.join(__dirname,'../bench/receipts/occupancy-density-p1-h08.json');
+ await page.locator('#review-mechanics').setInputFiles(h08);
+ await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('-1.798%'));
+ assert.match(await page.locator('#mechanics-policy').innerText(),/No fragments were removed/);
+ assert.match(await page.locator('#mechanics-resolution').innerText(),/0.8 × 0.8 × 0.8 mm/);
+ assert.match(await page.locator('#mechanics-audits').innerText(),/Original fixed DOFs: 7216; retained: 7216/);
+ assert.match(await page.locator('#mechanics-rows').innerText(),/376.88/);
+ assert.doesNotMatch(await page.locator('#mechanics-audits').innerText(),/Removed \d+ cells/);
+ assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),JSON.parse(fs.readFileSync(h08)));
  const badWeighted=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p3-sf16-r1.json')));
  badWeighted.cases.project.audit.missing_load_l1_N=1;
  await page.locator('#review-mechanics').setInputFiles({name:'synthetic-lost-load.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(badWeighted))});
