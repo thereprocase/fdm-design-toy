@@ -1,5 +1,6 @@
 """Orca modifier capability spike (#6): variant builder, region accounting, the committed capability file."""
 import io
+import os
 import zipfile
 from pathlib import Path
 
@@ -12,8 +13,9 @@ from fdmgen.gcode import Toolpath
 from fdmgen.slicer.modifier_spike import _fraction_in_box, build_variant, region_volumes
 
 REPO = Path(__file__).resolve().parents[1]
+SRC = Path(os.environ.get("SPOOL_RACK_ROOT") or REPO.parent / "spool-wall-rack")
 CAP = REPO / "catalog" / "slicer" / "orca-2.4.2-p1s-asa-modifier-capabilities.yaml"
-TEMPLATE_ZIP = REPO.parent / "spool-wall-rack" / "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/slice-evidence.zip"
+TEMPLATE_ZIP = SRC / "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/slice-evidence.zip"
 
 
 def test_fraction_in_box_known_answers():
@@ -32,7 +34,7 @@ def test_region_volumes_split_long_segments_by_length():
     assert r["outside"]["Outer wall"]["volume_mm3"] == pytest.approx(26.5)      # y 13..39.5
 
 
-@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="spool-wall-rack checkout not next to this repository")
+@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="slice template missing from SPOOL_RACK_ROOT or sibling checkout")
 def test_build_variant_keeps_one_body_and_one_modifier_with_overrides():
     template = zipfile.ZipFile(TEMPLATE_ZIP).read("audit.3mf")
     data, geo = build_variant(template, {"wall_loops": "6"})

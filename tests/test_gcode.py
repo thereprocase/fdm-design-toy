@@ -1,5 +1,6 @@
 """Canonical G-code reader (#2): P0-A parity on the archived slice, arcs, footer guard, frames."""
 import io
+import os
 import json
 import math
 import re
@@ -20,7 +21,7 @@ from fdmgen.gcode import (
 from fdmgen.gcode.frames import extruder_offset
 
 REPO = Path(__file__).resolve().parents[1]
-SRC = REPO.parent / "spool-wall-rack"
+SRC = Path(os.environ.get("SPOOL_RACK_ROOT") or REPO.parent / "spool-wall-rack")
 SLICE = SRC / "designs/rev-g2/g-recheck/2w-5layers/slice-evidence.zip"
 REFERENCE = SRC / "analysis/rev-g2/g-recheck/2w-5layers/validated-shape/shape-verification.json"
 PINNED_CREDITED = 70979.8020219935           # PLAN P0-A; must equal the reference file's key
@@ -28,7 +29,7 @@ PINNED_GCODE_SHA = "ab6cdc9bc145ce140e39432573fdb89347ae66724c9fd072689a6792ba5e
 AREA = math.pi * 1.75 ** 2 / 4
 
 
-@pytest.mark.skipif(not SLICE.is_file(), reason="spool-wall-rack@14338e9 checkout not next to this repository")
+@pytest.mark.skipif(not SLICE.is_file(), reason="archived slice fixture missing from SPOOL_RACK_ROOT or sibling checkout")
 def test_p0a_credited_volume_parity():
     ref = json.loads(REFERENCE.read_text())
     assert ref["structurally_credited_extrusion_volume_mm3"] == PINNED_CREDITED
@@ -147,7 +148,7 @@ def test_frame_chain_known_answers(tmp_path):
 ASA_SLICE = SRC / "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/slice-evidence.zip"
 
 
-@pytest.mark.skipif(not (SLICE.is_file() and ASA_SLICE.is_file()), reason="spool-wall-rack@14338e9 checkout not present")
+@pytest.mark.skipif(not (SLICE.is_file() and ASA_SLICE.is_file()), reason="archived slice fixtures missing from SPOOL_RACK_ROOT or sibling checkout")
 @pytest.mark.parametrize("archive,offset", [(SLICE, [0, 0, 0]), (ASA_SLICE, [0, 2, 0])])
 def test_offset_restore_lands_on_the_placed_body(archive, offset):
     """G-code + extruder offset sits half a line width inside the 3MF-placed body on all four sides,

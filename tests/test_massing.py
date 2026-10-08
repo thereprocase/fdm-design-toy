@@ -1,6 +1,7 @@
 """Massing export (#14 handoff): MOD-001 on helper boxes, 3MF contents, refused settings."""
 import hashlib
 import io
+import os
 import zipfile
 from pathlib import Path
 
@@ -16,8 +17,9 @@ from fdmgen.planning import Helper, PlanningDraft
 from fdmgen.slicer.threemf import Part, write_project
 
 REPO = Path(__file__).resolve().parents[1]
+SRC = Path(os.environ.get("SPOOL_RACK_ROOT") or REPO.parent / "spool-wall-rack")
 CAP = load_capabilities(REPO / "catalog" / "slicer" / "orca-2.4.2-p1s-asa-modifier-capabilities.yaml")
-TEMPLATE_ZIP = REPO.parent / "spool-wall-rack" / "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/slice-evidence.zip"
+TEMPLATE_ZIP = SRC / "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/slice-evidence.zip"
 
 
 def helper(hid, center, size):
@@ -62,7 +64,7 @@ def test_write_project_requires_a_body_first():
         write_project(b"", [Part("m", np.zeros((3, 3)), np.array([[0, 1, 2]]), "modifier_part")], object_name="x")
 
 
-@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="spool-wall-rack checkout not next to this repository")
+@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="slice template missing from SPOOL_RACK_ROOT or sibling checkout")
 def test_export_plan_writes_body_and_helper_modifiers():
     template = zipfile.ZipFile(TEMPLATE_ZIP).read("audit.3mf")
     b = body()
@@ -105,7 +107,7 @@ DRAFT = REPO / "tests" / "fixtures" / "massing" / "sample-draft.json"
 TABLE = REPO / "tests" / "fixtures" / "orient" / "spool-rack-g2-ef.orientation-table.json"
 
 
-@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="spool-wall-rack checkout not next to this repository")
+@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="slice template missing from SPOOL_RACK_ROOT or sibling checkout")
 def test_real_ui_draft_exports_and_flags_the_tiny_helper():
     """A draft exported by the browser workspace: one backing box near rear_seat, one 0.5 mm box.
     On the second workstation's Orca the backing box printed 2,746 mm3 of solid infill and the tiny box nothing."""
@@ -113,7 +115,7 @@ def test_real_ui_draft_exports_and_flags_the_tiny_helper():
 
     from fdmgen.planning import load_draft
     table = TABLE.read_bytes()
-    mesh_path = REPO.parent / "spool-wall-rack" / json.loads(table)["mesh"]["path"]
+    mesh_path = SRC / json.loads(table)["mesh"]["path"]
     p = load_draft(DRAFT.read_bytes(), table, mesh_path.read_bytes())
     b = trimesh.load(mesh_path, process=False)
     _data, rep = export_plan(p, b.vertices, b.faces, zipfile.ZipFile(TEMPLATE_ZIP).read("audit.3mf"), CAP)
@@ -131,7 +133,7 @@ def test_real_ui_draft_exports_and_flags_the_tiny_helper():
     assert backing["verdict"] == "FAIL" and backing["metrics"]["distance_mm"] == pytest.approx(13.0)   # 0.6 mm inside
 
 
-@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="spool-wall-rack checkout not next to this repository")
+@pytest.mark.skipif(not TEMPLATE_ZIP.is_file(), reason="slice template missing from SPOOL_RACK_ROOT or sibling checkout")
 def test_cli_massing_exit_code_and_outputs(tmp_path, capsys):
     from fdmgen.cli import main
     rc = main(["massing", str(DRAFT), "--table", str(TABLE), "--template", str(TEMPLATE_ZIP), "--out", str(tmp_path)])
