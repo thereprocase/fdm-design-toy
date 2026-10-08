@@ -25,6 +25,14 @@ function clearBridgeLocation(){
 }
 el('bridge-location-kind').onchange=clearBridgeLocation;
 el('bridge-location-hide').onclick=()=>{reviewViewer.setRoadWitness(null);el('bridge-location-hide').hidden=true;el('bridge-location-selected').textContent='Road hidden. The source receipt remains loaded.';};
+function renderBridgeLocation(r,hash,kind,roads){
+  reviewViewer.setRoadWitness(null);el('bridge-location-buttons').replaceChildren();el('bridge-location-hide').hidden=true;el('bridge-location-selected').textContent='';
+  el('bridge-location-status').textContent=(kind==='project'?'Project':'Shell-only baseline')+' bridge receipt matched the current shell G-code and pose. '+(roads.length?'Choose a recorded maximum below.':'No location geometry recorded; measurements remain in the receipt.');
+  el('bridge-location-source').textContent=JSON.stringify({receipt_sha256:hash,receipt:r},null,2);el('bridge-location-provenance').hidden=false;
+  for(const road of roads){const button=add('button',road.role+' '+road.model+' · '+road.value_mm+' mm',el('bridge-location-buttons'));button.type='button';button.className='secondary';
+   button.onclick=()=>{reviewViewer.setRoadWitness(road.source.design_mm);el('bridge-location-hide').hidden=false;el('bridge-location-selected').textContent=(kind==='project'?'Project':'Shell-only baseline')+' · '+road.role+' '+road.model+' · '+road.value_mm+' mm · road '+road.road_index+' · slicer role '+road.source.role+'. Dashed: full road; solid: bounded unsupported run; dot: ceiling witness. Drawn through the body for location only. Slicer roles do not prove open-air or core geometry, or a helper remedy. '+(reviewMeshReady?'':'Load the matching STL to display it.');};
+  }
+}
 el('review-bridge').onchange=async event=>{
  const file=event.target.files[0];if(!file)return;const request=++bridgeLocationRequest,kind=el('bridge-location-kind').value,draft=saved,shell=kind==='project'?matchedShell:matchedShellBaseline;
  try{
@@ -32,12 +40,7 @@ el('review-bridge').onchange=async event=>{
   if(file.size>20*1024*1024)throw Error('Bridge receipt exceeds 20 MB.');
   const bytes=await file.arrayBuffer(),hash=await EvidenceBundle.digest(bytes),r=EvidenceBundle.bridge(JSON.parse(new TextDecoder().decode(bytes)),shell._receipt),roads=BridgeLocations.locations(r,draft);
   if(request!==bridgeLocationRequest||draft!==saved)return;
-  reviewViewer.setRoadWitness(null);el('bridge-location-buttons').replaceChildren();el('bridge-location-hide').hidden=true;el('bridge-location-selected').textContent='';
-  el('bridge-location-status').textContent=(kind==='project'?'Project':'Shell-only baseline')+' bridge receipt matched the current shell G-code and pose. '+(roads.length?'Choose a recorded maximum below.':'No location geometry recorded; measurements remain in the receipt.');
-  el('bridge-location-source').textContent=JSON.stringify({receipt_sha256:hash,receipt:r},null,2);el('bridge-location-provenance').hidden=false;
-  for(const road of roads){const button=add('button',road.role+' '+road.model+' · '+road.value_mm+' mm',el('bridge-location-buttons'));button.type='button';button.className='secondary';
-   button.onclick=()=>{reviewViewer.setRoadWitness(road.source.design_mm);el('bridge-location-hide').hidden=false;el('bridge-location-selected').textContent=(kind==='project'?'Project':'Shell-only baseline')+' · '+road.role+' '+road.model+' · '+road.value_mm+' mm · road '+road.road_index+' · slicer role '+road.source.role+'. Dashed: full road; solid: bounded unsupported run; dot: ceiling witness. Drawn through the body for location only. Slicer roles do not prove open-air or core geometry, or a helper remedy. '+(reviewMeshReady?'':'Load the matching STL to display it.');};
-  }
+  renderBridgeLocation(r,hash,kind,roads);
  }catch(error){if(request===bridgeLocationRequest)el('bridge-location-status').textContent=error.message+' Previously accepted road evidence, if any, is retained.';}
 };
 let saved=null,digest=null,generation=0,receiptGeneration=0,matchedReport=null,sliceGeneration=0,matchedSlice=null,mechanicsGeneration=0,shellGeneration=0,shellBaselineGeneration=0,matchedShell=null,matchedShellBaseline=null;
@@ -297,6 +300,16 @@ el('review-bundle').onchange=async e=>{
    add('p',`Raster cell ${num(r.method.cell_mm)} mm; maximum cantilever ${num(m.max_cantilever_mm)} mm, reported without a cantilever verdict.`,row);
    if(m.bridge_roads===0)add('p','No bridge roads evaluated; zero span is not a measured bridge success.',row);
    add('p',r.result.does_not_establish,row);
+   if(r.result.metrics.worst){
+    const locate=add('button','Locate recorded roads',row);locate.type='button';locate.className='secondary';locate.dataset.bundleLocate=kind;
+    const status=add('p','',row);status.setAttribute('role','status');
+    locate.onclick=()=>{try{
+     const roads=BridgeLocations.locations(r,saved),entry=bundle.manifest.receipts.find(e=>e.check==='bridge-check'&&e.slice_kind===(kind==='project'?'project':'shell-only'));
+     clearBridgeLocation();el('bridge-location-kind').value=kind;renderBridgeLocation(r,entry.sha256,kind,roads);el('bridge-location-options').open=true;
+     const target=el('bridge-location-buttons').querySelector('button')||el('review-mesh');target.focus({preventScroll:true});target.scrollIntoView({block:'center'});
+     status.textContent='Opened this verified receipt in Saved geometry.';
+    }catch(error){status.textContent=error.message+' Recorded bridge measurements remain available.';}};
+   }
    const details=add('details','',row);add('summary','Complete bridge receipt',details);add('pre',JSON.stringify(r,null,2),details);
   }
   el('bundle-provenance').textContent=JSON.stringify(bundle.manifest,null,2);

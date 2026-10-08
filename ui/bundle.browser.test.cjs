@@ -77,6 +77,27 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
 
  assert.match(await page.locator('#bundle-bridges').innerText(),/internal: 122.1 mm \(limit 18 mm\)/);
  assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
+ // Synthetic manifest containing the untouched newer baseline road receipt.
+ const modern=fixture(),roadBytes=fs.readFileSync(path.join(__dirname,'fixtures/bridge-locations/facet-00-shell-only.bridge-check.json'));
+ modern.files[4].buffer=roadBytes;modern.manifest.receipts[4].sha256=fixture.sha(roadBytes);
+ const modernFiles=()=>[{name:'evidence-bundle.json',buffer:Buffer.from(JSON.stringify(modern.manifest))},...modern.files].map(x=>({...x,mimeType:'application/json'}));
+ await page.locator('#review-bundle').setInputFiles(modernFiles());
+ await page.waitForFunction(()=>document.querySelector('[data-bundle-locate="baseline"]'));
+ await page.locator('[data-bundle-locate="baseline"]').click();
+ assert.equal(await page.locator('#bridge-location-kind').inputValue(),'baseline');
+ assert.equal(JSON.parse(await page.locator('#bridge-location-source').textContent()).receipt_sha256,fixture.sha(roadBytes));
+ assert.equal(await page.evaluate(()=>document.activeElement.parentElement.id),'bridge-location-buttons');
+ await page.locator('#bridge-location-buttons').getByRole('button',{name:'internal strand · 122.1 mm',exact:true}).click();
+ assert.match(await page.locator('#bridge-location-selected').innerText(),/122.1 mm/);
+ // Invalid optional coordinates with valid file hashes leave numeric results readable.
+ const wrong=JSON.parse(roadBytes);wrong.result.metrics.worst.internal.strand.design_mm.run_start[0]+=1;
+ modern.files[4].buffer=Buffer.from(JSON.stringify(wrong));modern.manifest.receipts[4].sha256=fixture.sha(modern.files[4].buffer);
+ await page.locator('#review-bundle').setInputFiles(modernFiles());
+ await page.waitForFunction(()=>document.querySelector('#bridge-location-buttons').children.length===0);
+ await page.locator('[data-bundle-locate="baseline"]').click();
+ assert.match(await page.locator('#bundle-bridges').innerText(),/locations withheld: coordinate frames disagree/);
+ assert.match(await page.locator('#bundle-bridges').innerText(),/internal: 122.1 mm/);
+ assert.equal(await page.locator('#bridge-location-buttons button').count(),0);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-shell').setInputFiles(path.join(__dirname,'fixtures/seed-project-shell-check-v03.json'));
  await page.waitForFunction(()=>document.querySelector('#bundle-results').hidden);

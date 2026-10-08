@@ -979,3 +979,9 @@ dot the ceiling witness. Lines are drawn through the body for location only.
 Slicer role labels do not establish open-air/core geometry or a helper remedy.
 Changing evidence or slice kind clears the overlay; a rejected import retains
 the accepted one. Legacy receipts remain readable without invented locations.
+
+When a verified bundle already contains road locations, **Locate recorded roads**
+on its bridge card opens those exact receipt bytes in Saved geometry without
+selecting the file again. The manifest-verified receipt hash stays attached.
+Invalid optional coordinates withhold the overlay while numeric results remain
+readable; older bundles still use the separate location-receipt picker.
