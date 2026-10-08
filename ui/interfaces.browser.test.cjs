@@ -16,6 +16,10 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await locate.click();assert(await p.locator('#mesh-file').evaluate(e=>e===document.activeElement));assert.deepEqual(await p.evaluate(()=>workSnapshot()),before);
  await p.locator('#hide-interfaces').click();
  await p.locator('[data-interface-preview="rear_seat"]').check();assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);assert.match(await p.locator('#interface-visible-names').innerText(),/load the matched STL/);
+ // Pending and suppressed envelopes remain explained outside collapsed controls.
+ const pendingWork=await p.evaluate(()=>workSnapshot());await p.locator('#preview-helper-clearance').check();await p.locator('#interface-options').evaluate(e=>e.open=false);
+ assert(await p.locator('#interface-visibility').isVisible());assert.match(await p.locator('#interface-visible-names').innerText(),/Load the matched STL and select a pose to draw/);assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);assert.deepEqual(await p.evaluate(()=>workSnapshot()),pendingWork);
+ await p.locator('#interface-options').evaluate(e=>e.open=true);await p.locator('#preview-helper-clearance').uncheck();
  await p.locator('#mesh-file').setInputFiles(process.env.FDM_PREVIEW_MESH);await p.waitForFunction(()=>viewer.interfaces.length===1);
  assert.equal(await p.evaluate(()=>viewer.interfaces[0].base_radius_mm),13.6);assert.deepEqual(await p.evaluate(()=>workSnapshot()),before);
  for(const field of await helper.locator('[data-interface-id]').all())await field.setChecked((await field.getAttribute('data-interface-id'))==='rear_seat');
@@ -27,6 +31,11 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  assert.deepEqual(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).map(item=>[item.id,item.extra_clearance_mm])),[['rear_seat',2]]);assert.match(await p.locator('#helper-clearance-status').innerText(),/15.6 mm radius/);
  await extra.fill('');assert.match(await p.locator('#helper-clearance-status').innerText(),/blank clearance uses 0/);assert.equal(await p.evaluate(()=>viewer.interfaces.find(item=>item.clearance).extra_clearance_mm),0);
  await extra.fill('-1');assert.equal(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).length),0);assert.match(await p.locator('#helper-clearance-status').innerText(),/invalid extra clearance/);
+ await p.locator('[data-interface-preview="rear_seat"]').uncheck();await p.locator('#interface-options').evaluate(e=>e.open=false);
+ assert(await p.locator('#interface-visibility').isVisible());assert.match(await p.locator('#interface-visible-names').innerText(),/invalid extra clearance.*No clearance envelope drawn/);assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);
+ await extra.fill('2');assert.match(await p.locator('#interface-visible-names').innerText(),/envelope shown/);assert.equal(await p.evaluate(()=>viewer.interfaces.length),1);
+ await helper.locator('[data-interface-id="rear_seat"]').uncheck();assert(await p.locator('#interface-visibility').isVisible());assert.match(await p.locator('#interface-visible-names').innerText(),/no interface references selected/);assert.equal(await p.evaluate(()=>viewer.interfaces.length),0);
+ await helper.locator('[data-interface-id="rear_seat"]').check();await p.locator('#interface-options').evaluate(e=>e.open=true);
  await extra.fill(savedExtra);await p.locator('.helper-region').nth(1).locator('[data-key="name"]').focus();assert.equal(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).length),4);
  await p.locator('#shell-only').check();assert.equal(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).length),0);assert.match(await p.locator('#helper-clearance-status').innerText(),/Shell-only plan/);await p.locator('#shell-only').uncheck();
  await locate.click();await p.locator('#preview-helper-clearance').uncheck();assert.equal(await p.evaluate(()=>viewer.interfaces.filter(item=>item.clearance).length),0);

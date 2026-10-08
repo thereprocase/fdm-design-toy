@@ -56,9 +56,10 @@ function updateInterfaceVisibility(){
  const ready=!!selected&&!!mesh&&meshHash===analysis?.mesh?.sha256;
  const envelopes=helperClearancePreview();
  viewer.setInterfaces(ready?[...chosen.map(item=>({...item,lines:InterfaceRender.segments(item)})),...envelopes]:[]);
- byId('interface-visibility').hidden=!chosen.length&&!envelopes.length;
+ const requested=byId('preview-helper-clearance').checked;
+ byId('interface-visibility').hidden=!chosen.length&&!requested;
  byId('interface-visible-names').textContent=chosen.length?(ready?'Interface models shown: ':'Interface models selected; load the matched STL and select a pose to draw: ')+chosen.map(item=>item.id).join(', ')+'. Blue dash-dot · base radii only, no helper extra clearance. End rings mark drawing clips, not physical ends.':'';
- if(envelopes.length)byId('interface-visible-names').textContent+=` Purple dotted requested-clearance envelope for ${helperLabel(activeHelper)}: ${envelopes.map(item=>item.id).join(', ')}. Preview only, no clearance verdict.`;
+ if(requested)byId('interface-visible-names').textContent+=' '+(ready&&envelopes.length?`Purple dotted requested-clearance envelope shown for ${helperLabel(activeHelper)}: ${envelopes.map(item=>item.id).join(', ')}. Preview only, no clearance verdict.`:byId('helper-clearance-status').textContent);
 }
 function showHelperInterfaces(box){
  cancelSurfacePlacement();setActiveHelper(box);byId('interface-options').open=true;
