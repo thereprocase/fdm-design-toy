@@ -473,3 +473,36 @@ modified solve. Original uncapped receipts are unchanged. Reproduce using
 capped NPZ hashes pinned in the new receipts. Solver source was `32c96bf`.
 This result does not resolve the threshold sign reversal or establish helper
 strength, grid convergence, realistic contact, anisotropy or physical performance.
+
+### CPU TI and stiffness-contrast sensitivity
+
+`amg_sensitivity.py` extends the CPU aggregation investigation with an explicit
+synthetic TI family and nonuniform stiffness. It does not change the production
+solver or fit a material card. Run on the compute worker with the existing
+optional PyAMG dependency, one BLAS/OpenMP thread, a named detached job and an
+external timeout:
+
+```sh
+python bench/amg_sensitivity.py --root /path/to/part-source \
+  --ratios 1 .7 --axes z --patterns uniform bands --emin 1e-3 \
+  --maxiter 150 --out out/amg-sensitivity.json
+```
+
+The law is `Ep=1`, `Ez=ratio`, `nu_p=nu_pz=0.3`, `Gpz=ratio/2.6` in the grid
+frame. `--axes x y z` rotates the TI axis using proper cyclic permutations.
+This family is a numerical challenge, not measured printed-material properties.
+The uniform control uses density 0.5; the band case alternates density 0 and 1
+in four-cell grid-X bands inside the body. Body stiffness is
+`E_min + rho^3 (1-E_min)`; outside cells remain exactly inactive. Unlike the
+uniform control, the band case exercises actual stiffness contrast. The bands
+are artificial and are not printable helper proposals.
+
+Every solve resets the random seed and records its true residual, convergence
+status, iteration count, timing, law, field hashes, load/restraint hashes and
+source hashes. Timing includes diagnostic residual matvecs. Exit 2 records at
+least one unconverged case; a written receipt alone does not establish convergence.
+Use a fresh output path for each run. Known-answer tests cover the isotropic
+limit, weak-axis compliance, band contrast, and a small TI contrast solve against
+a dense direct reference. These checks do not establish full bracket accuracy,
+GPU or mixed-precision performance, realistic contact, the zero-ersatz gap, or
+physical qualification.
