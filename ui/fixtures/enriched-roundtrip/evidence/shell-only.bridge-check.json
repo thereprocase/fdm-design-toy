@@ -1,0 +1,138 @@
+{
+ "schema": "fdmgen/bridge-check@0.2",
+ "result": {
+  "rule": "BRG-001",
+  "level": "T",
+  "verdict": "FAIL",
+  "message": "BRG-001 T FAIL: the slice bridges external 52.2 mm > 10; internal 54.0 mm > 18.",
+  "provisional": true,
+  "metrics": {
+   "bridge_roads": 2398,
+   "external_roads": 161,
+   "internal_roads": 2237,
+   "max_span_external_mm": 52.2,
+   "max_span_internal_mm": 53.95,
+   "max_ceiling_span_external_mm": 52.2,
+   "max_ceiling_span_internal_mm": 15.647,
+   "max_cantilever_mm": 0.0,
+   "limits_mm": {
+    "external": 10.0,
+    "internal": 18.0
+   },
+   "cell_mm": 0.1,
+   "bridge_layers_z_mm": [
+    18.2,
+    20.2,
+    22.6
+   ]
+  },
+  "fixes": [
+   "shorten the span with a pillar or rib",
+   "or re-orient"
+  ],
+  "establishes": "",
+  "does_not_establish": "Sag or anchor quality in print (P level); spans are measured on a cell_mm raster of the layer below, so they carry about one cell of error; cantilevers (runs reaching a road end) are reported, not judged. The verdict uses the strand span along each road; the ceiling span (twice the distance to the nearest support) is reported beside it and is much smaller where strands run along a narrow channel."
+ },
+ "gcode": {
+  "gcode_sha256": "e2877deccd2741346bc8be7ae4538ce6302561a4b4d41daadc9e218f850431d8",
+  "generator": "OrcaSlicer",
+  "version": "2.4.2",
+  "printer_model": "Bambu Lab P1S",
+  "print_settings_id": "Part P1S ASA 4w 8-skin screen",
+  "filament_settings_id": "\"ASA print-control screen\"",
+  "layer_height": "0.2",
+  "wall_loops": "4",
+  "sparse_infill_density": "0%",
+  "filament_shrink": "100%",
+  "enable_support": "0",
+  "extruder_offset_mm": [
+   0.0,
+   2.0,
+   0.0
+  ]
+ },
+ "pose": {
+  "id": "facet-01",
+  "R_design_to_print": [
+   [
+    1.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    -1.0
+   ]
+  ],
+  "t_mm": [
+   24.246979,
+   187.258791,
+   24.0
+  ]
+ },
+ "table": {
+  "name": "browser-table.json",
+  "sha256": "0295e63551efd604a4faad2939a2cd9ef3083c8e1f611ba927f48cc623f1071c"
+ },
+ "mesh": {
+  "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+  "source": "spool-wall-rack",
+  "frame": "design",
+  "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e"
+ },
+ "placement": {
+  "shift_xy_mm": [
+   -0.0,
+   -0.0
+  ],
+  "bands": [
+   {
+    "z_mm": 2.4,
+    "inside_fraction": 1.0,
+    "points": 6540
+   },
+   {
+    "z_mm": 7.2,
+    "inside_fraction": 1.0,
+    "points": 6078
+   },
+   {
+    "z_mm": 12.0,
+    "inside_fraction": 1.0,
+    "points": 5964
+   },
+   {
+    "z_mm": 16.8,
+    "inside_fraction": 1.0,
+    "points": 6075
+   },
+   {
+    "z_mm": 21.6,
+    "inside_fraction": 1.0,
+    "points": 6114
+   }
+  ],
+  "tol_mm": 0.5,
+  "min_inside": 0.99,
+  "verified": "consistent with this pose: slice road points lie inside the posed body section (+0.5 mm) at 5 heights; one-way containment, not proof of pose identity"
+ },
+ "method": {
+  "cell_mm": 0.1,
+  "support_density": 0.5,
+  "margin_mm": 2.0,
+  "caps": true,
+  "max_span_external_mm": 10.0,
+  "max_span_internal_mm": 18.0
+ },
+ "source_sha256": {
+  "fdmgen/catalog/checks/toolpath.py": "8bf5889d7e76ce19bd07b2e306bf6b07f11bd5b7af3569e5da15c2e337f9cebe",
+  "fdmgen/gcode/occupancy.py": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
+  "fdmgen/gcode/reader.py": "8d7bc6b5a1472a22f276445cd385868502e5544d0c5706b031754586d329674b"
+ }
+}

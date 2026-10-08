@@ -1,0 +1,77 @@
+{
+ "schema": "fdmgen/evidence-bundle@0.1",
+ "pose": "facet-01",
+ "inputs": {
+  "report_sha256": "a2bc93a32626b82b8f76151c69432e89334fa8998e67a2c6bc0dd92e3d00808e",
+  "table_sha256": "0295e63551efd604a4faad2939a2cd9ef3083c8e1f611ba927f48cc623f1071c",
+  "gcode_sha256": {
+   "project": "0a10c5fa811f7ed11a07e75879abe7a8238420ca9c2386a0d4c29e958da0af8c",
+   "shell-only": "e2877deccd2741346bc8be7ae4538ce6302561a4b4d41daadc9e218f850431d8"
+  }
+ },
+ "receipts": [
+  {
+   "check": "massing-evidence",
+   "slice_kind": "project",
+   "path": "massing-evidence.json",
+   "sha256": "57bb9db988fbec0a06df6d012e219aae5e33ef935dcb327313348bb11ce77160",
+   "schema": "fdmgen/massing-slice-evidence@0.1",
+   "verdict": "PASS"
+  },
+  {
+   "check": "shell-check",
+   "slice_kind": "project",
+   "path": "project.shell-check.json",
+   "sha256": "516e8db060db068a3a14ba3d9f8c0ff4783978692efb115ccd025623a4355a9c",
+   "schema": "fdmgen/shell-check@0.3",
+   "verdict": "PASS"
+  },
+  {
+   "check": "bridge-check",
+   "slice_kind": "project",
+   "path": "project.bridge-check.json",
+   "sha256": "bf1cd51b5e450d646563fb8cc91aab56ea54ff83e3c1b34dc50e6184ee08af50",
+   "schema": "fdmgen/bridge-check@0.2",
+   "verdict": "FAIL"
+  },
+  {
+   "check": "shell-check",
+   "slice_kind": "shell-only",
+   "path": "shell-only.shell-check.json",
+   "sha256": "7dcd0016105f212c5591e75b80fb9549a2e99809cec7aeeb02db907084c743ec",
+   "schema": "fdmgen/shell-check@0.3",
+   "verdict": "PASS"
+  },
+  {
+   "check": "bridge-check",
+   "slice_kind": "shell-only",
+   "path": "shell-only.bridge-check.json",
+   "sha256": "56007b8bd7933bdd2f661b48cf184662a03f7f6eb63c0f9cf7829951ac40ef2e",
+   "schema": "fdmgen/bridge-check@0.2",
+   "verdict": "FAIL"
+  }
+ ],
+ "paired": {
+  "shell-check": {
+   "thin_fraction": {
+    "project": 0.0019,
+    "shell-only": 0.0019,
+    "delta": 0.0
+   }
+  },
+  "bridge-check": {
+   "max_span_external_mm": {
+    "project": 52.2,
+    "shell-only": 52.2,
+    "delta": 0.0
+   },
+   "max_span_internal_mm": {
+    "project": 55.7,
+    "shell-only": 53.95,
+    "delta": 1.75
+   }
+  }
+ },
+ "establishes": "Which T-level checks this project slice and its shell-only baseline pass, each pinned by hash, and how the helpers change the shell and bridge measurements.",
+ "does_not_establish": "Anything at P level (printed parts), or for a different slice, pose or body."
+}

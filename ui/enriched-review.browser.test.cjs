@@ -1,0 +1,46 @@
+const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+(async()=>{
+ const root=path.resolve(__dirname,'..'),inputs=path.join(__dirname,'fixtures/enriched-roundtrip'),dir=path.join(inputs,'evidence'),hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+ const manifestBytes=await fs.readFile(path.join(dir,'evidence-bundle.json'));
+ assert.equal(hash(manifestBytes),'aa521412be1dd090f53218af8a5818271bf1a82c186a51e41d42fe9819ed549a');
+ assert.equal(hash(await fs.readFile(path.join(inputs,'browser-draft.json'))),'f9579cdd75e4a25c1b713143bd67ef6c754df2a981640a847b13d726d0d52698');
+ assert.equal(hash(await fs.readFile(path.join(inputs,'spool-rack-g2-ef-facet-01-massing.json'))),'a2bc93a32626b82b8f76151c69432e89334fa8998e67a2c6bc0dd92e3d00808e');
+ const manifest=JSON.parse(manifestBytes),draft=JSON.parse(await fs.readFile(path.join(inputs,'browser-draft.json')));
+ for(const r of manifest.receipts)assert.equal(hash(await fs.readFile(path.join(dir,r.path))),r.sha256);
+ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,headless:true,args:['--no-sandbox']});
+ try{
+ const page=await browser.newPage({viewport:{width:1366,height:900},locale:'en-US'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(pathToFileURL(path.join(root,'ui/massing-review.html')).href);
+ await page.locator('#review-draft').setInputFiles(path.join(inputs,'browser-draft.json'));
+ await page.locator('#review-receipt').setInputFiles(path.join(inputs,'spool-rack-g2-ef-facet-01-massing.json'));
+ await page.waitForFunction(()=>!document.querySelector('#review-bundle').disabled);
+ await page.locator('#review-bundle').setInputFiles((await fs.readdir(dir)).map(f=>path.join(dir,f)));
+ await page.waitForFunction(()=>document.querySelector('#bundle-status').textContent.startsWith('All five'));
+ assert.match(await page.locator('#bundle-status').innerText(),/2 FAIL, 0 NOT_CHECKED, 3 PASS/);
+ assert.match(await page.locator('#review-title').innerText(),/facet-01/);
+ assert.match(await page.locator('#review-count').innerText(),/0 failed checks/);
+ assert.match(await page.locator('#slice-helpers').innerText(),/T PASS/);
+ assert.match(await page.locator('#shell-comparison-status').innerText(),/0 percentage points/);
+ const bridges=page.locator('#bundle-bridges article');assert.equal(await bridges.count(),2);
+ assert.match(await bridges.nth(0).innerText(),/Project bridges · T FAIL/);
+ assert.match(await bridges.nth(0).innerText(),/external: 52.2 mm.*internal: 55.7 mm/);
+ assert.match(await bridges.nth(1).innerText(),/external: 52.2 mm.*internal: 53.95 mm/);
+ await page.locator('[data-review-target="bundle-results"]').click();
+ assert(await page.locator('#bridge-overview').isVisible());
+ await page.setViewportSize({width:390,height:844});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.locator('[data-review-target="bundle-results"]').click();assert(await page.locator('#bridge-overview').isVisible());
+ await page.locator('#revise-draft').click();await page.waitForURL('**/index.html#review-edit');
+ await page.locator('#table-file').setInputFiles(path.join(root,'tests/fixtures/orient/spool-rack-g2-ef.with-keep-outs.orientation-table.json'));
+ await page.waitForFunction(()=>document.querySelector('#review-transfer-status').textContent.includes('different orientation table'));
+ await page.locator('#table-file').setInputFiles(path.join(__dirname,'fixtures/orient-evidence/orientation-table.enriched.json'));
+ await page.waitForFunction(()=>document.querySelector('#draft-status').textContent.startsWith('Draft restored'));
+ assert.match(await page.locator('#pose-name').innerText(),/facet-01/);
+ const download=page.waitForEvent('download');await page.locator('#export').click();
+ const restored=JSON.parse(await fs.readFile(await(await download).path()));
+ assert.deepEqual(restored.massing,draft.massing);assert.deepEqual(restored.orientation,draft.orientation);
+ assert.equal(restored.source.orientation_table_sha256,draft.source.orientation_table_sha256);
+ assert.deepEqual(errors,[]);
+ console.log('PASS exact enriched facet01 bundle review, bridge failures, mobile, wrong-root refusal and unchanged draft restore');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exit(1)});

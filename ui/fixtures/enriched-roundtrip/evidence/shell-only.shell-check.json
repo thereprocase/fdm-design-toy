@@ -1,0 +1,261 @@
+{
+ "schema": "fdmgen/shell-check@0.3",
+ "result": {
+  "rule": "SHELL-001",
+  "level": "T",
+  "verdict": "PASS",
+  "message": "SHELL-001 T PASS: 0.2 % of the sampled surface is thinner than 2 beads (limit 1 %).",
+  "provisional": true,
+  "metrics": {
+   "samples": 20000,
+   "unmeasured": 0,
+   "thin_fraction": 0.0019,
+   "thin_area_mm2_est": 94.5,
+   "bands": [
+    {
+     "slope_deg": [
+      0,
+      10
+     ],
+     "samples": 6039,
+     "thin_fraction": 0.0005,
+     "median_mm": 1.4,
+     "p05_mm": 1.076,
+     "required_mm": 0.4
+    },
+    {
+     "slope_deg": [
+      10,
+      20
+     ],
+     "samples": 18,
+     "thin_fraction": 0.0,
+     "median_mm": 1.537,
+     "p05_mm": 1.36,
+     "required_mm": 0.583
+    },
+    {
+     "slope_deg": [
+      20,
+      30
+     ],
+     "samples": 28,
+     "thin_fraction": 0.0,
+     "median_mm": 1.651,
+     "p05_mm": 1.498,
+     "required_mm": 0.678
+    },
+    {
+     "slope_deg": [
+      30,
+      40
+     ],
+     "samples": 26,
+     "thin_fraction": 0.0,
+     "median_mm": 1.86,
+     "p05_mm": 1.717,
+     "required_mm": 0.768
+    },
+    {
+     "slope_deg": [
+      40,
+      50
+     ],
+     "samples": 476,
+     "thin_fraction": 0.0021,
+     "median_mm": 1.921,
+     "p05_mm": 1.76,
+     "required_mm": 0.834
+    },
+    {
+     "slope_deg": [
+      50,
+      60
+     ],
+     "samples": 123,
+     "thin_fraction": 0.0081,
+     "median_mm": 1.888,
+     "p05_mm": 1.604,
+     "required_mm": 0.847
+    },
+    {
+     "slope_deg": [
+      60,
+      70
+     ],
+     "samples": 66,
+     "thin_fraction": 0.0,
+     "median_mm": 1.832,
+     "p05_mm": 1.717,
+     "required_mm": 0.857
+    },
+    {
+     "slope_deg": [
+      70,
+      80
+     ],
+     "samples": 47,
+     "thin_fraction": 0.0,
+     "median_mm": 1.658,
+     "p05_mm": 1.376,
+     "required_mm": 0.831
+    },
+    {
+     "slope_deg": [
+      80,
+      90
+     ],
+     "samples": 13177,
+     "thin_fraction": 0.0024,
+     "median_mm": 1.424,
+     "p05_mm": 1.348,
+     "required_mm": 0.76
+    }
+   ],
+   "min_beads": 2,
+   "bead_spacing_mm": 0.38,
+   "layer_mm": 0.2,
+   "threshold": 0.5,
+   "entry_mm": 0.36
+  },
+  "fixes": [],
+  "establishes": "At least 2 beads of printed material along the normal almost everywhere.",
+  "does_not_establish": "Bond quality between those beads, or anything finer than the raster cell; the raster is an approximation of the slicer's roads."
+ },
+ "gcode": {
+  "gcode_sha256": "e2877deccd2741346bc8be7ae4538ce6302561a4b4d41daadc9e218f850431d8",
+  "generator": "OrcaSlicer",
+  "version": "2.4.2",
+  "printer_model": "Bambu Lab P1S",
+  "print_settings_id": "Part P1S ASA 4w 8-skin screen",
+  "filament_settings_id": "\"ASA print-control screen\"",
+  "layer_height": "0.2",
+  "wall_loops": "4",
+  "sparse_infill_density": "0%",
+  "filament_shrink": "100%",
+  "enable_support": "0",
+  "extruder_offset_mm": [
+   0.0,
+   2.0,
+   0.0
+  ]
+ },
+ "pose": {
+  "id": "facet-01",
+  "R_design_to_print": [
+   [
+    1.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    -1.0
+   ]
+  ],
+  "t_mm": [
+   24.246979,
+   187.258791,
+   24.0
+  ]
+ },
+ "table": {
+  "name": "browser-table.json",
+  "sha256": "0295e63551efd604a4faad2939a2cd9ef3083c8e1f611ba927f48cc623f1071c"
+ },
+ "mesh": {
+  "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+  "source": "spool-wall-rack",
+  "frame": "design",
+  "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e"
+ },
+ "grid": {
+  "frame": "print (plate) frame of the pose",
+  "origin_mm": [
+   23.247293159265354,
+   10.259105159265362,
+   -0.9996858407346411
+  ],
+  "cell_mm": 0.1,
+  "shape": [
+   2096,
+   2355,
+   260
+  ],
+  "clipped_outside_grid_mm3": 0.0
+ },
+ "method": {
+  "deposit": {
+   "roads": "credited",
+   "caps": true,
+   "step_frac": 0.5
+  },
+  "tie_break_mm": 0.0003141592653589793,
+  "surface_samples": 20000,
+  "seed": 0,
+  "min_beads": 2,
+  "bead_spacing_mm": 0.38,
+  "layer_mm": 0.2,
+  "thin_fraction_limit": 0.01,
+  "outer_width_mm": 0.42,
+  "march": {
+   "step_mm": 0.025,
+   "max_mm": 4.0,
+   "empty": 0.05
+  },
+  "entry_mm": 0.36
+ },
+ "source_sha256": {
+  "fdmgen/catalog/checks/shell.py": "ad25613cf96a78c8822ad81d7eb49ba43cdabf1504472fbd179bcb1da38fc590",
+  "fdmgen/gcode/occupancy.py": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
+  "fdmgen/gcode/reader.py": "8d7bc6b5a1472a22f276445cd385868502e5544d0c5706b031754586d329674b",
+  "fdmgen/catalog/checks/toolpath.py": "8bf5889d7e76ce19bd07b2e306bf6b07f11bd5b7af3569e5da15c2e337f9cebe"
+ },
+ "placement": {
+  "shift_xy_mm": [
+   -0.0,
+   -0.0
+  ],
+  "bands": [
+   {
+    "z_mm": 2.4,
+    "inside_fraction": 1.0,
+    "points": 6540
+   },
+   {
+    "z_mm": 7.2,
+    "inside_fraction": 1.0,
+    "points": 6078
+   },
+   {
+    "z_mm": 12.0,
+    "inside_fraction": 1.0,
+    "points": 5964
+   },
+   {
+    "z_mm": 16.8,
+    "inside_fraction": 1.0,
+    "points": 6075
+   },
+   {
+    "z_mm": 21.6,
+    "inside_fraction": 1.0,
+    "points": 6114
+   }
+  ],
+  "tol_mm": 0.5,
+  "min_inside": 0.99,
+  "verified": "consistent with this pose: slice road points lie inside the posed body section (+0.5 mm) at 5 heights; one-way containment, not proof of pose identity",
+  "deposit_offset_mm": [
+   0.0,
+   2.0,
+   0.0
+  ]
+ }
+}

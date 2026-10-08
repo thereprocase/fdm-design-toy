@@ -1,0 +1,421 @@
+{
+  "schema": "fdmgen.massing-plan.v0.3",
+  "status": "draft_requires_verification",
+  "source": {
+    "orientation_table_sha256": "0295e63551efd604a4faad2939a2cd9ef3083c8e1f611ba927f48cc623f1071c",
+    "orientation_schema": "fdmgen/orientation-table@0.1",
+    "problem": "spool-rack-g2-ef",
+    "mesh": {
+      "path": "designs/rev-g2/print-controls/ef-core-asa-4w-1p6/body-mounted.stl",
+      "sha256": "bd942d21cf4de6f2aff83633654ec81774ef0b77f8a53bfa02835ab63230882e",
+      "frame": "design",
+      "source": "spool-wall-rack"
+    }
+  },
+  "orientation": {
+    "id": "facet-01",
+    "kind": "stable_facet",
+    "build_dir_design": [
+      0,
+      0,
+      -1
+    ],
+    "spin_deg": 0,
+    "R_design_to_print": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        -1,
+        0
+      ],
+      [
+        0,
+        0,
+        -1
+      ]
+    ],
+    "t_mm": [
+      24.246979,
+      187.258791,
+      24
+    ],
+    "feasible": true,
+    "reasons": [],
+    "pareto": false,
+    "rank": 1,
+    "designer_decision": {
+      "choice": "selected_for_planning",
+      "candidate_id": "facet-01",
+      "table_sha256": "0295e63551efd604a4faad2939a2cd9ef3083c8e1f611ba927f48cc623f1071c",
+      "rank_at_decision": 1,
+      "decided_by_role": "designer",
+      "rationale": "Audit fresh helper planning from the enriched orientation table; recorded bridge FAIL remains unresolved."
+    },
+    "meta": {
+      "facet_area_mm2": 29445.286596258054,
+      "also": [
+        "axis-z"
+      ]
+    },
+    "columns": {
+      "ovh_fail_mm2": {
+        "value": 910.0490542460833,
+        "unit": "mm2",
+        "rule": "OVH-001",
+        "level": "M",
+        "verdict": "FAIL",
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "bridge_candidate_mm2": {
+        "value": 623.8956453814171,
+        "unit": "mm2",
+        "rule": "BRG-001",
+        "level": "M",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "contact_mm2": {
+        "value": 6847.382884481296,
+        "unit": "mm2",
+        "rule": "BED-002",
+        "level": "M",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "com_margin_mm": {
+        "value": 56.52965022800147,
+        "unit": "mm",
+        "rule": "BED-002",
+        "level": "M",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "base_min_width_mm": {
+        "value": 169.19466421520428,
+        "unit": "mm",
+        "rule": "BED-002",
+        "level": "M",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "height_mm": {
+        "value": 24.00000000000001,
+        "unit": "mm",
+        "rule": "BED-001",
+        "level": "M",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "fits_bed": {
+        "value": true,
+        "unit": "1",
+        "rule": "BED-001",
+        "level": "M",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "geometry; exclusion zone not modelled"
+      },
+      "v_unsupported_mm2": {
+        "value": 825.568367,
+        "unit": "mm2",
+        "rule": "OVH-001",
+        "level": "V",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "geometry"
+      },
+      "brg_worst_span_mm": {
+        "value": 52.312,
+        "unit": "mm",
+        "rule": "BRG-001",
+        "level": "V",
+        "verdict": "FAIL",
+        "provisional": true,
+        "fidelity": "D5 grid, straight-line spans"
+      },
+      "F_L_max": {
+        "value": 0.060984414492348565,
+        "unit": "1",
+        "rule": "STR-001",
+        "level": "FE",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+      },
+      "F_L_p99": {
+        "value": 0.019920843626201504,
+        "unit": "1",
+        "rule": "STR-001",
+        "level": "FE",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+      },
+      "F_L_max_at_mm": {
+        "value": [
+          1.91,
+          40.8,
+          16.8
+        ],
+        "unit": "mm",
+        "rule": "STR-001",
+        "level": "FE",
+        "verdict": null,
+        "provisional": true,
+        "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification"
+      },
+      "F_L_max_vendor_corner": {
+        "value": 0.04173620866820105,
+        "unit": "1",
+        "rule": "STR-001",
+        "level": "FE",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "FE prescreen: isotropic E=1000.0 MPa nu=0.3; linear fully-solid-envelope stress prescreen under the G2 full load; mount bores clamped; wall bilateral roller; solver-gate simplification; vendor-ratio Z_t corner (less conservative)"
+      },
+      "interface_roofs": {
+        "value": [
+          {
+            "id": "rear_seat",
+            "axis_from_layer_plane_deg": 90,
+            "needs_roof_variant": false,
+            "roof_variant": "teardrop_auto"
+          },
+          {
+            "id": "front_seat",
+            "axis_from_layer_plane_deg": 90,
+            "needs_roof_variant": false,
+            "roof_variant": "teardrop_auto"
+          },
+          {
+            "id": "mount_upper",
+            "axis_from_layer_plane_deg": 0,
+            "needs_roof_variant": true,
+            "roof_variant": null
+          },
+          {
+            "id": "mount_lower",
+            "axis_from_layer_plane_deg": 0,
+            "needs_roof_variant": true,
+            "roof_variant": null
+          }
+        ],
+        "unit": "1",
+        "rule": "HOLE-001",
+        "level": "M",
+        "verdict": "FAIL",
+        "provisional": true,
+        "fidelity": "mount_upper, mount_lower: axis within 45 deg of the layer plane and no roof_variant declared; the frozen geometry's roof decides (see OVH-001), or declare teardrop_auto in problem.yaml"
+      },
+      "t_support_segments": {
+        "value": 8596,
+        "unit": "count",
+        "rule": "OVH-001",
+        "level": "T",
+        "verdict": "FAIL",
+        "provisional": false,
+        "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm"
+      },
+      "t_support_volume_mm3": {
+        "value": 4217.516128704559,
+        "unit": "mm3",
+        "rule": "OVH-001",
+        "level": "T",
+        "verdict": null,
+        "provisional": false,
+        "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm"
+      },
+      "t_credited_mm3": {
+        "value": 69512.81610830707,
+        "unit": "mm3",
+        "rule": "STR-001",
+        "level": "T",
+        "verdict": null,
+        "provisional": false,
+        "fidelity": "OrcaSlicer 2.4.2: support 1, threshold 45, type normal(auto), profile Part P1S ASA 4w 8-skin screen + support 45 / \"ASA print-control screen\"; placement shift [-0.0, -0.0] mm; thick bridges and support excluded"
+      },
+      "t_shell_thin_fraction": {
+        "value": 0.0019,
+        "unit": "fraction",
+        "rule": "SHELL-001",
+        "level": "T",
+        "verdict": "PASS",
+        "provisional": true,
+        "fidelity": "shell-only slice de6d2af48fdc (OrcaSlicer 2.4.2, Part P1S ASA 4w 8-skin screen / \"ASA print-control screen\"); raster 0.1 mm, caps True, 20000 surface samples, seed 0, limit 0.01",
+        "receipt": {
+          "sha256": "2b46ccc470e663bafdd1eff055b5364d6a69d918dc23e75910e549dbae6797f1",
+          "slice_kind": "shell-only",
+          "gcode_sha256": "de6d2af48fdcabc43e1304e7782cfc0c2fecce34fd0155161c1f07d8b54e2cc0",
+          "source_sha256": {
+            "fdmgen/catalog/checks/shell.py": "ad25613cf96a78c8822ad81d7eb49ba43cdabf1504472fbd179bcb1da38fc590",
+            "fdmgen/gcode/occupancy.py": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
+            "fdmgen/gcode/reader.py": "8d7bc6b5a1472a22f276445cd385868502e5544d0c5706b031754586d329674b",
+            "fdmgen/catalog/checks/toolpath.py": "8bf5889d7e76ce19bd07b2e306bf6b07f11bd5b7af3569e5da15c2e337f9cebe"
+          }
+        },
+        "coverage": {
+          "samples_requested": 20000,
+          "measured": 20000,
+          "unmeasured": 0,
+          "clipped_outside_grid_mm3": 0
+        },
+        "pose_evidence": {
+          "verified": "consistent with this pose: slice road points lie inside the posed body section (+0.5 mm) at 5 heights; one-way containment, not proof of pose identity",
+          "bands": [
+            {
+              "z_mm": 2.4,
+              "inside_fraction": 1,
+              "points": 6540
+            },
+            {
+              "z_mm": 7.2,
+              "inside_fraction": 1,
+              "points": 6078
+            },
+            {
+              "z_mm": 12,
+              "inside_fraction": 1,
+              "points": 5964
+            },
+            {
+              "z_mm": 16.8,
+              "inside_fraction": 1,
+              "points": 6075
+            },
+            {
+              "z_mm": 21.6,
+              "inside_fraction": 1,
+              "points": 6114
+            }
+          ]
+        }
+      },
+      "t_bridge_span_external_mm": {
+        "value": 52.2,
+        "unit": "mm",
+        "rule": "BRG-001",
+        "level": "T",
+        "verdict": "FAIL",
+        "provisional": true,
+        "fidelity": "shell-only slice de6d2af48fdc (OrcaSlicer 2.4.2, Part P1S ASA 4w 8-skin screen / \"ASA print-control screen\"); layer-below raster 0.1 mm, caps True, support density 0.5",
+        "limit_mm": 10,
+        "ceiling_span_mm": 52.2,
+        "receipt": {
+          "sha256": "b23e8d80f010a04c1dd8733de2531a1eb36df9306a55c161dfe49bcb84eeba10",
+          "slice_kind": "shell-only",
+          "gcode_sha256": "de6d2af48fdcabc43e1304e7782cfc0c2fecce34fd0155161c1f07d8b54e2cc0",
+          "overall_verdict": "FAIL",
+          "source_sha256": {
+            "fdmgen/catalog/checks/toolpath.py": "8bf5889d7e76ce19bd07b2e306bf6b07f11bd5b7af3569e5da15c2e337f9cebe",
+            "fdmgen/gcode/occupancy.py": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
+            "fdmgen/gcode/reader.py": "8d7bc6b5a1472a22f276445cd385868502e5544d0c5706b031754586d329674b"
+          }
+        },
+        "coverage": {
+          "bridge_roads": 2398,
+          "external_roads": 161,
+          "internal_roads": 2237,
+          "max_cantilever_mm": 0,
+          "bridge_layers_z_mm": [
+            18.2,
+            20.2,
+            22.6
+          ],
+          "cell_mm": 0.1
+        }
+      },
+      "t_bridge_span_internal_mm": {
+        "value": 53.95,
+        "unit": "mm",
+        "rule": "BRG-001",
+        "level": "T",
+        "verdict": "FAIL",
+        "provisional": true,
+        "fidelity": "shell-only slice de6d2af48fdc (OrcaSlicer 2.4.2, Part P1S ASA 4w 8-skin screen / \"ASA print-control screen\"); layer-below raster 0.1 mm, caps True, support density 0.5",
+        "limit_mm": 18,
+        "ceiling_span_mm": 15.647,
+        "receipt": {
+          "sha256": "b23e8d80f010a04c1dd8733de2531a1eb36df9306a55c161dfe49bcb84eeba10",
+          "slice_kind": "shell-only",
+          "gcode_sha256": "de6d2af48fdcabc43e1304e7782cfc0c2fecce34fd0155161c1f07d8b54e2cc0",
+          "overall_verdict": "FAIL",
+          "source_sha256": {
+            "fdmgen/catalog/checks/toolpath.py": "8bf5889d7e76ce19bd07b2e306bf6b07f11bd5b7af3569e5da15c2e337f9cebe",
+            "fdmgen/gcode/occupancy.py": "09bd9903674300a7a3be494c30b5968e2c878f910369c591386544581326885a",
+            "fdmgen/gcode/reader.py": "8d7bc6b5a1472a22f276445cd385868502e5544d0c5706b031754586d329674b"
+          }
+        },
+        "coverage": {
+          "bridge_roads": 2398,
+          "external_roads": 161,
+          "internal_roads": 2237,
+          "max_cantilever_mm": 0,
+          "bridge_layers_z_mm": [
+            18.2,
+            20.2,
+            22.6
+          ],
+          "cell_mm": 0.1
+        }
+      }
+    }
+  },
+  "massing": {
+    "body": "fixed",
+    "walls": 4,
+    "skin_mm": 1.6,
+    "helper_infill_percent": 100,
+    "sparse_infill_structural_credit": false,
+    "shell_only": false,
+    "helper_regions": [
+      {
+        "id": "dcf80c0c-c75e-406b-8513-6d4be0d9c3c6",
+        "name": "Rear seat backing",
+        "location": "Below rear seat in design frame",
+        "purpose": "Proposed seat reinforcement; requires fresh evidence",
+        "keep_clear": {
+          "interface_ids": [
+            "rear_seat"
+          ],
+          "keep_out_ids": [
+            "crown_moulding",
+            "spool_slide"
+          ],
+          "clearance_mm": 0.5,
+          "note": "Keep rear rod seat and all declared assembly keep-outs clear"
+        },
+        "geometry": {
+          "type": "box",
+          "frame": "design",
+          "center_mm": [
+            90,
+            -20,
+            12
+          ],
+          "size_mm": [
+            16,
+            10,
+            24
+          ]
+        },
+        "geometry_status": "sketch"
+      }
+    ]
+  },
+  "outstanding_checks": [
+    "Create and validate helper geometry where requested",
+    "Verify interfaces and helper bonding",
+    "Slice and check credited material and printability",
+    "Verify load cases and material evidence; physical testing remains separate"
+  ]
+}

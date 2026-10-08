@@ -954,3 +954,11 @@ verdicts and independent strand/ceiling maxima. Missing ceiling measurements sta
 Not recorded; zero evaluated roads stay explicit. Producer-withheld comparisons
 are labelled before the individual values. No helper-effect delta is inferred;
 full methods, limits, failure context and receipts remain below.
+
+The exact fresh facet-01 round trip is pinned in `fixtures/enriched-roundtrip/`:
+new browser draft, massing export report, and the six-file evidence bundle
+(manifest `aa521412…`). It uses the existing exact
+`fixtures/orient-evidence/orientation-table.enriched.json` (`0295e635…`).
+The regular remote suite reviews these original bytes, retains both bridge
+failures, rejects the root table during revision, then restores the same massing
+and pose against the enriched table. This is workflow and slicer evidence only.
