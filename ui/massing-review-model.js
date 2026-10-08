@@ -110,23 +110,27 @@ const MassingReview = (() => {
   if(project.result.metrics.unmeasured||baseline.result.metrics.unmeasured)reasons.push('Unmeasured surface samples prevent this comparison.');
   return {comparable:reasons.length===0,reasons};
  }
- function mechanics(report, sliced, r){
-  slice(report,sliced);
-  if(r?.schema!=='fdmgen/seat-load-transfer-pilot@0.1')throw Error('Expected a seat-load-transfer mechanics pilot receipt.');
-  if(typeof r.method!=='string'||typeof r.establishes!=='string'||!Array.isArray(r.does_not_establish)||!r.does_not_establish.every(x=>typeof x==='string'))throw Error('Mechanics receipt needs method and evidence scope.');
+ function mechanicsInputs(report,sliced,inputs,referenceHash){
   if(sliced.baseline!=='shell-only slice'||contextMismatch(sliced).length)throw Error('Mechanics comparison needs a matching-context shell-only slice baseline.');
   for(const context of [sliced.slicer,sliced.baseline_slicer])for(const key of ['generator','version','printer_model','print_settings_id','filament_settings_id','layer_height','wall_loops','sparse_infill_density','filament_shrink','enable_support'])if(context?.[key]===undefined||context[key]===null||context[key]==='')throw Error('Mechanics comparison needs complete recorded slicer context.');
-  const project=r.inputs?.project?.provenance,baseline=r.inputs?.baseline?.provenance;
+  const project=inputs?.project?.provenance,baseline=inputs?.baseline?.provenance;
   if(project?.project_3mf_sha256!==report.project_3mf_sha256)throw Error('Mechanics receipt belongs to a different exported project.');
   for(const key of ['draft_sha256','table_sha256','mesh_sha256','problem','candidate_id'])if(project.plan?.[key]!==report.plan[key])throw Error('Mechanics receipt plan differs from the export.');
   for(const [name,p,context] of [['project',project,sliced.slicer],['baseline',baseline,sliced.baseline_slicer]]){
    if(!hash(p?.gcode_sha256)||p.gcode_sha256!==context?.gcode_sha256)throw Error(`Mechanics ${name} G-code differs from the loaded slice.`);
-   if(!hash(r.inputs[name].npz_sha256)||!hash(r.reference_sha256)||p.grid_receipt_sha256!==r.reference_sha256)throw Error('Missing or inconsistent mechanics grid provenance.');
+   if(!hash(inputs[name].npz_sha256)||!hash(referenceHash)||p.grid_receipt_sha256!==referenceHash)throw Error('Missing or inconsistent mechanics grid provenance.');
    const vec3=v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite);
    if(!vec3(p.grid?.shape)||!p.grid.shape.every(v=>Number.isInteger(v)&&v>0)||!vec3(p.grid?.h_mm)||!p.grid.h_mm.every(v=>v>0)||!vec3(p.grid?.origin_print_mm))throw Error('Mechanics receipt needs the complete grid.');
    if(p.table_sha256!==report.plan.table_sha256||p.pose!==report.plan.candidate_id)throw Error('Mechanics grid table or pose differs.');
   }
   for(const key of ['grid','installed_to_print','pose_R_design_to_print','pose_t_mm'])if(JSON.stringify(project[key])!==JSON.stringify(baseline[key]))throw Error('Mechanics grids or transforms differ.');
+ }
+ function mechanics(report, sliced, r){
+  slice(report,sliced);
+  if(r?.schema==='fdmgen/density-weighted-mechanics-pilot@0.1')return weightedMechanics(report,sliced,r);
+  if(r?.schema!=='fdmgen/seat-load-transfer-pilot@0.1')throw Error('Expected a seat-load-transfer mechanics pilot receipt.');
+  if(typeof r.method!=='string'||typeof r.establishes!=='string'||!Array.isArray(r.does_not_establish)||!r.does_not_establish.every(x=>typeof x==='string'))throw Error('Mechanics receipt needs method and evidence scope.');
+  mechanicsInputs(report,sliced,r.inputs,r.reference_sha256);
   if(!['largest-face-component sensitivity','unmodified threshold masks'].includes(r.domain_policy))throw Error('Unknown mechanics domain policy.');
   if(!Number.isFinite(r.threshold)||r.threshold<=0||r.threshold>1||!hash(r.transferred_load_sha256))throw Error('Invalid mechanics threshold or load provenance.');
   const nonnegative=(v,label)=>{if(!Number.isFinite(v)||v<0)throw Error('Invalid mechanics measurement: '+label);};
@@ -143,7 +147,35 @@ const MassingReview = (() => {
   }
   return r;
  }
+ function weightedMechanics(report,sliced,r){
+  mechanicsInputs(report,sliced,r.cases,r.reference_sha256);
+  const m=r.material,nonnegative=v=>Number.isFinite(v)&&v>=0;
+  if(!m||m.law!=='E/E0 = min(raw_density, 1)^power'||!Number.isFinite(m.E0_MPa)||m.E0_MPa<=0||!Number.isFinite(m.nu)||m.nu<=-1||m.nu>=.5||!Number.isFinite(m.power)||m.power<=0||m.stiffness_floor!==0||typeof m.evidence!=='string')throw Error('Unsupported or incomplete density-weighted material law.');
+  if(r.domain_policy!=='largest face component of positive-density cells'||r.load_policy!=='original full-body nodal loads and restraints; no transfer or deletion'||!hash(r.load_sha256))throw Error('Unsupported density-weighted domain or load policy.');
+  if(typeof r.establishes!=='string'||!Array.isArray(r.does_not_establish)||!r.does_not_establish.every(x=>typeof x==='string'))throw Error('Weighted mechanics needs evidence scope.');
+  if(JSON.stringify(r.grid)!==JSON.stringify(r.cases.project.provenance.grid)||JSON.stringify(r.installed_to_print)!==JSON.stringify(r.cases.project.provenance.installed_to_print))throw Error('Weighted mechanics grid or transform differs from occupancy provenance.');
+  for(const name of ['full_solid','baseline','project']){
+   const c=r.cases[name];
+   if(!c)throw Error('Missing weighted mechanics case.');
+   for(const a of [c.raw_audit,c.audit]){
+    if(!a||!['ready','blocked'].includes(a.status)||!Array.isArray(a.reasons)||!a.reasons.every(x=>typeof x==='string'))throw Error('Weighted mechanics needs raw and retained domain audits.');
+    for(const key of ['cells','face_components','missing_loaded_dofs','loaded_fixed_dofs','restrained_rigid_modes','missing_load_l1_N'])if(!nonnegative(a[key]))throw Error('Invalid weighted mechanics audit: '+key);
+   }
+   const f=c.fragment_removal;
+   for(const key of ['removed_cells','removed_grid_volume_mm3','removed_deposited_volume_mm3','removed_original_load_l1_N','removed_fixed_dofs'])if(!nonnegative(f?.[key]))throw Error('Missing weighted fragment accounting: '+key);
+   if(!nonnegative(c.cells_outside_full_body)||!Number.isFinite(c.positive_stiffness_fraction_min)||c.positive_stiffness_fraction_min<=0||c.positive_stiffness_fraction_min>1)throw Error('Invalid weighted domain measurement.');
+   if(c.solve?.status==='solved')for(const key of ['compliance_N_mm','max_displacement_mm','true_relative_residual'])if(!nonnegative(c.solve[key]))throw Error('Invalid weighted solve measurement: '+key);
+  }
+  return r;
+ }
+ function weightedComparable(r){
+  return ['full_solid','baseline','project'].every(name=>{
+   const c=r.cases[name],a=c.audit,f=c.fragment_removal,v=c.solve;
+   return a.status==='ready'&&a.reasons.length===0&&a.face_components===1&&a.missing_loaded_dofs===0&&a.missing_load_l1_N===0&&a.loaded_fixed_dofs===0&&a.restrained_rigid_modes===6&&f.removed_original_load_l1_N===0&&f.removed_fixed_dofs===0&&v?.status==='solved'&&v.cg_status===0&&v.true_relative_residual<=1e-8&&v.compliance_N_mm>0;
+  });
+ }
  function mechanicsComparable(r){
+  if(r.schema==='fdmgen/density-weighted-mechanics-pilot@0.1')return weightedComparable(r);
   return ['full_solid','baseline','project'].every(name=>{
    const a=r.audits[name],s=r.solves?.[name];
    return a.status==='ready'&&a.reasons.length===0&&a.face_components===1&&a.missing_loaded_dofs===0&&a.loaded_fixed_dofs===0&&a.restrained_rigid_modes===6&&s?.status==='solved'&&s.true_relative_residual<=1e-8&&s.compliance_N_mm>0;

@@ -36,6 +36,21 @@ const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}
  await page.locator('#review-mechanics').setInputFiles(path.join(__dirname,'../bench/receipts/occupancy-seat-transfer-r1.json'));
  await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('No supported compliance comparison'));
  assert.match(await page.locator('#mechanics-rows').innerText(),/Not established/);assert.match(await page.locator('#mechanics-audits').innerText(),/face-connected components/);
+ for(const [power,delta] of [[1,'-1.738%'],[3,'-2.906%']]){
+  const weightedPath=path.join(__dirname,`../bench/receipts/occupancy-density-p${power}-sf16-r1.json`);
+  await page.locator('#review-mechanics').setInputFiles(weightedPath);
+  await page.waitForFunction(delta=>document.querySelector('#mechanics-comparison').textContent.includes(delta),delta);
+  assert.match(await page.locator('#mechanics-policy').innerText(),/Density-weighted stiffness, no binary threshold/);
+  assert.match(await page.locator('#mechanics-model').innerText(),new RegExp(`power ${power}, stiffness floor 0`));
+  assert.match(await page.locator('#mechanics-model').innerText(),/no transfer or deletion/);
+  assert.match(await page.locator('#mechanics-model').innerText(),/uncalibrated/);
+  assert.match(await page.locator('#mechanics-audits').innerText(),/Raw domain: blocked/);
+  assert.deepEqual(JSON.parse(await page.locator('#mechanics-provenance').textContent()),JSON.parse(fs.readFileSync(weightedPath)));
+ }
+ const badWeighted=JSON.parse(fs.readFileSync(path.join(__dirname,'../bench/receipts/occupancy-density-p3-sf16-r1.json')));
+ badWeighted.cases.project.audit.missing_load_l1_N=1;
+ await page.locator('#review-mechanics').setInputFiles({name:'synthetic-lost-load.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(badWeighted))});
+ await page.waitForFunction(()=>document.querySelector('#mechanics-comparison').textContent.includes('No supported compliance comparison'));
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.locator('#review-slice').setInputFiles([]);await page.locator('#review-slice').setInputFiles(fixture('slice-evidence'));
  await page.waitForFunction(()=>document.querySelector('#mechanics-results').hidden);

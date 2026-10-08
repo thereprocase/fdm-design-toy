@@ -316,6 +316,16 @@ review, not optimised designs or physical qualifications.
 
 ## Review a mechanics sensitivity
 
+The review also accepts `fdmgen/density-weighted-mechanics-pilot@0.1` receipts.
+They retain their separate original-load policy and uncalibrated stiffness law
+`E/E0 = min(raw_density, 1)^power`, with no stiffness floor. The page shows the
+material constants, exponent, load fingerprint, raw/retained domain audits and
+fragment accounting; it does not reinterpret them as thresholded load-transfer
+results. The original receipt remains intact in provenance. A compliance delta
+requires successful retained-domain audits, no recorded lost load or restraints,
+and converged solves. The browser pairs recorded inputs; it does not rerun FE,
+verify NPZ bytes, calibrate the law or establish physical movement/strength.
+
 After loading the exact draft, export receipt and paired slice evidence, the
 review page accepts a `fdmgen/seat-load-transfer-pilot@0.1` mechanics receipt.
 It requires the export's project and plan hashes, both loaded slice G-code

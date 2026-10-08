@@ -99,11 +99,15 @@ el('review-mechanics').onchange=async e=>{
  }catch(error){if(request===mechanicsGeneration)el('mechanics-status').textContent=error.message+' Previous matched mechanics results, if any, remain below.';}
 };
 function renderMechanics(r){
+ const source=r,weighted=r.schema==='fdmgen/density-weighted-mechanics-pilot@0.1';
  const comparable=MassingReview.mechanicsComparable(r),num=x=>x.toLocaleString(undefined,{maximumFractionDigits:3});
+ // Presentation mapping only: keep the original weighted receipt intact below.
+ if(weighted)r={...r,inputs:r.cases,audits:Object.fromEntries(Object.entries(r.cases).map(([k,c])=>[k,c.audit])),solves:Object.fromEntries(Object.entries(r.cases).map(([k,c])=>[k,c.solve])),fragment_removal:Object.fromEntries(Object.entries(r.cases).map(([k,c])=>[k,{...c.fragment_removal,removed_volume_mm3:c.fragment_removal.removed_grid_volume_mm3}]))};
+
  showReviewSection('mechanics-results',!(false));
- el('mechanics-policy').textContent=`FE pilot · provisional. Domain policy: ${r.domain_policy}; density threshold ${r.threshold}. ${r.domain_policy==='largest-face-component sensitivity'?'Fragments were explicitly removed. This is not the unmodified raster result.':'Original thresholded domains; inspect connectivity failures below.'}`;
+ el('mechanics-policy').textContent=weighted?`FE pilot · provisional. Density-weighted stiffness, no binary threshold. Domain policy: ${r.domain_policy}. The full-body context may remove fragments; see each audit. This is not equivalent to the thresholded load-transfer pilot.`:`FE pilot · provisional. Domain policy: ${r.domain_policy}; density threshold ${r.threshold}. ${r.domain_policy==='largest-face-component sensitivity'?'Fragments were explicitly removed. This is not the unmodified raster result.':'Original thresholded domains; inspect connectivity failures below.'}`;
  el('mechanics-comparison').textContent=comparable?`Project compliance change versus shell-only: ${num(100*(r.solves.project.compliance_N_mm/r.solves.baseline.compliance_N_mm-1))}%. Applies only to this domain and load policy; not a strength rating.`:'No supported compliance comparison: an audit, conservation or convergence check is missing or failed.';
- el('mechanics-model').textContent=`Load method: ${r.method}. ${r.context_note||''} Material constants are not recorded in this pilot receipt; consult its reproducible benchmark. Linear model outputs do not establish physical movement.`;
+ el('mechanics-model').textContent=weighted?`Load policy: ${r.load_policy}. Load SHA-256: ${r.load_sha256}. Material: E0 ${num(r.material.E0_MPa)} MPa, nu ${num(r.material.nu)}; ${r.material.law}, power ${num(r.material.power)}, stiffness floor ${r.material.stiffness_floor}. ${r.material.evidence}. This law is uncalibrated; linear model outputs do not establish physical movement.`:`Load method: ${r.method}. ${r.context_note||''} Material constants are not recorded in this pilot receipt; consult its reproducible benchmark. Linear model outputs do not establish physical movement.`;
  const grid=r.inputs.baseline.provenance.grid;
  el('mechanics-resolution').textContent=`Solver cell size: ${grid.h_mm.map(num).join(' × ')} mm; grid ${grid.shape.join(' × ')} cells. Bead sampling refines deposition inside this grid, not the FE mesh.`;
  el('mechanics-sampling').textContent=[['baseline','Shell-only'],['project','Project']].map(([key,label])=>{
@@ -123,11 +127,12 @@ function renderMechanics(r){
   const detail=add('article','',el('mechanics-audits'));add('h3',label,detail);
   add('p',`${a.cells} cells; ${a.face_components} face-connected components; ${a.missing_loaded_dofs} missing loaded DOFs.`,detail);
   for(const reason of a.reasons)add('p',String(reason),detail);
+  if(weighted){const c=source.cases[name];add('p',`Raw domain: ${c.raw_audit.status}; ${c.raw_audit.face_components} face components. ${c.raw_audit.reasons.join('; ')} Cells outside full-body envelope: ${c.cells_outside_full_body}. Minimum positive stiffness fraction: ${c.positive_stiffness_fraction_min.toExponential(3)}.`,detail);}
   const f=r.fragment_removal?.[name];if(f)add('p',`Removed ${f.removed_cells} cells (${num(f.removed_volume_mm3)} mm³ of grid-cell volume); ${f.removed_fixed_dofs} fixed DOFs and ${num(f.removed_original_load_l1_N)} N summed absolute original nodal force lost exclusively with removed nodes.`,detail);
   if(s?.status==='solved')add('p',`True relative residual: ${s.true_relative_residual.toExponential(3)}.`,detail);
  }
  el('mechanics-scope').textContent=`${r.establishes||''} Does not establish: ${(r.does_not_establish||[]).join('; ')}.`;
- el('mechanics-provenance').textContent=JSON.stringify(r,null,2);
+ el('mechanics-provenance').textContent=JSON.stringify(source,null,2);
 }
 
 function clearShell(){

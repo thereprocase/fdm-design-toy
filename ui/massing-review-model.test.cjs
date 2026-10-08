@@ -102,3 +102,17 @@ test('shell 0.3 validates section evidence and gates comparisons on checked heig
  const policy=structuredClone(baseline);policy.placement.tol_mm=1;
  assert(!Review.shellComparison(p,Review.shell(seedReport,seedSlice,policy,draft,'baseline'),seedSlice).comparable);
 });
+
+test('weighted mechanics pairs real p1/p3 receipts without changing their schema',()=>{
+ const read=p=>JSON.parse(fs.readFileSync(path.join(__dirname,p))),rep=read('fixtures/seed-export-report.json'),slice=read('fixtures/seed-slice-evidence.json');
+ for(const power of [1,3]){
+  const r=read(`../bench/receipts/occupancy-density-p${power}-sf16-r1.json`),before=JSON.stringify(r);
+  assert.equal(Review.mechanics(rep,slice,r),r);assert(Review.mechanicsComparable(r));assert.equal(JSON.stringify(r),before);
+  for(const mutate of [x=>x.material.stiffness_floor=.001,x=>x.material.power=0,x=>x.load_sha256=null,x=>x.cases.baseline.provenance.gcode_sha256='0'.repeat(64),x=>x.grid.shape[0]++,x=>x.cases.project.fragment_removal=null]){
+   const bad=structuredClone(r);mutate(bad);assert.throws(()=>Review.mechanics(rep,slice,bad));
+  }
+  for(const mutate of [x=>x.cases.project.audit.missing_load_l1_N=1,x=>x.cases.project.fragment_removal.removed_fixed_dofs=1,x=>x.cases.project.solve.true_relative_residual=.01,x=>x.cases.project.audit.reasons=['blocked'],x=>x.cases.project.solve.cg_status=1]){
+   const bad=structuredClone(r);mutate(bad);Review.mechanics(rep,slice,bad);assert.equal(Review.mechanicsComparable(bad),false);
+  }
+ }
+});
